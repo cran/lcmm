@@ -200,19 +200,27 @@ if((int.fixed+int.random)>0) idprob0[1] <- 0
 
 
 ###### DATA SORTING on IND variable
-matYX <- cbind(IND,PRIOR,Y0,X0)
+matYX <- cbind(IND,PRIOR,Tentry,Tevent,Devent,Y0,X0)
 matYXord <- matYX[sort.list(matYX[,1]),]
-Y0 <- matYXord[,3]
-X0 <- matYXord[,-c(1,2,3)]
+Y0 <- matYXord[,6]
+X0 <- matYXord[,-c(1,2,3,4,5,6)]
 IND <- matYXord[,1]
 PRIOR <- matYXord[,2]
 PRIOR <-as.integer(as.vector(PRIOR))
+Tevent <- matYXord[,4]
+Tentry <- matYXord[,3]
+Devent <- matYXord[,5]
+Devent<-as.integer(as.matrix(Devent))
+Tevent<-as.numeric(as.matrix(Tevent))
+Tentry<-as.numeric(as.matrix(Tentry))
 
 X0<-as.numeric(as.matrix(X0))
 Y0<-as.numeric(as.matrix(Y0))
 nmes0<-as.vector(table(IND))
-
 ns0<-length(nmes0)
+
+
+
 
 
 ##### INCLUSION PRIOR 
@@ -260,14 +268,19 @@ nvdepsurv <- 0
 tsurvint <- tsurv
 indsurvint <- rep(0,ns0)
 
-if(all.equal(TimeDepVar,NULL)==F){
 
-   nvdepsurv <- 1
-   tsurvint <- tsurv
-   TimeDepVar[(is.na(TimeDepVar))] <- max(tsurv)
-   indsurvint[TimeDepVar<tsurv] <- 1
-   tsurvint[TimeDepVar<tsurv] <- TimeDepVar[TimeDepVar<tsurv]
-}
+if(!missing(TimeDepVar)) stop ("Including a time dependent covariate in the survival model is not yet possible")
+
+
+
+#if(all.equal(TimeDepVar,NULL)==F)
+#{
+#   nvdepsurv <- 1
+#   tsurvint <- tsurv
+#   TimeDepVar[(is.na(TimeDepVar))] <- max(tsurv)
+#   indsurvint[TimeDepVar<tsurv] <- 1
+#   tsurvint[TimeDepVar<tsurv] <- TimeDepVar[TimeDepVar<tsurv]
+#}
 
 
 nrisqtot <- 0

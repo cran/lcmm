@@ -12,9 +12,9 @@ This function provides informations about the posterior classification stemmed f
 }
 \usage{
 postprob(x,\dots)
-postprob.hlme(x,\dots)
-postprob.lcmm(x,\dots)
-postprob.Jointlcmm(x,\dots)
+\method{postprob}{hlme}(x,\dots)
+\method{postprob}{lcmm}(x,\dots)
+\method{postprob}{Jointlcmm}(x,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 

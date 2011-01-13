@@ -9,8 +9,7 @@ Plot of the class-specific event-free probabilities (survival functions) estimat
 Displays the estimated event-free probabilities (survival functions) for the time-to-event of interest in each latent class
 }
 \usage{
-plot.survival(x,legend.loc="topright",ylim=c(0,1),...)
-plot.survival.Jointlcmm(x,legend.loc="topright",ylim=c(0,1),...)
+\method{plot.survival}{Jointlcmm}(x,legend.loc="topright",ylim=c(0,1),...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

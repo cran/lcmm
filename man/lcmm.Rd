@@ -11,10 +11,10 @@ At the latent process level, the model estimates a standard linear mixed model o
 Parameters of the nonlinear link function and of the latent process mixed model are estimated simultaneously using a maximum likelihood method. 
 }
 \usage{
-lcmm(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
-nwg = FALSE, link = "linear", intnodes = NULL, epsY = 0.5, data, B, 
-convB = 1e-04, convL = 1e-04, convG = 1e-04, maxiter=500, nsim=100, 
-prior)
+lcmm(fixed, mixture, random, subject, classmb, ng = 1, 
+idiag = FALSE, nwg = FALSE, link = "linear", intnodes = NULL,
+epsY = 0.5, data, B, convB = 1e-04, convL = 1e-04, 
+convG = 1e-04, maxiter=500, nsim=100, prior)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

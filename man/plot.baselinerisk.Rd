@@ -8,8 +8,7 @@ Plot of the class-specific baseline risk functions estimated from a joint latent
 Displays the estimated baseline risk functions for the time-to-event of interest in each latent class
 }
 \usage{
-plot.baselinerisk.Jointlcmm(x,legend.loc="topleft",ylim=NULL,...)
-plot.baselinerisk(x,legend.loc="topleft",ylim=NULL,...)
+\method{plot.baselinerisk}{Jointlcmm}(x,legend.loc="topleft",ylim=NULL,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

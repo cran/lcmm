@@ -9,8 +9,7 @@ Plot of the estimated transformation between the outcome and the underlying late
 Displays the estimated transformation specified in the option \code{link} of \code{lcmm} function. It corresponds to the (non)linear parameterized link assumed between the oberved longitudinal outcome and the underlying latent process and estimated as long as other regression parameters. 
 }
 \usage{
-plot.linkfunction.lcmm(x,legend.loc="topright",...)
-plot.linkfunction(x,legend.loc="topright",...)
+\method{plot.linkfunction}{lcmm}(x,legend.loc="topright",...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

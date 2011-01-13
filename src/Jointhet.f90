@@ -2868,11 +2868,6 @@
                      ll=kk-1
                   end if
                end do
-               if (ll.lt.1.or.ll.gt.nz-1) then
-!                  write(*,*) 'probleme dans fct_risq splines'
-!                  write(*,*) 'll=',ll,'T=',Tsurv0(i)
-                  stop
-               end if
                if (ll.gt.1) then
                   do ii=1,ll-1
                      som=som+brisq(ii)
@@ -2899,11 +2894,6 @@
                      ll=kk-1
                   end if
                end do
-               if (ll.lt.1.or.ll.gt.nz-1) then
-!                  write(*,*) 'probleme dans fct_risq splines'
-!                  write(*,*) 'll=',ll,'T=',Tsurvint(i)
-                  stop
-               end if
                if (ll.gt.1) then
                   do ii=1,ll-1
                      som=som+brisq(ii)
@@ -3863,6 +3853,7 @@
 
 
         Tmm_est=0.d0
+
         Tmm1_est=0.d0
         Tmm2_est=0.d0
         Tmm3_est=0.d0

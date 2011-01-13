@@ -1584,14 +1584,6 @@
                end do
 
 
-!               if (thi.eq.0.and.thj.eq.0) then
-!                if (i.eq.1) then
-!                    write(*,*)'g',g,b2
-!                    write(*,*)'g',g,b0
-!                    stop
-!                    end if
-!                    end if
-
 
 ! variance covariance si spec aux classes :
 
@@ -2910,12 +2902,6 @@
            if (test(j).eq.zitr(ntrtot-2)) then
                l=ntrtot-3
             end if
-
-!         if (l.lt.1.or.l.gt.ntrtot-1) then
-!            write(*,*)'probleme estim splines',l
-!            write(*,*)'j=',j,'test(j)',test(j)
-!            stop
-!         end if
 
 
                ht2 = zitr(l+1)-test(j)
