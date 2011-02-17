@@ -7,10 +7,10 @@ classif<-NULL
 
 cl.table<-NULL
 for (g in 1:x$ng) {
-temp<- subset(x$pprob,x$pprob[,1]==g)
-temp1<-apply(temp[,-1],2,mean)
+temp<- subset(x$pprob,x$pprob[,2]==g)
+temp1<-apply(temp[,3:(x$ng+2)],2,mean)
 cl.table<-rbind(cl.table,temp1)
-classif<-cbind(classif,length(temp[,1]))
+classif<-cbind(classif,length(temp[,2]))
 }
 
 rownames(cl.table)<-paste("class",1:x$ng,sep="")

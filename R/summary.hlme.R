@@ -49,7 +49,18 @@ NVC   <- x$N[3]
 NW    <- x$N[4]
 NPM   <- length(x$best)
 
-wald <- x$best/x$se
+
+se <- rep(1,NPM)
+if ((all.equal(x$conv,1)==T)==T){
+#recuperation des indices de V
+id <- 1:NPM
+indice <- rep(id*(id+1)/2)
+se <-sqrt(x$V[indice])
+se[(NPROB+NEF+1):(NPROB+NEF+NVC)]<-1
+}
+
+
+wald <- x$best/se
 pwald <- 1-pchisq(wald**2,1)
 coef <- x$best
 
@@ -57,7 +68,7 @@ coef <- x$best
 if(NPROB>0){
 cat("Fixed effects in the class-membership model:\n" )
 
-tmp <- cbind(coef[1:NPROB],x$se[1:NPROB],wald[1:NPROB],pwald[1:NPROB])
+tmp <- cbind(coef[1:NPROB],se[1:NPROB],wald[1:NPROB],pwald[1:NPROB])
 dimnames(tmp) <- list(names(coef)[1:NPROB], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp)
@@ -68,7 +79,7 @@ cat("\n")
 
 cat("Fixed effects in the longitudinal model:\n" )
 
-tmp <- cbind(coef[(NPROB+1):(NPROB+NEF)],x$se[(NPROB+1):(NPROB+NEF)],wald[(NPROB+1):(NPROB+NEF)],pwald[(NPROB+1):(NPROB+NEF)])
+tmp <- cbind(coef[(NPROB+1):(NPROB+NEF)],se[(NPROB+1):(NPROB+NEF)],wald[(NPROB+1):(NPROB+NEF)],pwald[(NPROB+1):(NPROB+NEF)])
 dimnames(tmp) <- list(names(coef)[(NPROB+1):(NPROB+NEF)], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp)
@@ -82,7 +93,7 @@ if(x$idiag==1){
 Mat.cov <- diag(coef[(NPROB+NEF+1):(NPROB+NEF+NVC)])
 colnames(Mat.cov) <-x$name.mat.cov 
 rownames(Mat.cov) <-x$name.mat.cov 
-Mat.cov[lower.tri(Mat.cov)] <- NA
+Mat.cov[lower.tri(Mat.cov)] <- 0
 Mat.cov[upper.tri(Mat.cov)] <- NA
 
 print(Mat.cov,na.print="")
@@ -105,12 +116,12 @@ cat("\n")
 }
 }
 
-std <- cbind(coef[NPM],x$se[NPM])
+std <- cbind(coef[NPM],se[NPM])
 colnames(std) <-c("coef","se") 
 rownames(std) <-"Residual standard error:"
 if(NW>=1) {
 nom <- paste("Proportional variance coefficient",c(1:(x$ng-1)))
-std <-cbind(coef[(NPROB+NEF+NVC+1):NPM],x$se[(NPROB+NEF+NVC+1):NPM]) 
+std <-cbind(coef[(NPROB+NEF+NVC+1):NPM],se[(NPROB+NEF+NVC+1):NPM]) 
 rownames(std) <- c(nom,"Residual standard error")
 colnames(std) <-c("coef","se") 
 }

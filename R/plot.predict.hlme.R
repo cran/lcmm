@@ -7,7 +7,10 @@ if(missing(var.time)) stop("The argument var.time should be specified")
 if(missing(newdata)) stop("The argument newdata should be specified")
 if(missing(x)) stop("The argument x should be specified")
 if (!inherits(x, "hlme")) stop("use only with \"hlme\" objects")
-if(!identical(colnames(newdata),x$Xnames)) stop(paste("newdata should include the covariates ",x$Xnames," in this order"))
+if(!identical(colnames(newdata),x$Xnames)) {
+cat("newdata should include the following covariates in exactly the same order: ", "\n")
+cat(x$Xnames, "\n")}
+if (!identical(colnames(newdata),x$Xnames)) stop("see above")
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
 if (!inherits(var.time, "character")) stop("the class of var.time should be character")
 
@@ -40,7 +43,14 @@ kk <- kk+x$ng}
 
 Y<-matrix(0,length(newdata[,1]),x$ng)
 colnames(Y) <- paste("class",1:x$ng,sep="") 
-for(g in 1:x$ng){Y[,g]<- X1 %*% b1 + X2 %*% b2[,g]}
+for(g in 1:x$ng){
+if(length(b1) != 0){
+Y[,g]<- X1 %*% b1 
+}
+if(length(b2) != 0){
+Y[,g]<- Y[,g] + X2 %*% b2[,g]
+}
+}
 
 title1 <- "Class-specific mean predicted trajectory"
 for (i in 1:x$ng){

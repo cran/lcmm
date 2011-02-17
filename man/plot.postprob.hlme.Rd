@@ -33,8 +33,8 @@ This function can only be used with latent class mixed models that include at le
 }
 \examples{
 data(data_hlme)
-m<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
- subject=ID,ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
+m<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject=ID,ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
+
 plot.postprob.hlme(m)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
