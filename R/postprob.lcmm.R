@@ -1,8 +1,7 @@
-postprob.hlme <-
+postprob.lcmm <-
 function(x,...){
-if (!inherits(x, "hlme")) stop("use only with \"hlme\" objects")
+if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 if(x$ng==1) stop("use only with  ng > 1")
-
 
 classif<-NULL
 cl.table<-NULL

@@ -1,6 +1,6 @@
-plot.hlme <-
+plot.lcmm <-
 function(x,...){
-if (!inherits(x, "hlme")) stop("use only with \"hlme\" objects")
+if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 if(x$conv==1|x$conv==2) {
 dev.new()
 plot(x$pred[,2]~x$pred[,1],xlab="marginal predictions",ylab="marginal residuals",main="marginal residuals versus marginal predictions",...)

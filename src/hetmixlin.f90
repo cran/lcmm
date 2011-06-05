@@ -74,6 +74,10 @@
 !
 !----------------------------------------------------------
 
+
+
+
+
       module commun
 
       implicit none
@@ -85,7 +89,13 @@
       integer,dimension(:),allocatable,save :: nmes,prior
       end module commun
 
+
+
+
 !*************************************************************
+
+
+
 
 
 
@@ -176,7 +186,9 @@
 
 
 !C-------------------------------------------------------------
-!C                   MARQ98
+!C                  MODULE OPTIM
+!
+!
 !C-------------------------------------------------------------
       module optim
 
@@ -969,6 +981,7 @@
 
 
 
+
 !================ SUBROUTINES ================================
 
       subroutine hetmixlin(Y0,X0,Prior0, idprob0,idea0,idg0   &
@@ -1152,7 +1165,7 @@
 !lancement de l'optimisation
 
         IF (npm.eq.1) then
-          istop=10
+          istop=12
           go to 1589
 
         else
@@ -1310,11 +1323,6 @@
        vrais=0.d0
        it=0
        do i=1,ns
-         if (i==1) then
-            it=0
-         else
-            it=it+nmes(i-1)
-         end if
 
 !-------- creation de Vi = ZiGZi'+se*seIni ----------
 
@@ -1559,6 +1567,7 @@
             end if
             vrais=vrais+2*log(expo)
          end if
+         it=it+nmes(i)
       end do
 
 ! FIN BOUCLE SUJET
@@ -1652,11 +1661,6 @@
       kk=0
 	it=0
       do i=1,ns
-	if (i==1) then
-		it=0
-	else
-		it=it+nmes(i-1)
-	end if
 
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
 
@@ -1860,6 +1864,8 @@
           PPI(i,g)=pi(g)*fi(g)/f
        end do
 
+       it=it+nmes(i)
+
       end do
 
  147  continue
@@ -1879,7 +1885,7 @@
       use optim
 
       implicit none
-      integer ::i,j,k,l,m,g,l2,m2,jj,it,npm,nef
+      integer ::i,j,k,l,m,g,l2,m2,jj,npm,nef
       integer ::ier,nmoins,nmes_cur,n2,nmoins2,kk
       double precision,dimension(maxmes,nea) ::Z,P
       double precision,dimension(maxmes,nv) ::X0,X2
@@ -1951,15 +1957,7 @@
       pred_re=0.d0
       nmes_cur=0
       kk=0
-      it=0
-
-       do i=1,ns
-
-	if (i==1) then
-		it=0
-	else
-		it=it+nmes(i)
-	end if
+      do i=1,ns
 
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
 
@@ -1971,7 +1969,7 @@
             if (idea(k).eq.1) then
                l=l+1
                do j=1,nmes(i)
-                  Z(j,l)=dble(X(it+j,k))
+                  Z(j,l)=dble(X(nmes_cur+j,k))
                end do
             end if
 
@@ -2057,7 +2055,7 @@
                if (idg(k).ne.0) then
                   l=l+1
                   do j=1,nmes(i)
-                     X0(j,l)=dble(X(it+j,k))
+                     X0(j,l)=dble(X(nmes_cur+j,k))
                   end do
                   b0(l)=b1(nprob+l)
                end if
@@ -2105,7 +2103,7 @@
             do k=1,nv
                if (idprob(k).eq.1) then
                   l=l+1
-                  Xprob(1+l)=X(it+1,k)
+                  Xprob(1+l)=X(nmes_cur+1,k)
                end if
             end do
 !     write(*,*)'l apres Xprob',l,(Xprob(j),j=1,10)
@@ -2140,12 +2138,12 @@
                if (idg(k).eq.2) then
                   l=l+1
                   do j=1,nmes(i)
-                     X2(j,l)=dble(X(it+j,k))
+                     X2(j,l)=dble(X(nmes_cur+j,k))
                   end do
                else if (idg(k).eq.1) then
                   m=m+1
                   do j=1,nmes(i)
-                     X0(j,m)=dble(X(it+j,k))
+                     X0(j,m)=dble(X(nmes_cur+j,k))
                   end do
                end if
             end do

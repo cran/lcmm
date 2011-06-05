@@ -1,22 +1,24 @@
 \name{plot.postprob}
+\alias{plot.postprob.Jointlcmm}
 \alias{plot.postprob}
+\alias{plot.postprob.lcmm}
+\alias{plot.postprob.hlme}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Histograms of the posterior class-membership probabilities
 }
 \description{
-This function is generic; method functions can be written to
-     handle specific classes of objects. For the moment, the only class which already has
-     methods for this function is \code{hlme}.
+This function provides the histograms of the posterior class-membership probabilities stemmed from a \code{Jointlcmm} object.
 }
 \usage{
-plot.postprob(x,\dots)
+\method{plot.postprob}{Jointlcmm}(x,\dots)
+\method{plot.postprob}{lcmm}(x,\dots)
+\method{plot.postprob}{hlme}(x,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-an object inheriting from class \code{hlme}, representing a fitted latent class
-          linear mixed-effects model
+an object inheriting from classes \code{lcmm}, \code{hlme} or \code{Jointlcmm}, representing respectively a fitted latent class linear mixed model, a more general latent class mixed model or a joint latent class model
 }
   \item{\dots}{
 other parameters to be passed through to plotting functions
@@ -28,10 +30,13 @@ Returns as many plots as the number of latent classes}
 Cecile Proust-Lima and Benoit Liquet
 }
 \note{
-This function can only be used with latent class mixed models that include at least 2 latent classes
+This function can only be used with latent class mixed models and joint latent class models that include at least 2 latent classes
 }
 \seealso{
-\code{\link{plot.postprob.hlme}}, \code{\link{hlme}}, \code{\link{postprob}}, \code{\link{plot.predict}}  
+\code{\link{Jointlcmm}}, \code{\link{lcmm}}, \code{\link{hlme}},\code{\link{postprob}}  
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+\examples{
+data(data_hlme)
+m<-lcmm(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme)  
+plot.postprob(m) 
+}

@@ -13,7 +13,7 @@ This model is limited to a Gaussian outcome.
 
 \usage{
 hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
- nwg = FALSE, data, B, convB, convL, convG, prior,Maxiter)
+ nwg = FALSE, data, B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500)
 }
 
 
@@ -44,9 +44,9 @@ number of latent classes considered. If \code{ng=1} no \code{mixture} nor \code{
 optional logical for the variance-covariance structure of the random-effects. If \code{FALSE}, a non structured matrix of variance-covariance is considered (by default). 
 If \code{TRUE} a diagonal matrix of variance-covariance is considered. 
 }
-  \item{nwg}{
-optional logical of class-specific variance-covariance of the random-effects. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default). 
-If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class.
+ \item{nwg}{
+optional logical of class-specific variance-covariance of the random-effects. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
+If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class (the proportional parameter in the last latent class equals 1 to ensure identifiability).
 }
   \item{data}{
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
@@ -64,7 +64,7 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 }
 \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng)
 }
-\item{Maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, Maxiter=100}
+\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=300}
 }
 
 
@@ -79,7 +79,7 @@ if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of a
 (4) only if \code{nwg=TRUE}, ng-1 parameters for class-specific proportional coefficients
  for the variance covariance matrix of the random-effects; 
 (5) the variance of the residual error. 
-
+We understand that it can be difficult to enter the correct number of parameters in \code{B} at the first place. So we recommend to run the program without specifying the initial vector \code{B} even if this model does not converge. As the final vector \code{best} has exactly the same structure as \code{B} (even when the program stops without convergence), it will help defining a satisfying vector of initial values \code{B} for next runs. 
 
 
 Some caution should be made when using the program:
@@ -96,10 +96,10 @@ This is a reason why specification of initial values in \code{B} should be prefe
 
 
 (4) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
-In some cases, the program may not converge and reach the maximum number of iterations fixed at 70. 
+In some cases, the program may not converge and reach the maximum number of iterations fixed at 100. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
 If the parameters are on the boundaries of the parameter space, the identifiability of the model should be assessed. 
-If not, the program should be run again with other initial values.
+If not, the program should be run again with other initial values, with a higher maximum number of iterations or less strict convergence tolerances.
 }
 \value{
 The list returned is:
@@ -141,19 +141,19 @@ distribution for the random-effects. Computer Methods Programs Biomedicine 78, 1
 Cecile Proust-Lima and Benoit Liquet
 }
 \seealso{
-\code{\link{postprob.hlme}},\code{\link{plot.postprob.hlme}},\code{\link{summary.hlme}},\code{\link{plot.predict.hlme}}
+\code{\link{postprob}},\code{\link{plot.postprob}},\code{\link{summary}},\code{\link{plot.predict}}
 }
 \examples{
 data(data_hlme)
 ### homogeneous linear mixed model (standard linear mixed model) 
 ### with independent random-effects
-m1<-hlme(Y~Time+X1+X1_time,random=~Time,subject=ID,ng=1,idiag=TRUE,data=data_hlme)
+m1<-hlme(Y~Time+X1+X1_time,random=~Time,subject='ID',ng=1,idiag=TRUE,data=data_hlme)
 m1
 ### latent class linear mixed model with 2 classes
-m2<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject=ID,ng=2,data=data_hlme)
+m2<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme)
 m2
 ### same model as m2 with the vector if initial values specified
-m3<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject=ID,ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
+m3<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
 m3
 }
 

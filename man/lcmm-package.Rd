@@ -1,9 +1,8 @@
 \name{lcmm-package}
 \alias{lcmm-package}
-\alias{lcmm}
 \docType{package}
 \title{
-Estimation of Latent Class Mixed Models and Joint Latent Class Mixed Models for quantitative, bounded quantitative, discrete and ordinal outcomes
+Estimation of Latent Class Mixed Models and Joint Latent Class Mixed Models for quantitative, bounded quantitative, discrete and ordinal longitudinal  outcomes and a right-censored left-truncated time-to-event.
 }
 \description{
 This package provides functions for the estimation of latent class mixed models (LCMM) and joint latent class mixed models using a maximum likelihood method.
@@ -12,12 +11,12 @@ This package provides functions for the estimation of latent class mixed models 
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.2 \cr
-Date: \tab 2011-02-17 \cr
+Version: \tab 1.4 \cr
+Date: \tab 2011-06-05 \cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
-The package includes for the moment only the estimation of latent class linear mixed models for Gaussian longitudinal outcomes using \code{hlme} function. 
+The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative and discrete longitudinal outcomes using \code{lcmm} function, and joint latent class mixed model for Gaussian longitudinal outcome and a time-to-event using \code{Jointlcmm} function. 
 }
 \author{
 Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
@@ -25,24 +24,28 @@ Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
 Maintainer: <cecile.proust@isped.u-bordeaux2.fr>
 }
 \references{
-Verbeke G and Lesaffre E (1996). A linear mixed-effects model with heterogeneity in
-the random-effects population. Journal of the American Statistical Association 91, 217-21
+Lin, H., Turnbull, B. W., McCulloch, C. E. and Slate, E. H. (2002). Latent class models for
+joint analysis of longitudinal biomarker and event process data: application to longitudinal
+prostate-specific antigen readings and prostate cancer. Journal of the American Statistical
+Association 97, 53-65.
 
 Muthen B and Shedden K (1999). Finite mixture modeling with mixture outcomes using the EM algorithm. Biometrics 55, 463-9
 
 Proust C and Jacqmin-Gadda H. Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78:165-73
-}
-\examples{
-data(data_hlme)
-m<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject=ID,ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
-summary(m)
-plot(m)
-##posterior classification
-postprob(m)
-plot.postprob(m)
-##class-specific predicted trajectories
-newdata<-data.frame(intercept=rep(1,100),Time=seq(0,5,length=100),X1=rep(0,100),X1_time=rep(0,100),X2=rep(0,100),X3=rep(0,100))
-plot.predict.hlme(m,newdata,"Time","right")
+
+Proust, C., Jacqmin-Gadda, H., Taylor, J. M., Ganiayre, J. and Commenges, D. (2006). A
+nonlinear model with latent process for cognitive evolution using multivariate longitudinal
+data. Biometrics 62, 1014-24.
+
+Proust-Lima, C., Dartigues, J.-F. and Jacqmin-Gadda, H. (2011). Misuse of the linear mixed
+model when evaluating risk factors of cognitive decline. Technical report
+
+Proust-Lima, C. and Taylor, J. (2009). Development and validation of a dynamic prognostic
+tool for prostate cancer recurrence using repeated measures of post-treatment PSA: a joint
+modelling approach. Biostatistics 10, 535-49.
+
+Verbeke G and Lesaffre E (1996). A linear mixed-effects model with heterogeneity in
+the random-effects population. Journal of the American Statistical Association 91, 217-21
 }
 \keyword{package}
 

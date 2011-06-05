@@ -1,9 +1,9 @@
-summary.hlme <-
+summary.lcmm <-
 function(object,...){
 x <- object
-if (!inherits(x, "hlme")) stop("use only with \"hlme\" objects")
+if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 
-cat("Heterogenous linear mixed model", "\n")
+cat("General latent class mixed model", "\n")
 cat("     fitted by maximum likelihood method", "\n")
 
 cl <- x$call
@@ -17,6 +17,23 @@ cat(paste("     Number of subjects:", x$ns),"\n")
 cat(paste("     Number of observations:", length(x$pred[,1])),"\n")
 cat(paste("     Number of latents classes:", x$ng), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
+if (x$linktype==0) {
+ntrtot <- 2
+cat("     Link function: linear"," \n")
+}
+if (x$linktype==1)
+{
+ntrtot <- 4
+cat("     Link function: Standardised Beta CdF"," \n")
+}
+if (x$linktype==2) {
+ntrtot <- length(x$linknodes)+2
+cat("     Link function: Quadratic I-splines with nodes"," \n")
+#cat(paste("      ",x$linknodes)," \n")
+cat(     x$linknodes," \n")
+}
+
+
 cat(" \n")
 cat("Iteration process:", "\n")
 
@@ -24,7 +41,8 @@ if(x$conv==1) cat("Convergence criteria satisfied")
 if(x$conv==2) cat("Maximum number of iteration reached without convergence")
 if(x$conv==4|x$conv==12) {
 cat("The program stopped abnormally. No results can be displayed.\n")
-}else{
+}
+else{
 
 cat(" \n")
 cat("     Number of iterations: ", x$niter, "\n")
@@ -49,13 +67,13 @@ NW    <- x$N[4]
 NPM   <- length(x$best)
 
 
-se <- rep(1,NPM)
+se <- rep(NA,NPM)
 if ((all.equal(x$conv,1)==T)==T){
 #recuperation des indices de V
 id <- 1:NPM
 indice <- rep(id*(id+1)/2)
 se <-sqrt(x$V[indice])
-se[(NPROB+NEF+1):(NPROB+NEF+NVC)]<-1
+se[(NPROB+NEF+1):(NPROB+NEF+NVC)]<-NA
 wald <- x$best/se
 pwald <- 1-pchisq(wald**2,1)
 coef <- x$best
@@ -66,8 +84,6 @@ pwald <- NA
 coef <- x$best
 }
 
-
-
 if(NPROB>0){
 cat("Fixed effects in the class-membership model:\n" )
 
@@ -76,18 +92,25 @@ dimnames(tmp) <- list(names(coef)[1:NPROB], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp)
 cat("\n")
-
 }
+
 
 
 cat("Fixed effects in the longitudinal model:\n" )
 
 tmp <- cbind(coef[(NPROB+1):(NPROB+NEF)],se[(NPROB+1):(NPROB+NEF)],wald[(NPROB+1):(NPROB+NEF)],pwald[(NPROB+1):(NPROB+NEF)])
-dimnames(tmp) <- list(names(coef)[(NPROB+1):(NPROB+NEF)], c("coef", "Se", "Wald", "p-value"))
-cat("\n")
-prmatrix(tmp)
+tmp <- rbind(c(0,NA,NA,NA),tmp)
+interc <- "intercept"
+if (x$ng>1){
+interc <- paste(interc,"1")
+}
+interc <- paste(interc,"(not estimated)")
+dimnames(tmp) <- list(c(interc,names(coef)[(NPROB+1):(NPROB+NEF)]), c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 
+
+prmatrix(tmp)
+cat("\n")
 
 if(NVC>0){
 cat("\n")
@@ -98,12 +121,9 @@ colnames(Mat.cov) <-x$name.mat.cov
 rownames(Mat.cov) <-x$name.mat.cov 
 Mat.cov[lower.tri(Mat.cov)] <- 0
 Mat.cov[upper.tri(Mat.cov)] <- NA
-
 print(Mat.cov,na.print="")
 cat("\n")
 }
-
-
 if(x$idiag==0){
 Mat.cov<-matrix(0,ncol=length(x$name.mat.cov),nrow=length(x$name.mat.cov))
 colnames(Mat.cov) <-x$name.mat.cov 
@@ -111,24 +131,26 @@ rownames(Mat.cov) <-x$name.mat.cov
 Mat.cov[upper.tri(Mat.cov,diag=TRUE)]<-coef[(NPROB+NEF+1):(NPROB+NEF+NVC)]
 Mat.cov <-t(Mat.cov)
 Mat.cov[upper.tri(Mat.cov)] <- NA
-
 print(Mat.cov,na.print="")
 cat("\n")
 }
 }
 
-std <- cbind(coef[NPM],se[NPM])
-colnames(std) <-c("coef","se") 
-rownames(std) <-"Residual standard error:"
 if(NW>=1) {
 nom <- paste("Proportional variance coefficient",c(1:(x$ng-1)))
-std <-cbind(coef[(NPROB+NEF+NVC+1):NPM],se[(NPROB+NEF+NVC+1):NPM]) 
+std <-cbind(coef[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)],se[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]) 
 rownames(std) <- c(nom,"Residual standard error")
 colnames(std) <-c("coef","se") 
 }
-print(std)
+
+cat("Residual standard error (not estimated) = 1\n")
+cat("\n")
+
+cat("Parameters of the link function:\n" )
+tmp <- cbind(coef[(NPM-ntrtot+1):NPM],se[(NPM-ntrtot+1):NPM],wald[(NPM-ntrtot+1):NPM],pwald[(NPM-ntrtot+1):NPM])
+dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1):NPM], c("coef", "Se", "Wald", "p-value"))
+cat("\n")
+prmatrix(tmp)
 cat("\n")
 }
 }
-
-

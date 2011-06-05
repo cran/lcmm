@@ -23,7 +23,7 @@ The data were simulated from a 3-latent class linear mixed model. Repeated data 
   }
 }
 \seealso{
-\code{\link{hlme}},\code{\link{postprob.hlme}},\code{\link{plot.postprob.hlme}},\code{\link{summary.hlme}},\code{\link{plot.predict.hlme}}    
+\code{\link{hlme}},\code{\link{postprob}},\code{\link{plot.postprob}},\code{\link{summary.lcmm}},\code{\link{plot.predict}}    
 }
 
 

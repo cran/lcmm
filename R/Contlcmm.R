@@ -1,8 +1,10 @@
-hlme <-
-function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,data,B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500){
+
+.Contlcmm <-
+function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,epsY,idlink0,ntrtot0,nbzitr0,zitr,nsim,call){
+
 
 cl <- match.call()
-args <- as.list(match.call(hlme))[-1]
+args <- as.list(match.call(.Contlcmm))[-1]
 
 #nom.subject <- as.character(args$subject)
 nom.subject <- as.character(subject)
@@ -34,7 +36,8 @@ int.fixed <-  attr.fixed$intercept
 depvar <- as.character(attr.fixed$variables[2])
 inddepvar.fixed <- attr.fixed$term.labels
 inddepvar.fixed.nom <-inddepvar.fixed 
-if(int.fixed > 0) inddepvar.fixed.nom <-c("intercept",inddepvar.fixed)
+if(int.fixed == 0) stop ("Only models with an intercept can be estimated using lcmm. This is required for identifiability purposes")
+#if(int.fixed > 0) inddepvar.fixed.nom <-c("intercept",inddepvar.fixed)
 
 ##########################################################
 res.mixture <- terms(mixture)
@@ -60,17 +63,21 @@ inddepvar.classmb.nom <- inddepvar.classmb
 inddepvar.classmb.nom <- c("intercept",inddepvar.classmb)
 
 
+
 ###########################################################
 # intercept is always in inddepvar.classmb
 var.exp <- unique(c(inddepvar.fixed,inddepvar.mixture,inddepvar.random,inddepvar.classmb))
 
-nom.fixed <- inddepvar.fixed.nom
+
+nom.fixed <- c("intercept",inddepvar.fixed.nom)
 nom.mixture <- inddepvar.mixture.nom  
 
 if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
 
-
 Y0 <- data[,depvar] 
+
+## message d'erreur si les variables non présentes ? ##
+
 X0 <- as.data.frame(data[,var.exp])
 names(X0) <- var.exp
 if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("The data should not contain any missing value")
@@ -107,8 +114,6 @@ for (i in 1:nvar.exp)    {
  }
 
 if((int.fixed+int.random)>0) idprob0[1] <- 0
-
-
 
 # on ordonne les donn es suivants la variable IND
 matYX <- cbind(IND,PRIOR,Y0,X0)
@@ -165,9 +170,9 @@ b<-NULL
 b1 <- NULL
 NPROB <- 0
 if(ng0==1| missing(B)){
-NEF<-sum(idg0!=0)
+NEF<-sum(idg0!=0)-1
 b1[1:NEF]<-0
-if(int.fixed > 0)  b1[1]<-mean(Y0)
+
 
 if(idiag0==1){
 NVC<-sum(idea0==1)
@@ -181,7 +186,23 @@ bidiag<-rep(0,NVC)
 bidiag[indice]<-1
 b1[(NEF+1):(NEF+NVC)]<-bidiag
 }
-b1[NEF+NVC+1]<-1
+
+# valeurs initiales pour les transfos #
+if (idlink0==0) 
+b1[NEF+NVC+1]<-mean(Y0)
+b1[NEF+NVC+2]<-1
+if (idlink0==1){
+b1[(NEF+NVC+1)]<-0
+b1[(NEF+NVC+2)]<- -log(2)
+b1[(NEF+NVC+3)]<- 0.70
+b1[(NEF+NVC+4)]<- 0.10
+}
+if (idlink0==2) {
+b1[(NEF+NVC+1)]<- -2
+b1[(NEF+NVC+2):(NEF+NVC+ntrtot0)]<- 0.1
+}
+
+
 NPM<-length(b1)
 NW<-0
 V <- rep(0,NPM*(NPM+1)/2) 
@@ -191,14 +212,14 @@ V <- rep(0,NPM*(NPM+1)/2)
 if(ng0>1){
 NPROB<-(sum(idprob0==1)+1)*(ng0-1)
 b[1:NPROB]<-0
-NEF<-sum(idg0==1)+(sum(idg0==2))*ng0
+NEF<-sum(idg0==1)+(sum(idg0==2))*ng0-1
 if(idiag0==1)NVC<-sum(idea0==1)
 if(idiag0==0){
 kk<-sum(idea0==1) 
 NVC<-(kk*(kk+1))/2}
 NW<-nwg0*(ng0-1)
 if(NW>0) b[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]<-1
-NPM<-NPROB+NEF+NVC+NW+1
+NPM<-NPROB+NEF+NVC+NW+ntrtot0
 V <- rep(0,NPM*(NPM+1)/2)
 } 
 
@@ -211,8 +232,8 @@ idea2 <- idea0
 idprob2 <- rep(0,nv0)  
 idg2 <- rep(0,nv0) 
 idg2[idg0!=0] <- 1
-NEF2<-sum(idg2==1)
-NPM2<-NEF2+NVC+1
+NEF2<-sum(idg2==1)-1
+NPM2<-NEF2+NVC+ntrtot0
 nwg2<-0
 ng2<-1
 ppi2<- rep(0,ns0)
@@ -220,19 +241,29 @@ pred_m_g2 <- rep(0,nobs0)
 pred_ss_g2 <- rep(0,nobs0)
 
 V2 <- rep(0,NPM2*(NPM2+1)/2)
-best <- rep(0,NPM2)
-init <- .Fortran("hetmixlin",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),npm=as.integer(NPM2),best=as.double(b1),V=as.double(V2),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi2),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g2),pred_ss_g=as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),PACKAGE="lcmm")
+
+marker <- rep(0,nsim)
+transfY <- rep(0,nsim)
+init <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(marker),as.double(transfY),as.integer(nsim),PACKAGE="lcmm")
+
 
 k <- NPROB
 l <- 0
 t<- 0
 for (i in 1:nvar.exp)    {
-if(idg0[i]==1){
+if(idg0[i]==1 & i>1){
 l <- l+1
 t <- t+1
 b[k+t] <- init$best[l]
 }
 if(idg0[i]==2){
+if (i==1){
+	for (g in 2:ng){
+	t <- t+1
+	b[k+t] <- - 0.5*(g-1)
+	}
+}
+if (i>1){
 	l <- l+1
 	for (g in 1:ng){
 	t <- t+1
@@ -240,8 +271,10 @@ if(idg0[i]==2){
 	}
 }
 }
+}
+
 b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <-init$best[(NEF2+1):(NEF2+NVC)]
-b[NPROB+NEF+NVC+NW+1] <- init$best[NPM2]
+b[(NPM-ntrtot0+1):NPM] <-init$best[(NPM2-ntrtot0+1):NPM2]
 } 
 if(ng0==1 ){
 b <- b1
@@ -263,20 +296,32 @@ nom1 <- paste(nom,c(1:(ng0-1)))
 names(b)[1:NPROB]<-nom1
 }
 
-if(ng0==1) names(b)[1:NEF] <- inddepvar.fixed.nom
-
+if(ng0==1) names(b)[1:(NEF)] <- inddepvar.fixed.nom
 if(ng0>1){
-nom1<- NULL
-for (i in 1:nvar.exp) {
-if(idg0[i]==2){ nom <- paste(nom.X0[i],c(1:ng0))
-nom1 <- cbind(nom1,t(nom))}
-if(idg0[i]==1) nom1 <- cbind(nom1,nom.X0[i])
-}
+	nom1<- NULL
+	for (i in 1:nvar.exp) {
+		if(idg0[i]==2){ 
+		   if (i==1){
+			 nom <- paste(nom.X0[i],c(2:ng0))
+		       nom1 <- cbind(nom1,t(nom))
+		    }
+		   if (i>1){
+			 nom <- paste(nom.X0[i],c(1:ng0))
+			 nom1 <- cbind(nom1,t(nom))
+		    }
+		}
+	      if(idg0[i]==1 & i>1) nom1 <- cbind(nom1,nom.X0[i])
+	}
 names(b)[(NPROB+1):(NPROB+NEF)]<- nom1
 }
+
+if(idlink0==0) names(b)[(NPM-ntrtot0+1):NPM]<- c("Linear 1 (intercept)","Linear 2 (std err)")
+if(idlink0==1) names(b)[(NPM-ntrtot0+1):NPM]<- paste("Beta",c(1:(ntrtot0)))
+if(idlink0==2) names(b)[(NPM-ntrtot0+1):NPM]<- paste("I-splines",c(1:(ntrtot0)))
+
+
 if(NVC!=0)names(b)[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- paste("varcov",c(1:(NVC)))
 if(NW!=0)names(b)[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- paste("varprop",c(1:(ng0-1)))
-names(b)[(NPROB+NEF+NVC+NW+1):(NPM)] <- "stderr"
 
 N <- NULL
 N[1] <- NPROB
@@ -289,13 +334,14 @@ idea <- as.integer(idea0)
 nv <- as.integer(nv0)
 
 
-cat("Be patient, hlme program is running ... \n")
-
-
 ################ Sortie ###########################
 
-out <- .Fortran("hetmixlin",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),PACKAGE="lcmm")
+cat("Be patient. The lcmm program is running ... \n")
 
+
+marker <- rep(0,nsim)
+transfY <- rep(0,nsim)
+out <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),PACKAGE="lcmm")
 
 ### Creation du vecteur cholesky
 Cholesky <- rep(0,(nea0*(nea0+1)/2))
@@ -340,7 +386,13 @@ colnames(pred)<-c(nom.subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp
 names(out$best)<-names(b)
 btest <- out$best[1:length(inddepvar.fixed.nom)]
 names(btest) <-inddepvar.fixed.nom
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,N=N,name.mat.cov=inddepvar.random.nom,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,cholesky=Cholesky)
-class(res) <-c("hlme")  
+
+
+estimlink <- cbind(out$marker,out$transfY)
+colnames(estimlink) <- c("Y","transfY")
+
+
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,dataset=args$data,N=N,name.mat.cov=inddepvar.random.nom,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,cholesky=Cholesky,estimlink=estimlink,linktype=idlink0,linknodes=zitr)
+class(res) <-c("lcmm")  
 res
 }
