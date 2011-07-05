@@ -14,7 +14,8 @@ cat(" \n")
 cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$dataset),"\n")
 cat(paste("     Number of subjects:", x$ns),"\n")
-cat(paste("     Number of observations:", length(x$pred[,1])),"\n")
+
+cat(paste("     Number of observations:", x$N[5]),"\n")
 cat(paste("     Number of latents classes:", x$ng), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
 if (x$linktype==0) {
@@ -33,6 +34,11 @@ cat("     Link function: Quadratic I-splines with nodes"," \n")
 cat(     x$linknodes," \n")
 }
 
+
+if (x$linktype==3) {
+ntrtot <- sum(x$ide==1)
+cat("     Link function: thresholds"," \n")
+}
 
 cat(" \n")
 cat("Iteration process:", "\n")
@@ -73,7 +79,7 @@ if ((all.equal(x$conv,1)==T)==T){
 id <- 1:NPM
 indice <- rep(id*(id+1)/2)
 se <-sqrt(x$V[indice])
-se[(NPROB+NEF+1):(NPROB+NEF+NVC)]<-NA
+if (NVC>0) se[(NPROB+NEF+1):(NPROB+NEF+NVC)]<-NA
 wald <- x$best/se
 pwald <- 1-pchisq(wald**2,1)
 coef <- x$best
@@ -86,11 +92,12 @@ coef <- x$best
 
 if(NPROB>0){
 cat("Fixed effects in the class-membership model:\n" )
+cat("(the class of reference is the last class) \n")
 
 tmp <- cbind(coef[1:NPROB],se[1:NPROB],wald[1:NPROB],pwald[1:NPROB])
 dimnames(tmp) <- list(names(coef)[1:NPROB], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
-prmatrix(tmp)
+prmatrix(tmp,na.print="")
 cat("\n")
 }
 
@@ -109,14 +116,18 @@ dimnames(tmp) <- list(c(interc,names(coef)[(NPROB+1):(NPROB+NEF)]), c("coef", "S
 cat("\n")
 
 
-prmatrix(tmp)
+prmatrix(tmp,na.print="")
 cat("\n")
 
 if(NVC>0){
 cat("\n")
 cat("Variance-covariance matrix of the random-effects:\n" )
 if(x$idiag==1){
+if (NVC>1) {
 Mat.cov <- diag(coef[(NPROB+NEF+1):(NPROB+NEF+NVC)])
+}else{
+Mat.cov <- matrix(coef[(NPROB+NEF+1)],ncol=1)
+}
 colnames(Mat.cov) <-x$name.mat.cov 
 rownames(Mat.cov) <-x$name.mat.cov 
 Mat.cov[lower.tri(Mat.cov)] <- 0
@@ -147,6 +158,12 @@ cat("Residual standard error (not estimated) = 1\n")
 cat("\n")
 
 cat("Parameters of the link function:\n" )
+if (x$linktype==3 & ntrtot != (x$linknodes[2]-x$linknodes[1])) {
+temp <- (x$linknodes[1]:(x$linknodes[2]-1))*(1-x$ide)
+cat("(the following levels are not observed in the data: ",temp[temp!=0],"\n")
+cat("so that the number of parameters in the threshold transformation is reduced to",ntrtot,") \n")
+}
+
 tmp <- cbind(coef[(NPM-ntrtot+1):NPM],se[(NPM-ntrtot+1):NPM],wald[(NPM-ntrtot+1):NPM],pwald[(NPM-ntrtot+1):NPM])
 dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1):NPM], c("coef", "Se", "Wald", "p-value"))
 cat("\n")

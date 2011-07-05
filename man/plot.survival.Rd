@@ -29,13 +29,6 @@ optional numeric vector of length 2, giving the y coordinate range.
 other parameters to be passed through to plotting functions
 }
 }
-\details{
-cecile
-}
-\value{
-cecile
-}
-
 \author{
 Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
 }
@@ -51,9 +44,13 @@ Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
 \dontrun{
 
 data(data_Jointlcmm)
-#### estimation with 3 latent classes (ng=3) - see Jointlcmm help for details on the model
-m3 <- Jointlcmm(fixed= Ydep1~Time+X1+X1_Time,mixture=~Time,random=~Time,classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ mixture(X1)+X2 ,hazard="5-equi-splines",hazardtype="PH",ng=3,data=data_Jointlcmm)
-# Class-specific predicted baseline risk & survival functions in the 3-class model retained (for the reference value of the covariates) 
+#### estimation with 3 latent classes (ng=3) - see Jointlcmm help for details 
+#### on the model
+m3 <- Jointlcmm(fixed= Ydep1~Time+X1+X1_Time,mixture=~Time,random=~Time,
+classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ mixture(X1)+X2,
+hazard="5-equi-splines",hazardtype="PH",ng=3,data=data_Jointlcmm)
+# Class-specific predicted baseline risk & survival functions in the 3-class 
+# model retained (for the reference value of the covariates) 
 plot.baselinerisk(m3)
 plot.baselinerisk(m3,ylim=c(0,5))
 plot.survival(m3)

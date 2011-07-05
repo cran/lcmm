@@ -13,7 +13,8 @@ This model is limited to a Gaussian outcome.
 
 \usage{
 hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
- nwg = FALSE, data, B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500)
+ nwg = FALSE, data, B,convB=0.0001,convL=0.0001,convG=0.0001,prior,
+ maxiter=500)
 }
 
 
@@ -31,7 +32,7 @@ By default, an intercept is included. If no intercept, \code{-1} should be the f
 an optional one-sided formula for the random-effects in the linear mixed model. Covariates with a random-effect are separated by \code{+}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included.
 }
-  \item{subject}{name of the covariate representing the grouping structure
+  \item{subject}{name of the covariate representing the grouping structure.
 }
   \item{classmb}{
 an optional one-sided formula describing the covariates in the class-membership multinomial logistic model. Covariates included are separated by \code{+}. 
@@ -56,15 +57,15 @@ an optional vector containing the initial values for the parameters. The order i
 If no vector is specified, a preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
 Due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
-\item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001
+\item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001.
 }
-\item{convL}{optional threshold for the convergence criterion based on the log-likelihood stability. By default, convL=0.0001
+\item{convL}{optional threshold for the convergence criterion based on the log-likelihood stability. By default, convL=0.0001.
 }
-\item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001
+\item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001.
 }
-\item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng)
+\item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
 }
-\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=300}
+\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=300.}
 }
 
 
@@ -120,7 +121,7 @@ The list returned is:
 (resid_ss) averaged over classes, the observation (obs) and finally the class-specific marginal and subject-specific predictions 
 (with the number of the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...)}
 \item{pprob}{table of posterior classification and posterior individual class-membership probabilities}
-\item{Xnames}{list of covariates included in the model - for use in function \code{\link{plot.predict.hlme}}}
+\item{Xnames}{list of covariates included in the model}
 
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
@@ -141,19 +142,22 @@ distribution for the random-effects. Computer Methods Programs Biomedicine 78, 1
 Cecile Proust-Lima and Benoit Liquet
 }
 \seealso{
-\code{\link{postprob}},\code{\link{plot.postprob}},\code{\link{summary}},\code{\link{plot.predict}}
+\code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{summary}}, \code{\link{plot.predict}}
 }
 \examples{
 data(data_hlme)
 ### homogeneous linear mixed model (standard linear mixed model) 
 ### with independent random-effects
-m1<-hlme(Y~Time+X1+X1_time,random=~Time,subject='ID',ng=1,idiag=TRUE,data=data_hlme)
+m1<-hlme(Y~Time+X1+X1_time,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_hlme)
 m1
 ### latent class linear mixed model with 2 classes
-m2<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme)
+m2<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+subject='ID',ng=2,data=data_hlme)
 m2
 ### same model as m2 with the vector if initial values specified
-m3<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
+m3<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
 m3
 }
 

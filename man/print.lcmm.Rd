@@ -27,7 +27,7 @@ further arguments to be passed to or from other methods.
 Cecile Proust-Lima and Benoit Liquet
 }
 \seealso{
-\code{\link{hlme}},\code{\link{Jointlcmm}},\code{\link{lcmm}},
+\code{\link{hlme}}, \code{\link{Jointlcmm}}, \code{\link{lcmm}},
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

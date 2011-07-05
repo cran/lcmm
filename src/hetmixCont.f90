@@ -912,7 +912,7 @@
       subroutine hetmixCont(Y0,X0,Prior0,idprob0,idea0,idg0,ns0,ng0,nv0,nobs0 &
           ,nea0,nmes0,idiag0,nwg0,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convB,convL,convG,maxiter0 &
-          ,epsY0,idlink0,nbzitr0,zitr0,marker,transfY,nsim0)
+          ,epsY0,idlink0,nbzitr0,zitr0,marker,transfY,nsim0,Yobs)
 
       use parametersc
       use communc
@@ -938,7 +938,7 @@
       double precision,intent(out)::vrais
       double precision,dimension(3),intent(out)::gconv
       double precision,dimension(ns0*ng0),intent(out)::ppi0
-      double precision,dimension(nobs0),intent(out)::resid_m,resid_ss
+      double precision,dimension(nobs0),intent(out)::resid_m,resid_ss,Yobs
       double precision,dimension(nobs0*ng0),intent(out)::pred_m_g
       double precision,dimension(nobs0*ng0),intent(out)::pred_ss_g
       double precision,dimension(ns0*nea0),intent(out)::pred_RE
@@ -967,7 +967,7 @@
        resid_ss=0.d0
        vrais=0.d0
        ni=0
-
+       Yobs=0.d0
 
 
 
@@ -1182,7 +1182,7 @@
 !            write(*,*)'avant residuals'
 
             call residualsc(b,npm,ppi,resid_m,pred_m_g,resid_ss &
-          ,pred_ss_g,pred_RE)
+          ,pred_ss_g,pred_RE,Yobs)
             ig=0
             ij=0
             do i=1,ns
@@ -2044,7 +2044,7 @@
 !------------------------------------------------------------
 
 
-      subroutine residualsc(b1,npm,ppi,resid_m,pred_m_g,resid_ss,pred_ss_g,pred_RE)
+      subroutine residualsc(b1,npm,ppi,resid_m,pred_m_g,resid_ss,pred_ss_g,pred_RE,Yobs)
 
       use communc
 
@@ -2066,7 +2066,7 @@
       double precision,dimension(nea,maxmes)::Valea
       double precision,dimension(maxmes) :: mu,Y1,Y2,pred1,err1
       double precision,dimension(ng) :: pi
-      double precision,dimension(nobs)::resid_m,resid_ss
+      double precision,dimension(nobs)::resid_m,resid_ss,Yobs
       double precision,dimension(nobs*ng)::pred_m_g,pred_ss_g
       double precision,dimension(ns,ng) ::PPI
       double precision,dimension(ns*nea)::pred_RE
@@ -2105,7 +2105,7 @@
       pred_m_g=0.d0
       resid_ss=0.d0
       pred_ss_g=0.d0
-
+      Yobs=0.d0
       nmes_cur=0
       kk=0
       nmestot=0
@@ -2135,6 +2135,7 @@
                nmestot=nmestot+1
                Se(j,j)=1.d0
                Y1(j)=dble(Y(nmestot)-b1(nef+nvc+nwg+1))/abs(b1(nef+nvc+nwg+2))
+               Yobs(nmes_cur+j)=Y1(j)
             end do
 
          elseif (idlink.eq.1) then  ! Beta link
@@ -2164,7 +2165,7 @@
                   do k=1,nmes(i)
                      resid_m(nmes_cur+k)=9999.d0
                      pred_m_g(nmes_cur+k)=9999.d0
-
+                     Yobs(nmes_cur+k)=9999.d0
                      resid_ss(nmes_cur+k)=9999.d0
                      pred_ss_g(nmes_cur+k)=9999.d0
                   end do
@@ -2172,6 +2173,8 @@
                      pred_RE((i-1)*nea+k)=9999.d0
                   end do
                   goto 654
+               else
+                  Yobs(nmes_cur+j)=Y1(j)
                end if
 
             end do
@@ -2204,14 +2207,14 @@
                do k=1,nmes(i)
                   resid_m(nmes_cur+k)=9999.d0
                   pred_m_g(nmes_cur+k)=9999.d0
-
+                  Yobs(nmes_cur+k)=9999.d0
                   resid_ss(nmes_cur+k)=9999.d0
                   pred_ss_g(nmes_cur+k)=9999.d0
                end do
                do k=1,nea
                     pred_RE((i-1)*nea+k)=9999.d0
                 end do
-               goto 654
+               goto 654            
                end if
                if (ll.gt.1) then
                   do ii=2,ll
@@ -2221,6 +2224,9 @@
 
                Y1(j)=bb+som +splaa(ll-2)*im2(nmestot) &
                  +splaa(ll-1)*im1(nmestot)+splaa(ll)*im(nmestot)
+
+               Yobs(nmes_cur+j)=Y1(j)   
+
 
             end do
 
@@ -2257,7 +2263,6 @@
                do j=1,nmes(i)
                   resid_m(nmes_cur+j)=9999.d0
                   pred_m_g(nmes_cur+j)=9999.d0
-
                   resid_ss(nmes_cur+j)=9999.d0
                   pred_ss_g(nmes_cur+j)=9999.d0
                end do
@@ -2516,7 +2521,6 @@
                   resid_ss(nmes_cur+j)=resid_ss(nmes_cur+j) &
                       +ppi(i,g)*(Y1(j)-pred1(j))
                   resid_m(nmes_cur+j)=resid_m(nmes_cur+j)+pi(g)*(Y2(j))
-
                end do
                do k=1,nea
                   pred_RE((i-1)*nea+k)=pred_RE((i-1)*nea+k)+ppi(i,g)*err2(k)

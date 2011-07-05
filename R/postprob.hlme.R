@@ -1,9 +1,9 @@
 postprob.hlme <-
 function(x,...){
 if (!inherits(x, "hlme")) stop("use only with \"hlme\" objects")
-if(x$ng==1) stop("use only with  ng > 1")
-
-
+if(x$ng==1)  {
+cat("Postprob function can only be used when ng > 1 \n")
+} else {
 classif<-NULL
 cl.table<-NULL
 for (g in 1:x$ng) {
@@ -28,7 +28,7 @@ cat("     --> mean of posterior probabilities in each class", "\n")
 print(signif(cl.table,3))
 cat(" \n")
 }
-
+}
 
 
 postprob <- function(x,...) UseMethod("postprob")

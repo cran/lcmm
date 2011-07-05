@@ -40,7 +40,7 @@ In each latent class, the time of event followed a class-specific Weibull hazard
   }
 }
 \seealso{
-\code{\link{Jointlcmm}},\code{\link{lcmm}},\code{\link{hlme}}   
+\code{\link{Jointlcmm}}, \code{\link{lcmm}}, \code{\link{hlme}}   
 }
 
 \keyword{datasets}

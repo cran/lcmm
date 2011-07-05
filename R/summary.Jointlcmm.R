@@ -36,11 +36,12 @@ cat("     Weibull baseline risk function \n")
 }
 if (x$hazard[[1]]==1)
 {
-cat("     Piecewise constant baseline risk function \n")
+cat("     Piecewise constant baseline risk function with nodes: \n")
+cat(     x$hazard[[3]]," \n")
 }
 if (x$hazard[[1]]==3)
 {
-cat("     M-splines constant baseline risk function with nodes \n")
+cat("     M-splines constant baseline risk function with nodes: \n")
 cat(     x$hazard[[3]]," \n")
 }
 
@@ -138,7 +139,11 @@ if(NVC>0){
 cat("\n")
 cat(" *** Variance-covariance matrix of the random-effects:\n" )
 if(x$idiag==1){
+if (NVC>1) {
 Mat.cov <- diag(coef[(NEF+1):(NEF+NVC)])
+}else{
+Mat.cov <- matrix(coef[(NEF+1)],ncol=1)
+}
 colnames(Mat.cov) <-x$name.mat.cov 
 rownames(Mat.cov) <-x$name.mat.cov 
 Mat.cov[lower.tri(Mat.cov)] <- 0

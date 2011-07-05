@@ -156,6 +156,7 @@ ppi0 <- rep(0,ns0*ng0)
 nv0<-nvar.exp
 nobs0<-length(Y0)
 resid_m <- rep(0,nobs0)
+Yobs <- rep(0,nobs0)
 resid_ss <- rep(0,nobs0)
 pred_m_g <- rep(0,nobs0*ng0)
 pred_ss_g <- rep(0,nobs0*ng0)
@@ -244,7 +245,7 @@ V2 <- rep(0,NPM2*(NPM2+1)/2)
 
 marker <- rep(0,nsim)
 transfY <- rep(0,nsim)
-init <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(marker),as.double(transfY),as.integer(nsim),PACKAGE="lcmm")
+init <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(marker),as.double(transfY),as.integer(nsim),as.double(Yobs),PACKAGE="lcmm")
 
 
 k <- NPROB
@@ -328,6 +329,7 @@ N[1] <- NPROB
 N[2] <- NEF
 N[3] <- NVC
 N[4] <- NW
+N[5] <- nobs0
 
 idiag <- as.integer(idiag0)
 idea <- as.integer(idea0)
@@ -341,11 +343,11 @@ cat("Be patient. The lcmm program is running ... \n")
 
 marker <- rep(0,nsim)
 transfY <- rep(0,nsim)
-out <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),PACKAGE="lcmm")
+out <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),PACKAGE="lcmm")
 
 ### Creation du vecteur cholesky
 Cholesky <- rep(0,(nea0*(nea0+1)/2))
-if(idiag0==0){
+if(idiag0==0 & NVC>0){
 Cholesky[1:NVC] <- out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)]
 ### Construction de la matrice U 
 U <- matrix(0,nrow=nea0,ncol=nea0)
@@ -353,7 +355,7 @@ U[upper.tri(U,diag=TRUE)] <- Cholesky[1:NVC]
 z <- t(U) %*% U
 out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- z[upper.tri(z,diag=TRUE)]
 }
-if(idiag0==1){
+if(idiag0==1 & NVC>0){
 id <- 1:nea0
 indice <- rep(id+id*(id-1)/2)
 Cholesky[indice] <- out$best[(NPROB+NEF+1):(NPROB+NEF+nea0)]
@@ -362,9 +364,11 @@ out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- out$best[(NPROB+NEF+1):(NPROB+NEF+NVC
 
 ####################################################
 
+if (nea0>0) {
 predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
 predRE <- cbind(INDuniq,predRE)
 colnames(predRE) <- c(nom.subject,inddepvar.random.nom)
+}
 
 ppi<- matrix(out$ppi2,ncol=ng0,byrow=TRUE)
 classif<-apply(ppi,1,which.max)
@@ -375,9 +379,9 @@ rownames(ppi) <- 1:ns0
 
 pred_m_g <- matrix(out$pred_m_g,nrow=nobs0)
 pred_ss_g <- matrix(out$pred_ss_g,nrow=nobs0)
-pred_m <- Y0-out$resid_m
-pred_ss <- Y0-out$resid_ss
-pred <- cbind(IND,pred_m,out$resid_m,pred_ss,out$resid_ss,Y0,pred_m_g,pred_ss_g)
+pred_m <- out$Yobs-out$resid_m
+pred_ss <- out$Yobs - out$resid_ss
+pred <- cbind(IND,pred_m,out$resid_m,pred_ss,out$resid_ss,out$Yobs,pred_m_g,pred_ss_g)
 
 temp<-paste("pred_m",1:ng0,sep="")
 temp1<-paste("pred_ss",1:ng0,sep="")

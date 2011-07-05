@@ -51,8 +51,12 @@ if(all.equal(length(grep("-",unlist(strsplit(link,split="")))),0)==T){
 		}
 
 		IND <- sort(unique(Y0))
+		IND <- IND[1:(length(IND)-1)]-minY0+1
 		ide0 <- rep(0,as.integer(maxY0-minY0))
-		ide0[(IND-minY0+1)] <- 1	
+		ide0[IND] <- 1
+
+
+	
 	
 	#######################################################################
 	}
@@ -131,6 +135,11 @@ cat("Argument 'epsY' should be a definite positive real. It is changed to the de
 
 
 
+#cat("ide :")
+#cat(ide0,"\n")
+#cat(zitr,"\n")
+
+
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
 result <- switch(link
@@ -139,9 +148,8 @@ result <- switch(link
 ,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m)
 
 ,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m)
-,"thresholds"=.Ordlcmm(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,call=m)
-)
-##### a faire pour ordinal ###########
+,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=m))
+
 }
 
 

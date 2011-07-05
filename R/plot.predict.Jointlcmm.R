@@ -72,7 +72,6 @@ legend(x=legend.loc,legend=colnames(Y),col=1:x$ng,lty=1:x$ng,inset=.02)
 par(new=FALSE)
 }else{
 cat("Predictions can not be computed since the program stopped abnormally.")
-stop("Pease check the data & model specification")
 }
 }
 

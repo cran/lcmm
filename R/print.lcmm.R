@@ -13,7 +13,7 @@ cat(" \n")
 cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$dataset),"\n")
 cat(paste("     Number of subjects:", x$ns),"\n")
-cat(paste("     Number of observations:", length(x$pred[,1])),"\n")
+cat(paste("     Number of observations:", x$N[5]),"\n")
 cat(paste("     Number of latents classes:", x$ng), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
 if (x$linktype==0) {

@@ -39,7 +39,8 @@ Cecile Proust-Lima and Benoit Liquet
 
 \examples{
 data(data_hlme)
-m<-lcmm(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',ng=2,data=data_hlme)
+m<-lcmm(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+subject='ID',ng=2,data=data_hlme)
 plot(m)
 }
 

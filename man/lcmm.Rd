@@ -7,13 +7,14 @@ Estimation of latent class mixed-effect models for different types of outcomes (
 \description{
 This function fits mixed models and latent class mixed models for different types of outcomes. It handles continuous longitudinal outcomes (Gaussian or non-Gaussian) as well as bounded quantitative, discrete and ordinal longitudinal outcomes. 
 The different types of the outcomes are taken into account using parameterized nonlinear link functions between the observed outcome and the underlying latent process of interest it measures. 
-At the latent process level, the model estimates a standard linear mixed model or a latent class mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}). 
+At the latent process level, the model estimates a standard linear mixed model or a latent class mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}) but it should be noted that the program also works when no random-effect is included. 
 Parameters of the nonlinear link function and of the latent process mixed model are estimated simultaneously using a maximum likelihood method. 
 }
 \usage{
 lcmm(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
 nwg = FALSE, link = "linear", intnodes = NULL, epsY = 0.5, data, B, 
-convB = 1e-04, convL = 1e-04, convG = 1e-04, maxiter=500, nsim=100, prior)
+convB = 1e-04, convL = 1e-04, convG = 1e-04, maxiter=500, nsim=100, 
+prior)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -65,18 +66,18 @@ If no vector is specified, a preliminary analysis involving the estimation of a 
 Due to possible local maxima in latent class mixed models, the \code{B} vector should be specified and several different starting points should be tried when ng>1.
 }
 
-\item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001
+\item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001.
 }
-\item{convL}{optional threshold for the convergence criterion based on the log-likelihood stability. By default, convL=0.0001
+\item{convL}{optional threshold for the convergence criterion based on the log-likelihood stability. By default, convL=0.0001.
 }
-\item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001
+\item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001.
 }
-\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=500
+\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=500.
 }
   \item{nsim}{
 number of points used to plot the estimated link function. By default, nsim=100.
 }
-  \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng)
+  \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
 }
 
 }
@@ -87,13 +88,13 @@ A. THE PARAMETERIZED LINK FUNCTIONS
 
 \code{lcmm} function estimates latent class mixed models for different types of outcomes by assuming a parameterized link function for linking the outcome Y(t) with the underlying latent process L(t) it measures. To fix the latent process dimension, we chose to constrain the (first) intercept of the latent class mixed model at the latent process level at 0 and the standard error of the gaussian error of measurement at 1. These two parameters are replaced by additional parameters in the parameterized link function. 
 
-1. With the "linear" link function, 2 parameters are required that correspond directly to the intercept and the standard error: (Y - b1)/b2 = L(t)
+1. With the "linear" link function, 2 parameters are required that correspond directly to the intercept and the standard error: (Y - b1)/b2 = L(t).
 
-2. With the "beta" link function, 4 parameters are required for the following transformation: [ h(Y(t)',b1,b2) - b3]/b4 where h is the Beta CDF with canonical parameters c1 and c2 that can be derived from b1 and b2 as c1=exp(b1)/[exp(b2)*(1+exp(b1))] and c2=1/[exp(b2)*(1+exp(b1))], and Y(t)' is the rescaled outcome i.e. Y(t)'= [ Y(t) - min(Y(t)) + epsY ] / [ max(Y(t)) - min(Y(t)) +2*epsY ]   
+2. With the "beta" link function, 4 parameters are required for the following transformation: [ h(Y(t)',b1,b2) - b3]/b4 where h is the Beta CDF with canonical parameters c1 and c2 that can be derived from b1 and b2 as c1=exp(b1)/[exp(b2)*(1+exp(b1))] and c2=1/[exp(b2)*(1+exp(b1))], and Y(t)' is the rescaled outcome i.e. Y(t)'= [ Y(t) - min(Y(t)) + epsY ] / [ max(Y(t)) - min(Y(t)) +2*epsY ]. 
 
-3. With the "splines" link function, n+2 parameters are required for the following transformation b_1 + b_2*I_1(Y(t)) + ... + b_\{n+2\} I_\{n+1\}(Y(t)), where I_1,...,I_\{n+1\} is the basis of quadratic I-splines
+3. With the "splines" link function, n+2 parameters are required for the following transformation b_1 + b_2*I_1(Y(t)) + ... + b_\{n+2\} I_\{n+1\}(Y(t)), where I_1,...,I_\{n+1\} is the basis of quadratic I-splines.
 
-4. With the "thresholds" link function for an ordinal outcome in levels 0,...,C, C parameters are required for the following transformation: Y(t)=c <=> b_{c} < L(t) <= b_\{c+1\} with b_0 = - infinity and b_\{C+1\}=+infinity. 
+4. With the "thresholds" link function for an ordinal outcome in levels 0,...,C. A maximumn of C parameters are required for the following transformation: Y(t)=c <=> b_c < L(t) <= b_\{c+1\} with b_0 = - infinity and b_\{C+1\}=+infinity. The number of parameters is reduced if some levels do not have any information. For example, if a level c is not observed in the dataset, the corresponding threshold b_\{c+1\} is constrained to be the same as the previous one b_\{c+\}. The number of parameters in the link function is reduced by 1.  
 
 Details of these parameterized link functions can be found in the referred papers. 
 
@@ -130,6 +131,17 @@ However, we recommend to systematically enter initial values in \code{B} and try
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
 This is a reason why specification of initial values in \code{B} should be preferred.
 
+
+D. NUMERICAL INTEGRATION WITH THE THRESHOLD LINK FUNCTION
+
+With exception for the threshold link function, maximum likelihood estimation implemented in lcmm does not require any numerical integration over the random-effects so that the estimation procedure is relatively fast. See Proust et al. (2006) for more details on the estimation procedure. 
+
+However, with the treshold link function and when at least one random-effect is specified, a numerical integration over the random-effects distribution is required in each computation of the individual contribution to the likelihood which complicates greatly the estimation procedure. For the moment, we do not allow any option regarding the numerical integration technics used. 
+1. When a single random-effect is specified, we use a standard non-adaptive Gaussian quadrature with 30 points.
+2. When at least two random-effects are specified, we use a multivariate non-adaptive Gaussian quadrature implemented by Genz (1996) in HRMSYM Fortran subroutine. 
+
+Further developments should allow for adaptive technics and more options regarding numerical integration technic.
+
 }
 \value{
 The list returned is:
@@ -146,13 +158,13 @@ The list returned is:
 \item{N}{internal information used in related functions}
 \item{name.mat.cov}{internal information used in related functions}
 \item{idiag}{internal information used in related functions}
-\item{pred}{table of individual predictions and residuals; it includes marginal predictions (pred_m), marginal residuals (resid_m), subject-specific predictions (pred_ss) and subject-specific residuals 
-(resid_ss) averaged over classes, the observation (obs) and finally the class-specific marginal and subject-specific predictions 
-(with the number of the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...)}
+\item{pred}{table of individual predictions and residuals in the underlying latent process scale; it includes marginal predictions (pred_m), marginal residuals (resid_m), subject-specific predictions (pred_ss) and subject-specific residuals 
+(resid_ss) averaged over classes, the transformed observations in the latent process scale (obs) and finally the class-specific marginal and subject-specific predictions 
+(with the number of the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). This output is not available yet when specifying a thresholds transformation.}
 \item{pprob}{table of posterior classification and posterior individual class-membership probabilities}
-\item{Xnames}{list of covariates included in the model - for use in function \code{\link{plot.predict.hlme}}}
+\item{Xnames}{list of covariates included in the model}
 
-\item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject}
+\item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject. This output is not available yet when specifying a thresholds transformation.}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
 \item{estimlink}{table containing the simulated values of the marker and corresponding estimated link function}
 \item{linktype}{indicator of link function type: 0 for linear, 1 for beta, 2 for splines and 3 for thresholds}
@@ -168,75 +180,116 @@ Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
 
 
 \references{
-Proust C and Jacqmin-Gadda H. Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78:165-73
 
-Proust, C., Jacqmin-Gadda, H., Taylor, J. M., Ganiayre, J. and Commenges, D. (2006). A
+Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over innite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
+
+
+Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78:165-73
+
+Proust, Jacqmin-Gadda, Taylor, Ganiayre, and Commenges (2006). A
 nonlinear model with latent process for cognitive evolution using multivariate longitudinal
 data. Biometrics 62, 1014-24.
 
-Proust-Lima, C., Dartigues, J.-F. and Jacqmin-Gadda, H. (2011). Misuse of the linear mixed
-model when evaluating risk factors of cognitive decline. Technical report
+Proust-Lima, Dartigues and Jacqmin-Gadda (2011). Misuse of the linear mixed
+model when evaluating risk factors of cognitive decline. Amer J Epidemiol - in press
 }
 
 
 \seealso{
 
-\code{\link{postprob}},\code{\link{plot.postprob}},\code{\link{plot.linkfunction}},\code{\link{plot.predict}},\code{\link{hlme}}
+\code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{plot.linkfunction}}, \code{\link{plot.predict}}, \code{\link{hlme}}
 }
 \examples{
 \dontrun{
-#### Estimation of homogeneous mixed models with different assumed link functions
-#### quadratic mean trajectory and independent random intercept, slope and quadratic slope
-#### (comparison of linear, Beta and 3 splines link functions)
+#### Estimation of homogeneous mixed models with different assumed link functions,
+#### a quadratic mean trajectory for the latent process with independent random 
+#### intercept and slope (the random quadratic slope was removed as it did not 
+#### improve the fit of the data.
+#### --- comparison of linear, Beta and 3 splines link functions ---
 data(data_Jointlcmm)
 # linear link function
-m10<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="linear")
+m10<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="linear")
 summary(m10)
 # Beta link function
-m11<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="beta")
+m11<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="beta")
 summary(m11)
 plot.linkfunction(m11)
 # I-splines with 3 equidistant nodes
-m12<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="3-equi-splines")
+m12<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="3-equi-splines")
 summary(m12)
 # I-splines with 5 nodes at quantiles
-m13<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="5-quant-splines")
+m13<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="5-quant-splines")
 summary(m13)
 # I-splines with 5 nodes, and interior nodes entered manually
-m14<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
+m14<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
 summary(m14)
 plot.linkfunction(m14)
+# Thresholds
+# Especially for the threshold link function, we recommend to estimate models 
+# with increasing complexity and use estimates of previous ones to specify 
+# plausible initial values (we remind that estimation of models with threshold
+# link function involves a computationally demanding numerical integration 
+# -here of size 3)
+m15<-lcmm(Ydep2~Time+Time_2,random=~Time,subject='ID',ng=1,
+idiag=TRUE,data=data_Jointlcmm,link="thresholds",maxiter=100,
+B=c(-0.9590738,-0.83961242,0.7662350,0.8089786,-7.5095009,0.5897911,
+0.7456457,0.6689082,0.4141080,0.4367605,0.6171588,0.6064021,0.5399203,
+0.5085475,0.5534401,0.5368202,0.5388183,0.6547953,0.6720263,0.5907727,
+0.6585694,0.6767515,0.6728922,0.6826909,0.7474775,0.7528652,0.7255133,
+0.7799251,0.6529472))
+summary(m15)
+plot.linkfunction(m15)
+
 
 
 #### Plot of estimated different link functions:
 #### (applicable for models that only differ in the "link function" used. 
 #### Otherwise, the latent process scale is different and a rescaling is necessary)
-transfo=data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],beta=m11$estimlink[,2]
-,spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],spl_5m=m14$estimlink[,2])
-plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',xlab="latent process",ylab="marker")
+transfo=data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],
+beta=m11$estimlink[,2],spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],
+spl_5m=m14$estimlink[,2])
+plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',xlab="latent process",
+ylab="marker")
 par(new=TRUE)
 plot(transfo[,1]~transfo[,3],xlim=c(-10,5),col=2,type='l',xlab="",ylab="")
 par(new=TRUE)
 plot(transfo[,1]~transfo[,4],xlim=c(-10,5),col=3,type='l',xlab="",ylab="")
 par(new=TRUE)
 plot(transfo[,1]~transfo[,5],xlim=c(-10,5),col=4,type='l',xlab="",ylab="")
-legend(x="bottomright",legend=colnames(transfo[,2:5]),col=1:4,lty=1,inset=.02)
+par(new=TRUE)
+plot(m15$estimlink[,1]~m15$estimlink[,2],xlim=c(-10,5),col=5,type='l'
+,xlab="",ylab="")
+legend(x="bottomright",legend=c(colnames(transfo[,2:5]),"thresholds"),
+col=1:5,lty=1,inset=.02)
 
 
-#### Estimation of 2-latent class mixed models with different assumed link functions
-#### with individual and class specific linear trend
+#### Estimation of 2-latent class mixed models with different assumed link 
+#### functions with individual and class specific linear trend
+#### for illustration, only default initial values where used but other
+#### sets of initial values should also be tried to ensure convergence 
+#### towards the golbal maximum
 # Linear link function
-m20<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,data=data_Jointlcmm,link="linear")
+m20<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,
+data=data_Jointlcmm,link="linear")
 summary(m20)
 postprob(m20)
 # Beta link function
-m21<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,data=data_Jointlcmm,link="beta")
+m21<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,
+data=data_Jointlcmm,link="beta")
 summary(m21)
 postprob(m21)
 # I-splines link function (and 5 nodes at quantiles)
-m22<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,data=data_Jointlcmm,link="5-quant-splines")
+m22<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,idiag=TRUE,
+data=data_Jointlcmm,link="5-quant-splines")
 summary(m22)
 postprob(m22)
 
-}
+
+
+}    
 }

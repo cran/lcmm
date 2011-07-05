@@ -270,83 +270,99 @@ if(all.equal(TimeDepVar,NULL)==F){
 }
 
 
+nrisqtot <- 0
+zitype=0
+# zitype =1 for quant, 2 for equi, 3 for manual
 
 
-##### hazard specification
+
+##### hazard specification #########################################
 
 # revoir le test ci-dessous : peut-être inclu dans un autre
-     carac <- strsplit(hazard,split="-")
-     carac <- unlist(carac)   
-     if(!(length(carac) %in% c(1,2,3))){stop("Please check and revise the hazard argument according to the format specified in the help.")}
+carac <- strsplit(hazard,split="-")
+carac <- unlist(carac)   
+if(!(length(carac) %in% c(1,2,3))){stop("Please check and revise the hazard argument according to the format specified in the help.")}
      
 # test sur hazardtype
-     if (!(hazardtype %in% c("PH","Common","Specific"))) stop("Only 'Specific', 'PH' or 'Common' hazardtype can be specified corresponding respectively to class-specific hazards, hazards proportional over latent classes or hazards common over classes")
+if (!(hazardtype %in% c("PH","Common","Specific"))) stop("Only 'Specific', 'PH' or 'Common' hazardtype can be specified corresponding respectively to class-specific hazards, hazards proportional over latent classes or hazards common over classes")
      
-     haz <-strsplit(hazard,split="")
-     haz <- unlist(haz)
-     haz <- grep("-",haz)
+haz <-strsplit(hazard,split="")
+haz <- unlist(haz)
+haz <- grep("-",haz)
 
-# revoir ce test car pourrait y avoir que splines ou piecewise	
-     if((all.equal(length(haz),0)==T)==T){
-	if(!(hazard %in% c("Weibull","piecewise","splines"))){
-		stop("Only 'Weibull', 'piecewise' or 'splines' hazard can be specified in hazard argument")
-	} 
-     }else{
-### contrÃ´le du separateur de l'argument hazard
+### longueur hazard = 1
+if((all.equal(length(haz),0)==T)==T){
+   if(!(hazard %in% c("Weibull","piecewise","splines"))){
+	stop("Only 'Weibull', 'piecewise' or 'splines' hazard can be specified in hazard argument")
+   }
+   else {
+	nz0 <- switch(hazard,"Weibull"=2,"piecewise"=5,"splines"=5)
+	typrisq0 <- switch(hazard,"Weibull"=2,"piecewise"=1,"splines"=3)
+	nprisq0 <- switch(hazard,"Weibull"=2,"piecewise"=nz0-1,"splines"=nz0+2)
+	zitype<- switch(hazard,"Weibull"=0,"piecewise"=1,"splines"=1)
+   } 
+}else{
+#### longueur hazard > 1
 
-	if(!(length(haz) %in% c(1,2))) stop("With splines or piecewise baseline function, the separator of hazard argument must be only '-'")  
+ ## controle longueur
+   if(!(length(haz) %in% c(1,2))) stop("With splines or piecewise baseline function, the separator of hazard argument must be only '-'")  
 	
-	test <- strsplit(hazard,split="-")
-	test <- unlist(test)   
+   test <- strsplit(hazard,split="-")
+   test <- unlist(test)   
 	
-	if(all.equal(length(test),2)==T){
-		if(!all(test[1:2] %in% c("splines","piecewise","equi","manual","quant"))){
-			stop ("With splines or Piecewise baseline function, hazard argument should contain only 'splines','piecewise','equi','manual','quant'")
+   if(all.equal(length(test),2)==T){
+   ## si hazard a 2 elements
+       if(!all(test[1:2] %in% c("splines","piecewise","equi","manual","quant"))){
+		stop ("The hazard argument is incorrectly specified. Please refer to the help file of Joinlcmm.")
+	 }
+ 	 # manuel
+	 if(("manual" %in% unlist(strsplit(hazard,split="-")))){	
+	      zitype <- 3 
+		nz0 <- length(hazardnodes)+2
+		typrisq0 <- switch(test[2],"piecewise"=1,"splines"=3)
+		nprisq0 <- switch(test[2],"piecewise"=nz0-1,"splines"=nz0+2)
+	  }
+        else {
+      	 # quant      
+      	 if(("quant" %in% unlist(strsplit(hazard,split="-")))){	zitype <- 1 }
+		 # equi
+ 		 if(("equi" %in% unlist(strsplit(hazard,split="-")))){	zitype <- 2 }
+	       nz0 <- 5
+		 typrisq0 <- switch(test[2],"piecewise"=1,"splines"=3)
+		 nprisq0 <- switch(test[2],"piecewise"=nz0-1,"splines"=nz0+2)
+	 } 
+		
+   }else{
+   ## si hazard a 3 elements
+       if(!all(test[2:3] %in% c("splines","piecewise","equi","manual","quant"))){
+		stop ("The hazard argument is incorrectly specified. Please refer to the help file of Joinlcmm.")
+	  }
+        # manuel
+	  if(("manual" %in% unlist(strsplit(hazard,split="-")))){	
+	      zitype <- 3 
+            nz0 <- as.integer(test[1])
+		nz1 <- length(hazardnodes)+2
+		if(!(all.equal(nz0,nz1)==T)){
+			cat("Warning: the number of internal nodes does not correspond to the number of nodes indicated in 'hazard'.","\n")
+			cat("The number of nodes derived from the list of internal nodes is kept for the analysis","\n") 
+			nz0 <- nz1				
 		}		
-	}else{
-
-		if(!all(test[2:3] %in% c("splines","piecewise","equi","manual","quant"))){
-			stop ("With splines or piecewise baseline function, hazard argument should contain only 'splines','piecewise','equi','manual','quant'")
-		}
-	}	 
-     }     
- 
-
-nrisqtot <- 0
-
-### Pour Weibull
-if(all.equal(hazard,"Weibull")==T){
-       nz0=2       
-       typrisq0 <- 2
-       nprisq0 <- 2 
-}
-else{
-## test si on entre les noeuds manuellement	
-
-	if(("manual" %in% unlist(strsplit(hazard,split="-")))){	
-		if(all.equal(length(unlist(strsplit(hazard,split="-"))),2)==T){
-			nz0 <- length(hazardnodes)+2
-			typrisq0 <- switch(test[3],"piecewise"=1,"splines"=3)
-			nprisq0 <- switch(test[3],"piecewise"=nz0-1,"splines"=nz0+2)
-		}else{
-			nz0 <- as.integer(test[1])
-			nz1 <- length(hazardnodes)+2
-			if(!(all.equal(nz0,nz1)==T)){
-#				cat("Warning: on garde nz1","\n") 
-				nz0 <- nz1				
-			}
-			
-			typrisq0 <- switch(test[3],"piecewise"=1,"splines"=3)
-			nprisq0 <- switch(test[3],"piecewise"=nz0-1,"splines"=nz0+2)	
-		}
-	
-	}else{
-		nz0 <- as.integer(test[1])
 		typrisq0 <- switch(test[3],"piecewise"=1,"splines"=3)
-		nprisq0 <- switch(test[3],"piecewise"=nz0-1,"splines"=nz0+2)	
-	
-	}
+		nprisq0 <- switch(test[3],"piecewise"=nz0-1,"splines"=nz0+2)
+	  }
+        else {
+	       # quant      
+      	 if(("quant" %in% unlist(strsplit(hazard,split="-")))){	zitype <- 1 }
+		 # equi
+ 		 if(("equi" %in% unlist(strsplit(hazard,split="-")))){	zitype <- 2 }
+	  	 nz0 <- as.integer(test[1])
+		 typrisq0 <- switch(test[3],"piecewise"=1,"splines"=3)
+		 nprisq0 <- switch(test[3],"piecewise"=nz0-1,"splines"=nz0+2)
+	  }
+   }	 
+  
 }
+
 risqcom0 <- switch(hazardtype,"Specific"=0,"PH"=2,"Common"=1)
 if (evt != 0){   
   nrisqtot <-  switch(hazardtype,"Specific"=nprisq0*ng0,"PH"=nprisq0+ng0-1,"Common"=nprisq0)   
@@ -383,46 +399,39 @@ minT <- zi0[1]
 maxT <- zi0[nz0]
 if((maxT-minT) < 0) stop("Please check the time of event variable. It seems that all the times are equal.")
 
-if (!(length(grep("Weibull",hazard)) > 0)){
-##### si "equi"
+##### si noeuds a initialiser
+if (zitype > 0){
+
     if(nz0-2 <= 0){
          stop("Splines or piecewise baseline function should include at least 2 nodes (and at least 5 are recommended)")
-    }else{
-        if((all.equal("equi",test[2])==T)==T){
-            pas=as.double(maxT-minT)/as.double(nz0-1)
-            for(i in 2:(nz0-1)){
-                zi0[i] <- zi0[i-1]+ pas
-            }
-        }
-	
-##### si "manual" 
-if(all.equal(length(unlist(strsplit(hazard,split="-"))),2)==T){
-        if((all.equal("manual",test[1])==T)==T){
-            if (is.null(hazardnodes)){
-                 stop("If 'manual' option is specified for the splines or piecewise baseline hazard function, hazardnodes argument should include the list of interior nodes")
-            }else{
-                zi0[2:(nz0-1)] <- hazardnodes[1:(nz0-2)]
-            }
+    }
+# equi
+    if(zitype == 2){
+         pas=as.double(maxT-minT)/as.double(nz0-1)
+         for(i in 2:(nz0-1)){
+              zi0[i] <- zi0[i-1]+ pas
          }
-}else{
-        if((all.equal("manual",test[2])==T)==T){
-            if (is.null(hazardnodes)){
-                 stop("If 'manual' option is specified for the splines or piecewise baseline hazard function, hazardnodes argument should include the list of interior nodes")
-            }else{
-		    hazardnodes <- sort(hazardnodes)
-		    zi0[2:(nz0-1)] <- hazardnodes[1:(nz0-2)]
-            }
+     }
+#  manual
+     if(zitype == 3){
+        if (is.null(hazardnodes)){
+             stop("If 'manual' option is specified for the splines or piecewise baseline hazard function, hazardnodes argument should include the list of interior nodes")
+        }else{
+             hazardnodes <- sort(hazardnodes)
+             zi0[2:(nz0-1)] <- hazardnodes[1:(nz0-2)]
          }
-
+     }
+#  quant
+     if(zitype == 1){
+        pas <-c(1:(nz0-2))/(nz0-1) 
+        zi0 [2:(nz0-1)] <- quantile(TSURV,probs=pas)
+     }
 }
-##### si "quant"
-       if((all.equal("quant",test[2])==T)==T){
-          pas <-c(1:(nz0-2))/(nz0-1) 
-          zi0 [2:(nz0-1)] <- quantile(TSURV,probs=pas)
-       }
-   }
 
-}
+
+
+
+
 
 
 #-------------------------------------------------------------------------------
@@ -580,7 +589,6 @@ b[(NPROB+nprisq0+1):(NPROB+nprisq0+ng-1)] <- 1+ (1:(ng-1))/(ng-1)
      }
 } else {
     if(length(B)!=NPM){
-       cat("taille",length(B),"NPM",NPM)
        stop("The length of the vector B is not correct")
     } else{
     b <-B
@@ -712,7 +720,7 @@ if (!(out$conv %in% c(1,2))){
 
 
 Cholesky <- rep(NA,(nea0*(nea0+1)/2))
-if(idiag0==0){
+if(idiag0==0&NVC>0){
    Cholesky[1:NVC] <- out$best[(NEF+1):(NEF+NVC)]
 ### Construction de la matrice U 
    U <- matrix(0,nrow=nea0,ncol=nea0)
@@ -720,7 +728,7 @@ if(idiag0==0){
    z <- t(U) %*% U
    out$best[(NEF+1):(NEF+NVC)] <- z[upper.tri(z,diag=TRUE)]
 }
-if(idiag0==1){
+if(idiag0==1&NVC>0){
    id <- 1:nea0
    indice <- rep(id+id*(id-1)/2)
    Cholesky[indice] <- out$best[(NEF+1):(NEF+nea0)]
@@ -730,9 +738,11 @@ if(idiag0==1){
 
 ####################################################
 
+if (nea0>0) {
 predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
 predRE <- cbind(INDuniq,predRE)
 colnames(predRE) <- c(nom.subject,inddepvar.random.nom)
+}
 
 ppi<- matrix(out$ppi2,ncol=ng0,byrow=TRUE)
 

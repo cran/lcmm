@@ -299,7 +299,7 @@ out <- .Fortran("hetmixlin",as.double(Y0),as.double(X0),as.integer(prior0),as.in
 
 ### Creation du vecteur cholesky
 Cholesky <- rep(0,(nea0*(nea0+1)/2))
-if(idiag0==0){
+if(idiag0==0 & NVC>0){
 Cholesky[1:NVC] <- out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)]
 ### Construction de la matrice U 
 U <- matrix(0,nrow=nea0,ncol=nea0)
@@ -307,7 +307,7 @@ U[upper.tri(U,diag=TRUE)] <- Cholesky[1:NVC]
 z <- t(U) %*% U
 out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- z[upper.tri(z,diag=TRUE)]
 }
-if(idiag0==1){
+if(idiag0==1 & NVC>0){
 id <- 1:nea0
 indice <- rep(id+id*(id-1)/2)
 Cholesky[indice] <- out$best[(NPROB+NEF+1):(NPROB+NEF+nea0)]
@@ -315,10 +315,11 @@ out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- out$best[(NPROB+NEF+1):(NPROB+NEF+NVC
 } 
 
 ####################################################
-
+if (nea0>0) {
 predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
 predRE <- cbind(INDuniq,predRE)
 colnames(predRE) <- c(nom.subject,inddepvar.random.nom)
+}
 
 ppi<- matrix(out$ppi2,ncol=ng0,byrow=TRUE)
 classif<-apply(ppi,1,which.max)

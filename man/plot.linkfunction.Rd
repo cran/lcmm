@@ -37,35 +37,44 @@ Cecile Proust-Lima and Benoit Liquet
 
 \dontrun{
 
-
-#### Estimation of homogeneous mixed models with different assumed link functions
-#### quadratic mean trajectory and independent random intercept, slope and quadratic slope
+#### Estimation of homogeneous mixed models with different assumed link functions,
+#### a quadratic mean trajectory for the latent process with independent random 
+#### intercept, slope and quadratic slope
 #### (comparison of linear, Beta and 3 splines link functions)
+data(data_Jointlcmm)
 # linear link function
-m10<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="linear")
+m10<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="linear")
 summary(m10)
 # Beta link function
-m11<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="beta")
+m11<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="beta")
 summary(m11)
 plot.linkfunction(m11)
 # I-splines with 3 equidistant nodes
-m12<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="3-equi-splines")
+m12<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="3-equi-splines")
 summary(m12)
 # I-splines with 5 nodes at quantiles
-m13<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="5-quant-splines")
+m13<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="5-quant-splines")
 summary(m13)
 # I-splines with 5 nodes, and interior nodes entered manually
-m14<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
+m14<-lcmm(Ydep2~Time+Time_2,random=~Time+Time_2,subject='ID',ng=1,idiag=TRUE,
+data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
 summary(m14)
 plot.linkfunction(m14)
+
 
 
 #### Plot of estimated different link functions:
 #### (applicable for models that only differ in the "link function" used. 
 #### Otherwise, the latent process scale is different and a rescaling is necessary)
-transfo=data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],beta=m11$estimlink[,2]
-,spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],spl_5m=m14$estimlink[,2])
-plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',xlab="latent process",ylab="marker")
+transfo=data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],
+beta=m11$estimlink[,2],spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],
+spl_5m=m14$estimlink[,2])
+plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',xlab="latent process",
+ylab="marker")
 par(new=TRUE)
 plot(transfo[,1]~transfo[,3],xlim=c(-10,5),col=2,type='l',xlab="",ylab="")
 par(new=TRUE)

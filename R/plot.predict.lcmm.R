@@ -79,14 +79,13 @@ ylim1 <- c(min(Y),max(Y))
 
 title1 <- "Class-specific mean latent process predicted trajectory"
 for (i in 1:x$ng){
-plot(Y[,i]~X,col=i,type="l",ylim=ylim1,xlim=c(min(X),max(X)),xlab=var.time,pch=2,ylab="outcome",main=title1,lty=i)
+plot(Y[,i]~X,col=i,type="l",ylim=ylim1,xlim=c(min(X),max(X)),xlab=var.time,pch=2,ylab="latent process",main=title1,lty=i)
 par(new=TRUE)
 }
 legend(x=legend.loc,legend=colnames(Y),col=1:x$ng,lty=1:x$ng,inset=.02)
 par(new=FALSE)
 }else{
 cat("Output can not be produced since the program stopped abnormally.")
-stop("Pease check the data & model specification")
 }
 }            
 

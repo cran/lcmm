@@ -2,7 +2,9 @@ postprob.Jointlcmm <-
 function(x,...){
 if (!inherits(x, "Jointlcmm")) stop("use only with \"Jointlcmm\" objects")
 
-if(x$ng==1) stop("use only with  ng > 1")
+if(x$ng==1) { 
+cat("Postprob function can only be used when ng > 1 \n")
+} else {
 if(x$conv==1|x$conv==2) {
 
 classif<-NULL
@@ -32,7 +34,6 @@ if(sum(is.na(x$pprob[,3:(x$ng+2)]))==0){
 cat(" \n")
 cat("Posterior classification based on longitudinal and time-to-event data:", "\n")
 print(classif)
-
 cat(" \n")
 
 cat("Posterior classification table:", "\n")
@@ -54,7 +55,7 @@ cat("Error in the computation of posterior class-membership probabilities given 
 }
 }else{
 cat("Output can not be produced since the program stopped abnormally.")
-stop("Pease check the data & model specification")
+}
 }
 }
 
