@@ -20,12 +20,12 @@ rownames(classif)<-c("N","%")
 
 cat(" \n")
 cat("Posterior classification:", "\n")
-print(classif)
+print(round(classif,2))
 cat(" \n")
 
 cat("Posterior classification table:", "\n")
 cat("     --> mean of posterior probabilities in each class", "\n")
-print(signif(cl.table,3))
+print(round(cl.table,4))
 cat(" \n")
 }
 }

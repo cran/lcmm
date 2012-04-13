@@ -15,11 +15,8 @@ The data were simulated from a 3-latent class linear mixed model. Repeated data 
     \item{\code{Y}}{longitudinal outcome}
     \item{\code{Time}}{time of measurement}
     \item{\code{X1}}{binary covariate}
-    \item{\code{X1_time}}{interaction between X1 and Time}
     \item{\code{X2}}{binary covariate}
-    \item{\code{X2_time}}{interaction between X2 and Time}
     \item{\code{X3}}{binary covariate}
-    \item{\code{X3_time}}{interaction between X3 and Time}
   }
 }
 \seealso{

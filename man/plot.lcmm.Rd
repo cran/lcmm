@@ -12,7 +12,8 @@ This function displays 2 plots: the marginal residuals against the marginal pred
 \usage{
 \method{plot}{hlme}(x,\dots)
 \method{plot}{lcmm}(x,\dots)
-\method{plot}{Jointlcmm}(x,\dots)}
+\method{plot}{Jointlcmm}(x,\dots)
+}
 %- maybe also 'usage' for other objects documented here.
 
 \arguments{
@@ -39,14 +40,10 @@ Cecile Proust-Lima and Benoit Liquet
 
 \examples{
 data(data_hlme)
-m<-lcmm(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme)
 plot(m)
 }
-
-
-
-
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

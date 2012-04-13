@@ -1,0 +1,18 @@
+News about R package lcmm :
+---------------------------
+
+Changes in Version 1.5 (2012-04-06):
+
+° improved variable specification in the estimating functions Jointlcmm, lcmm and hlme with 
+	- categorical variables using factor() 
+	- variables entered as functions using I() 
+	- interaction terms using "*" and ":"
+
+° computation of the predictive accuracy measure EPOCE from a Jointlcmm object either on the training data or on external data (post-fit functions epoce and Diffepoce)
+
+° for discrete outcomes, lcmm function now computates the posterior discrete log-likelihood and the universal approximate cross-validation criterion (UACV)
+
+° Jointlcmm now includes two parameterizations of I-splines and piecewise-constant baseline risks functions to ensure positive risks: either log/exp or sqrt/square (option logscale=).  
+
+
+

@@ -7,6 +7,7 @@ cat("General latent class mixed model", "\n")
 cat("     fitted by maximum likelihood method", "\n")
 
 cl <- x$call
+cl$B <- NULL
 cat(" \n")
 dput(cl)
 cat(" \n")
@@ -43,10 +44,10 @@ cat("     Link function: thresholds"," \n")
 cat(" \n")
 cat("Iteration process:", "\n")
 
-if(x$conv==1) cat("Convergence criteria satisfied")
-if(x$conv==2) cat("Maximum number of iteration reached without convergence")
+if(x$conv==1) cat("     Convergence criteria satisfied")
+if(x$conv==2) cat("     Maximum number of iteration reached without convergence")
 if(x$conv==4|x$conv==12) {
-cat("The program stopped abnormally. No results can be displayed.\n")
+cat("     The program stopped abnormally. No results can be displayed.\n")
 }
 else{
 
@@ -61,6 +62,14 @@ cat(paste("     maximum log-likelihood:", round(x$loglik,2))," \n")
 cat(paste("     AIC:", round(-2*x$loglik+2*length(x$best),2))," \n")
 cat(paste("     BIC:", round(-2*x$loglik+length(x$best)*log(x$ns),2))," \n")
 cat(" \n")
+if (x$Ydiscrete==1){
+cat(paste("     Discrete posterior log-likelihood:", round(x$discrete_loglik,2))," \n")
+cat(paste("     Discrete AIC:", round(-2*x$discrete_loglik+2*length(x$best),2))," \n")
+cat(" \n")
+cat(paste("     Mean discrete AIC per subject:",round((-x$discrete_loglik+length(x$best))/as.double(x$ns),4))," \n")
+cat(paste("     Mean UACV per subject:",round(x$UACV,4))," \n")
+cat(paste("     Mean discrete LL per subject:",round(x$discrete_loglik/as.double(x$ns),4))," \n")
+}
 cat(" \n")
 
 cat("Maximum Likelihood Estimates:", "\n")
@@ -94,7 +103,7 @@ if(NPROB>0){
 cat("Fixed effects in the class-membership model:\n" )
 cat("(the class of reference is the last class) \n")
 
-tmp <- cbind(coef[1:NPROB],se[1:NPROB],wald[1:NPROB],pwald[1:NPROB])
+tmp <- cbind(round(coef[1:NPROB],5),round(se[1:NPROB],5),round(wald[1:NPROB],3),round(pwald[1:NPROB],5))
 dimnames(tmp) <- list(names(coef)[1:NPROB], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp,na.print="")
@@ -105,11 +114,11 @@ cat("\n")
 
 cat("Fixed effects in the longitudinal model:\n" )
 
-tmp <- cbind(coef[(NPROB+1):(NPROB+NEF)],se[(NPROB+1):(NPROB+NEF)],wald[(NPROB+1):(NPROB+NEF)],pwald[(NPROB+1):(NPROB+NEF)])
+tmp <- cbind(round(coef[(NPROB+1):(NPROB+NEF)],5),round(se[(NPROB+1):(NPROB+NEF)],5),round(wald[(NPROB+1):(NPROB+NEF)],3),round(pwald[(NPROB+1):(NPROB+NEF)],5))
 tmp <- rbind(c(0,NA,NA,NA),tmp)
 interc <- "intercept"
 if (x$ng>1){
-interc <- paste(interc,"1")
+interc <- paste(interc,"class1")
 }
 interc <- paste(interc,"(not estimated)")
 dimnames(tmp) <- list(c(interc,names(coef)[(NPROB+1):(NPROB+NEF)]), c("coef", "Se", "Wald", "p-value"))
@@ -148,7 +157,7 @@ cat("\n")
 }
 
 if(NW>=1) {
-nom <- paste("Proportional variance coefficient",c(1:(x$ng-1)))
+nom <- paste("Proportional coefficient class",c(1:(x$ng-1)),sep="")
 std <-cbind(coef[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)],se[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]) 
 rownames(std) <- c(nom,"Residual standard error")
 colnames(std) <-c("coef","se") 
@@ -164,10 +173,10 @@ cat("(the following levels are not observed in the data: ",temp[temp!=0],"\n")
 cat("so that the number of parameters in the threshold transformation is reduced to",ntrtot,") \n")
 }
 
-tmp <- cbind(coef[(NPM-ntrtot+1):NPM],se[(NPM-ntrtot+1):NPM],wald[(NPM-ntrtot+1):NPM],pwald[(NPM-ntrtot+1):NPM])
+tmp <- cbind(round(coef[(NPM-ntrtot+1):NPM],5),round(se[(NPM-ntrtot+1):NPM],5),round(wald[(NPM-ntrtot+1):NPM],3),round(pwald[(NPM-ntrtot+1):NPM],5))
 dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1):NPM], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
-prmatrix(tmp)
+prmatrix(tmp,na.print="")
 cat("\n")
 }
 }

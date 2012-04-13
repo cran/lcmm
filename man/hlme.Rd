@@ -145,20 +145,44 @@ Cecile Proust-Lima and Benoit Liquet
 \code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{summary}}, \code{\link{plot.predict}}
 }
 \examples{
+
+##### Example of a latent class model estimated for a varying number
+# of latent classes: 
+# The model includes a subject- (ID) and class-specific linear 
+# trend (intercept and Time in fixed, random and mixture components) and
+# a common effect of X1 and its interaction with time over classes 
+# (in fixed). 
+# The random-effects are assumed independent (idiag=TRUE). The variance
+# of the random intercept and slope are assumed to be equal 
+# over classes (nwg=F).
+# The covariate X3 predicts the class membership (in classmb). 
+# !CAUTION: for illustration, only default initial values where used but 
+# other sets of initial values should be tried to ensure convergence towards
+# the global maximum.
+
 data(data_hlme)
+
 ### homogeneous linear mixed model (standard linear mixed model) 
 ### with independent random-effects
-m1<-hlme(Y~Time+X1+X1_time,random=~Time,subject='ID',ng=1,idiag=TRUE,
+m1<-hlme(Y~Time*X1,random=~Time,subject='ID',ng=1,idiag=TRUE,
 data=data_hlme)
-m1
+summary(m1)
 ### latent class linear mixed model with 2 classes
-m2<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+m2<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme)
 m2
-### same model as m2 with the vector if initial values specified
-m3<-hlme(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+summary(m2)
+postprob(m2)
+### same model as m2 with the vector of initial values specified
+m3<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
 m3
+summary(m3)
+
+## plot of predicted trajectories using some newdata
+newdata<-data.frame(Time=seq(0,5,length=100),
+X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
+plot.predict(m3,newdata,"Time","right",bty="l")
+
+
 }
-
-

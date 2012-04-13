@@ -9,6 +9,7 @@ cat("Heterogenous linear mixed model", "\n")
 cat("     fitted by maximum likelihood method", "\n")
 
 cl <- x$call
+cl$B <- NULL
 cat(" \n")
 dput(cl)
 cat(" \n")
@@ -22,10 +23,10 @@ cat(paste("     Number of parameters:", length(x$best))," \n")
 cat(" \n")
 cat("Iteration process:", "\n")
 
-if(x$conv==1) cat("Convergence criteria satisfied")
-if(x$conv==2) cat("Maximum number of iteration reached without convergence")
+if(x$conv==1) cat("     Convergence criteria satisfied")
+if(x$conv==2) cat("     Maximum number of iteration reached without convergence")
 if(x$conv==4|x$conv==5)  {
-cat("The program stopped abnormally. No results can be displayed.\n")
+cat("     The program stopped abnormally. No results can be displayed.\n")
 }else{
 
 

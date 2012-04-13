@@ -49,32 +49,34 @@ Cecile Proust-Lima and Benoit Liquet
 }
 \examples{
 
-\dontrun{
 ################# Prediction from linear latent class model
 data(data_hlme)
 ## fitted model
-m<-lcmm(Y~Time+X1+X1_time,mixture=~Time,random=~Time,classmb=~X2+X3,
+m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme)
 ## newdata for predictions plot
-newdata<-data.frame(intercept=rep(1,100),Time=seq(0,5,length=100),
-X1=rep(0,100),X1_time=rep(0,100),X2=rep(0,100),X3=rep(0,100))
-plot.predict(m,newdata,"Time","right")
+newdata<-data.frame(Time=seq(0,5,length=100),
+X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
+plot.predict(m,newdata,"Time","right",bty="l")
 ## data from the first subject for predictions plot
-firstdata<-cbind(intercept=rep(1,3),data_hlme[1:3,c("Time","X1",
-"X1_time","X2","X3")])
-plot.predict(m,firstdata,"Time","right")
+firstdata<-data_hlme[1:3,]
+plot.predict(m,firstdata,"Time","right",bty="l")
 
 
 ################# Prediction from a joint latent class model
 data(data_Jointlcmm)
 ## fitted model - see help of Jointlcmm function for details on the model
-m3 <- Jointlcmm(fixed= Ydep1~Time+X1+X1_Time,mixture=~Time,random=~Time,
-classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ mixture(X1)+X2
-,hazard="5-equi-splines",hazardtype="PH",ng=3,data=data_Jointlcmm)
+m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
+classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+B=c( 0.7667 ,  0.4020,  -0.8243,  -0.2726,   0.0000 ,  0.0000 ,  0.0000 ,  0.3020,
+ -0.6212,   2.6247 ,  5.3139,  -0.0255,   1.3595,   0.8172, -11.6867,  10.1668,
+10.2355 , 11.5137,  -2.6209,  -0.4328,  -0.6062 ,  1.4718 , -0.0378  , 0.8505,
+ 0.0366,   0.2634  , 1.4981))
 # class-specific predicted trajectories (with characteristics of subject ID=193)
 data <- data_Jointlcmm[data_Jointlcmm$ID==193,]
-plot.predict(m3,var.time="Time",newdata=data)
-}
+plot.predict(m3,var.time="Time",newdata=data,bty="l")
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

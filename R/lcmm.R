@@ -1,4 +1,4 @@
-lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=500,nsim=100,prior)
+lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=500,nsim=100,prior,range=NULL)
 {
 
 m <- match.call()
@@ -9,8 +9,15 @@ if(missing(data)){ stop("The argument data should be specified and defined as a 
 attr.fixed <- attributes(terms(fixed))
 depvar <- as.character(attr.fixed$variables[2])
 Y0 <- data[,depvar]
+
 minY0 <- min(Y0)
-maxY0 <- max(Y0) 
+maxY0 <- max(Y0)
+if ((!missing(range)) & length(range)==2){
+if (minY0>range[1]|maxY0<range[2]){
+minY0 <- range[1]
+maxY0 <- range[2]
+} 
+}
 
 if(all.equal((maxY0-minY0),0) == T){
 	stop("All the values of the dependent variable are the same. No estimation can be performed in that case.")
@@ -44,7 +51,8 @@ if(all.equal(length(grep("-",unlist(strsplit(link,split="")))),0)==T){
 	} 	
 	if ((link %in% c("thresholds"))){
 
-
+		minY0 <- min(Y0)
+		maxY0 <- max(Y0)
 		############################## PARTIE A COMPLETER POUR ORDINAL #####################
 		if(!(all.equal(minY0,as.integer(minY0))==T) | !(all.equal(maxY0,as.integer(maxY0))==T)|!all(Y0 %in% minY0:maxY0)){
 			stop("With the threshold link function, the longitudinal outcome must be discrete")
@@ -134,6 +142,12 @@ cat("Argument 'epsY' should be a definite positive real. It is changed to the de
 }
 
 
+Ydiscrete <- 1
+if (idlink0!=3) {
+        if(!(all.equal(minY0,as.integer(minY0))==T) | !(all.equal(maxY0,as.integer(maxY0))==T)|!all(Y0 %in% minY0:maxY0)){
+		Ydiscrete <- 0
+	}
+}
 
 #cat("ide :")
 #cat(ide0,"\n")
@@ -143,12 +157,12 @@ cat("Argument 'epsY' should be a definite positive real. It is changed to the de
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
 result <- switch(link
-,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m)
+,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
 
-,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m)
+,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
 
-,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m)
-,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=m))
+,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
+,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=m,Ydiscrete))
 
 }
 

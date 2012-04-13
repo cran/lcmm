@@ -1,24 +1,26 @@
+############## last change 2012/03/19 #####################
 
 ############################### Fonction Jointlcmm ###################################
 
 Jointlcmm <-
-function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,survival,hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=500,nsim=100,prior){
-
+function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,survival,hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=150,nsim=100,prior,logscale=FALSE){
 
 cl <- match.call()
-m <- match.call(expand = FALSE)
-    m$fixed <- m$mixture <- m$random <- m$subject <- m$classmb <-m$ng<-m$idiag<-m$nwg<-m$B<-m$convB <- m$convL <-m$convG<-m$prior<-m$maxiter<-m$hazardnodes<-m$hazard<-m$hazardtype<-m$TimeDepVar<-m$nsim<-m$... <-NULL
+mCall <- match.call(expand.dots = FALSE)
+mCall$fixed<-mCall$mixture<-mCall$random<-mCall$subject<-mCall$classmb<-mCall$ng<-mCall$idiag<-mCall$nwg<-
+mCall$survival<-mCall$hazard<-mCall$hazardtype<-mCall$hazardnodes<-mCall$TimeDepVar<-mCall$B<-mCall$convB<-
+mCall$convL<-mCall$convG<-mCall$maxiter<-mCall$nsim<-mCall$prior<-mCall$logscale <- NULL
+
+m <- match.call(expand.dots = FALSE)
+    m$fixed <- m$mixture <- m$random <- m$subject <- m$classmb <-m$ng<-m$idiag<-m$nwg<-m$B<-m$convB <- m$convL <-m$convG<-m$prior<-m$logscale<-m$maxiter<-m$hazardnodes<-m$hazard<-m$hazardtype<-m$TimeDepVar<-m$nsim<-m$... <-NULL
 args <- as.list(match.call(Jointlcmm))[-1]
 
-#nom.subject <- as.character(args$subject)
-nom.subject <- as.character(subject)
-
-#### INCLUSION PRIOR
-nom.prior <- as.character(args$prior)
+#subject.name <- as.character(args$subject)
+subject.name <- as.character(subject)
 
 #### ERROR MESSAGES
 if(!missing(mixture) & ng==1) stop("No mixture can be specified with ng=1")
-if(missing(mixture) & ng>1) stop("The argument mixture has to be specified for ng > 1")
+#if(missing(mixture) & ng>1) stop("The argument mixture is required for ng > 1")
 if(!missing(classmb) & ng==1) stop("No classmb can be specified with ng=1")
 if(missing(random)) random <- ~-1
 if(missing(fixed)) stop("The argument Fixed must be specified in any model")
@@ -31,41 +33,113 @@ if(class(mixture)!="formula") stop("The argument mixture must be a formula")
 if(class(random)!="formula") stop("The argument random must be a formula")
 if(class(classmb)!="formula") stop("The argument classmb must be a formula")
 if(class(survival)!="formula") stop("The argument survival must be a formula")
-
 if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")} 
 if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")} 
 
+### ad
+X0.names2 <- c("intercept")
+### ad
+int.fixed <- 0
+int.mixture <- 0
+int.random <- 0
+int.classmb <- 0
 
-###########################################################
-res.fixed <- terms(fixed)
-attr.fixed <- attributes(res.fixed)
-int.fixed <-  attr.fixed$intercept
-depvar <- as.character(attr.fixed$variables[2])
-inddepvar.fixed <- attr.fixed$term.labels
-inddepvar.fixed.nom <-inddepvar.fixed 
-if(int.fixed > 0) inddepvar.fixed.nom <-c("intercept",inddepvar.fixed)
-##########################################################
-res.mixture <- terms(mixture)
-attr.mixture <- attributes(res.mixture) 
-int.mixture <-  attr.mixture$intercept  
-inddepvar.mixture <- attr.mixture$term.labels 
-inddepvar.mixture.nom <- inddepvar.mixture
-if(int.mixture > 0) inddepvar.mixture.nom <- c("intercept",inddepvar.mixture)
-##########################################################"
-res.random <- terms(random)
-attr.random <- attributes(res.random) 
-int.random <-  attr.random$intercept  
-inddepvar.random <- attr.random$term.labels 
-inddepvar.random.nom <- inddepvar.random
-if(int.random > 0) inddepvar.random.nom <- c("intercept",inddepvar.random)
-##########################################################"
-res.classmb <- terms(classmb)
-attr.classmb <- attributes(res.classmb) 
-int.classmb <-  attr.classmb$intercept  
-inddepvar.classmb <- attr.classmb$term.labels 
-inddepvar.classmb.nom <- inddepvar.classmb
-inddepvar.classmb.nom <- c("intercept",inddepvar.classmb)
+########## For fixed
+m <- mCall
+m$formula <- terms(fixed)
+# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/2012
+mtemp <- get_all_vars(formula(terms(fixed)),data=data)
+X0.names2 <- unique(c(X0.names2,colnames(mtemp)[-1]))
+# ad 
+m[[1]] <- as.name("model.frame")	
+m <- eval(m, sys.parent()) 
+mt <- attr(m, "terms")
+X_fixed <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
+if(colnames(X_fixed)[1]=="(Intercept)"){
+	colnames(X_fixed)[1] <- "intercept"
+	int.fixed <- 1
+}
+nom.fixed <- inddepvar.fixed <- inddepvar.fixed.nom <- colnames(X_fixed)
+if(int.fixed>0)inddepvar.fixed <- inddepvar.fixed[-1]
 
+
+
+if(mixture[[2]] != "-1"){
+	m <- mCall
+	m$formula <- terms(mixture)
+	mtemp <- get_all_vars(formula(terms(mixture)),data=data)
+ 	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))	
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+	mt <- attr(m, "terms") 
+	X_mixture <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
+	if(colnames(X_mixture)[1]=="(Intercept)"){
+		colnames(X_mixture)[1] <- "intercept"
+		int.mixture <- 1
+	}
+	nom.mixture <- inddepvar.mixture <- inddepvar.mixture.nom <- colnames(X_mixture)
+	if(int.mixture>0)inddepvar.mixture <- inddepvar.mixture[-1]
+	id.X_mixture <- 1
+
+}else{
+	inddepvar.mixture <- nom.mixture <- inddepvar.mixture.nom <- NULL
+	id.X_mixture <- 0
+}
+
+########## For random
+
+if(random[[2]] != "-1"){
+	m <- mCall
+	m$formula <- terms(random)
+	mtemp <- get_all_vars(formula(terms(random)),data=data)
+	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
+	inddepvar.random.nom2 <- colnames(mtemp)
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+	mt <- attr(m, "terms") 
+	X_random <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
+	if(colnames(X_random)[1]=="(Intercept)"){
+		colnames(X_random)[1] <- "intercept"
+		int.random <- 1
+	}
+	inddepvar.random <- inddepvar.random.nom <- colnames(X_random)
+	if(int.random>0) inddepvar.random <- inddepvar.random[-1]
+	id.X_random <- 1
+}else{
+## ad: add inddepvar.random.nom2 <- NULL 10/04/2012
+	inddepvar.random <- inddepvar.random.nom <- inddepvar.random.nom2 <- NULL
+
+	id.X_random <- 0
+}
+
+########## For classmb
+
+if(classmb[[2]] != "-1"){ 
+	m <- mCall
+	m$formula <- terms(classmb)
+	mtemp <- get_all_vars(formula(terms(classmb)),data=data)
+	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
+
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+	mt <- attr(m, "terms") 
+	X_classmb <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
+	colnames(X_classmb)[1] <- "intercept"
+
+	id.X_classmb <- 1
+	inddepvar.classmb <- colnames(X_classmb)[-1]
+	inddepvar.classmb.nom <- colnames(X_classmb)
+}else{
+	inddepvar.classmb <- inddepvar.classmb.nom <- "intercept"
+	id.X_classmb <- 0
+}
+
+var.exp <- NULL
+var.exp <- c(var.exp,colnames(X_fixed))
+if(id.X_mixture == 1) var.exp <- c(var.exp,colnames(X_mixture))
+if(id.X_random == 1)var.exp <- c(var.exp,colnames(X_random))
+if(id.X_classmb == 1)var.exp <- c(var.exp,colnames(X_classmb))
+var.exp <- unique(var.exp)
 
 
 ########################################################
@@ -77,20 +151,18 @@ res.evt <- if (missing(data)){
       terms(survival, special)
    }else{
         terms(survival, special, data = data)  
-    } 
-   
-    ord <- attr(res.evt, "order")
+    }  
+    ord <- attr(m$terms, "order")
     if (length(ord) & any(ord != 1)){ 
         stop("Interaction terms are not valid for this function")
     }
-    
-    m<-model.frame(formula(m$survival),data=data)
-    
-    depvar1 <- model.extract(m, "response")
+
+     depvar1 <- model.response(model.frame(formula=update(survival,"~1"),data=data))
 
     if (!inherits(depvar1, "Surv")){ 
         stop("Response must be a survival object")
     }
+
 ### for covariates in survival
 ### nom des variables a droite dans survie (avec et sans mixture)
     inddep.surv <- attr(res.evt, "term.labels")
@@ -98,34 +170,64 @@ res.evt <- if (missing(data)){
 ### ind.mixture = toutes les var avec mixture dans survie
     ind.mixture <- untangle.specials(res.evt, "mixture", 1)
 
+### stop if mixture and ng=1 ad 10/04/2012
+
+    if((ng == 1) && length(ind.mixture$terms)) stop("A class-specific effect of covariate can be specified in the survival model with mixture() only when number of groups is greater than 1. ")
+
 ### variables avec mixture
     dcomp <- ind.mixture$vars
     dcomp <- gsub("mixture\\(","",dcomp)
     dcomp <- gsub("\\)","",dcomp)
     inddepvar.Mixt  <- dcomp
-
-
- 
+## ad
+    if(length(grep("factor",inddepvar.Mixt))!= 0)inddepvar.Mixt <- paste(inddepvar.Mixt,")",sep="")
+## ad
 ### inddepvar.survival = toutes les variables avec pas de mixture dans survie
     inddepvar.noMixt <- inddep.surv[!(inddep.surv %in% ind.mixture$vars)]
 
-### ind.mixture$vars et ajouter a inddepvar.survival
-    inddepvar.survival <- c(inddepvar.noMixt,inddepvar.Mixt)
-
+     tmp.su <- c(inddepvar.noMixt,inddepvar.Mixt)
+     names.survival <- "~" 
+     for(i in 1:length(tmp.su)){
+	   if(i==1){
+		  names.survival <- paste(names.survival,tmp.su[i],sep="")
+	   }else{
+		  names.survival <- paste(names.survival,tmp.su[i],sep="+")
+	   }
+     }
+    int.survival <- 0
+     m <- mCall
+     m$formula <- formula(update(survival,names.survival))
+     # ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/2012
+     mtemp <- get_all_vars(formula(names.survival),data=data)
+     X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
+     # ad 
+     m[[1]] <- as.name("model.frame")
+     m <- eval(m)
     mt <- attr(m, "terms")  
-    X <- if (!is.empty.model(mt)){ 
-        model.matrix(mt, m, contrasts)
+    X_survival <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
+    if(colnames(X_survival)[1]=="(Intercept)"){
+	 colnames(X_survival)[1] <- "intercept"
+	 int.survival <- 1
     }
+
+	if(length(inddepvar.Mixt) > 0){
+		inddepvar.Mixt <- colnames(X_survival)[grep(inddepvar.Mixt,colnames(X_survival))]
+		inddepvar.noMixt <-colnames(X_survival)[!(colnames(X_survival) %in% inddepvar.Mixt)][-1]
+	}else{
+		inddepvar.noMixt <- colnames(X_survival)[-1]
+	}
+
+### ind.mixture$vars et ajouter a inddepvar.survival
+    if(int.survival>0) inddepvar.survival <- colnames(X_survival)[-1] 
 ################# type du modele de survie
     attr.surv.type <- attr(depvar1,"type")
-
+ 
     if (attr.surv.type=="right"){
         idtrunc0 <-0
         Tevent <- depvar1[,1]
         Devent <- depvar1[,2]
-    }
-    if (attr.surv.type=="right"){
         Tentry <- rep(0,length(Tevent))
+	X0.names2 <- unique(c(X0.names2,(colnames(mtemp)[-c(1,2)]))) ### ad
     }
 
     if (attr.surv.type=="counting"){
@@ -133,6 +235,7 @@ res.evt <- if (missing(data)){
         Tentry <- depvar1[,1]
         Tevent <- depvar1[,2]
         Devent <- depvar1[,3]
+	X0.names2 <- unique(c(X0.names2,(colnames(mtemp)[-c(1,2,3)]))) ### ad
     }
 
     if (max(Devent)==1) evt <- 1
@@ -144,36 +247,107 @@ if (!(attr.surv.type %in% c("right","counting"))){
 
 
 ##############   COVARIATES       ##########################
-# intercept is always in inddepvar.classmb
-var.exp <- unique(c(inddepvar.fixed,inddepvar.mixture,inddepvar.random,inddepvar.classmb,inddepvar.survival))
 
-nom.fixed <- inddepvar.fixed.nom
-nom.mixture <- inddepvar.mixture.nom  
-if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
+##### debut ajout AMADOU
+# intercept is always in inddepvar.classmb
+var.exp <- unique(c(var.exp,colnames(X_survival)))
+
+if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates included in mixture should also be included in the argument fixed")
 
 
 
 ##############   DATA      ##########################
-Y0 <- data[,depvar]
-X0 <- as.data.frame(data[,var.exp])
+Y.name <- as.character(attributes(terms(fixed))$variables[2])
+Y0 <- data[,Y.name]
 
-names(X0) <- var.exp
-if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("The data should not contain any missing value")
+
+##### debut ajout AMADOU
+X0 <- X_fixed
+
+if(id.X_mixture == 1){
+	for(i in 1:length(colnames(X_mixture))){
+		if((colnames(X_mixture)[i] %in% colnames(X0))==F){
+			X0 <- cbind(X0,X_mixture[,i])
+			
+		}
+	}
+}
+if(id.X_random == 1){
+	for(i in 1:length(colnames(X_random))){
+		if((colnames(X_random)[i] %in% colnames(X0))==F){
+			X0 <- cbind(X0,X_random[,i])
+		}	 
+	}
+}
+if(id.X_classmb == 1){
+	for(i in 1:length(colnames(X_classmb))){
+		if((colnames(X_classmb)[i] %in% colnames(X0))==F){
+			X0 <- cbind(X0,X_classmb[,i],deparse.level=0)	 
+		}	
+	}
+}
+for(i in 1:length(colnames(X_survival))){
+	if((colnames(X_survival)[i] %in% colnames(X0))==F){
+		X0 <- cbind(X0,X_survival[,i])
+		
+	}
+}
+
+colnames(X0) <- var.exp
+#X0 <- X0[,-which(colnames(X0)=="intercept")]
+
+
+if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("Jointlcmm does not handle missing data. Observations with missing data should be removed before Jointlcmm call.")
  
 n <- dim(data)[1]
-if ((int.fixed+int.random)>0) X0<- cbind(intercept=rep(1,n),X0)
-nom.X0 <- names(X0)
-nvar.exp <- length(nom.X0)
+#if ((int.fixed+int.random)>0) X0<- cbind(intercept=rep(1,n),X0)
+# ad 10/04/2012
+if (!((int.fixed+int.random)>0)) X0 <- as.data.frame(X0[,-which(colnames(X0)=="intercept")])
 
-IND <- data[,nom.subject]
+X0.names <- colnames(X0)
+nvar.exp <- length(X0.names)
+
+IND <- data[,subject.name]
+IDnum <- as.numeric(IND)
 
 
 #### INCLUSION PRIOR 
-if(missing(prior)){ PRIOR <- seq(0,length=length(IND))} 
+if(missing(prior)){ 
+PRIOR <- seq(0,length=length(IND))
+prior.name <- NULL
+} 
 if(!missing(prior)){ 
-PRIOR <- data[,nom.prior]
+prior.name <- as.character(args$prior)
+PRIOR <- data[,prior.name]
 PRIOR[(is.na(PRIOR))] <- 0
 }
+
+
+#### Parametre timeDepVar  ####
+
+
+TimeDepVar.name <- as.character(TimeDepVar)
+nvdepsurv  <- 0
+Tint <- Tevent
+if(!missing(TimeDepVar)) {
+### test : si pas une variable de data : probleme
+Tint <- data[,TimeDepVar.name]
+Tint[(is.na(Tint))] <- Tevent[(is.na(Tint))]
+Tint[Tint>Tevent] <- Tevent[Tint>Tevent]
+Tint[Tint<Tentry] <- Tentry[Tint<Tentry]
+nvdepsurv <- 1
+if (length(Tint[Tint>Tentry])==0) {
+Tint <- Tevent
+cat("TimeDepVar will be ignored since it is always lower than Time of Entry (0 by default). \n")
+nvdepsurv  <- 0
+}
+if (length(Tint[Tint<Tevent])==0) {
+cat("TimeDepVar will be ignored since it is always greater than Time of Event. \n")
+nvdepsurv <- 0
+}
+}
+
+
 
 
 
@@ -181,46 +355,48 @@ PRIOR[(is.na(PRIOR))] <- 0
 ng0 <- ng
 idiag0 <- as.integer(idiag)
 nwg0 <- as.integer(nwg)
+logspecif <- as.integer(logscale)
+#cat("specif",logspecif)
 idea0 <- rep(0,nvar.exp)
 idprob0 <- rep(0,nvar.exp)
 idg0 <- rep(0,nvar.exp)
 idxevt <- rep(0,nvar.exp)
 
 for (i in 1:nvar.exp){
- idea0[i] <- nom.X0[i]%in%inddepvar.random.nom
- idprob0[i] <- nom.X0[i]%in%inddepvar.classmb.nom      
- if(nom.X0[i]%in%nom.fixed & !(nom.X0[i]%in%nom.mixture)) idg0[i] <- 1 
- if(nom.X0[i]%in%nom.fixed & nom.X0[i]%in%nom.mixture) idg0[i] <- 2 
- if((nom.X0[i]%in%inddepvar.survival) & !(nom.X0[i]%in%inddepvar.Mixt)) idxevt[i] <- 1
- if((nom.X0[i]%in%inddepvar.survival) & (nom.X0[i]%in%inddepvar.Mixt)) idxevt[i] <- 2 
+ idea0[i] <- X0.names[i]%in%inddepvar.random.nom
+ idprob0[i] <- X0.names[i]%in%inddepvar.classmb.nom      
+ if(X0.names[i]%in%nom.fixed & !(X0.names[i]%in%nom.mixture)) idg0[i] <- 1 
+ if(X0.names[i]%in%nom.fixed & X0.names[i]%in%nom.mixture) idg0[i] <- 2 
+ if((X0.names[i]%in%inddepvar.survival) & !(X0.names[i]%in%inddepvar.Mixt)) idxevt[i] <- 1
+ if((X0.names[i]%in%inddepvar.survival) & (X0.names[i]%in%inddepvar.Mixt)) idxevt[i] <- 2 
  }
  
 if((int.fixed+int.random)>0) idprob0[1] <- 0
 
 
-
 ###### DATA SORTING on IND variable
-matYX <- cbind(IND,PRIOR,Tentry,Tevent,Devent,Y0,X0)
+matYX <- cbind(IDnum,IND,PRIOR,Tentry,Tevent,Devent,Tint,Y0,X0)
 matYXord <- matYX[sort.list(matYX[,1]),]
-Y0 <- matYXord[,6]
-X0 <- matYXord[,-c(1,2,3,4,5,6)]
-IND <- matYXord[,1]
-PRIOR <- matYXord[,2]
+
+Y0 <- matYXord[,8]
+X0 <- matYXord[,-c(1,2,3,4,5,6,7,8)]
+IDnum <- matYXord[,1]
+IND <-  matYXord[,2]
+PRIOR <- matYXord[,3]
 PRIOR <-as.integer(as.vector(PRIOR))
-Tevent <- matYXord[,4]
-Tentry <- matYXord[,3]
-Devent <- matYXord[,5]
+Tevent <- matYXord[,5]
+Tentry <- matYXord[,4]
+Devent <- matYXord[,6]
+Tint <- matYXord[,7]
 Devent<-as.integer(as.matrix(Devent))
 Tevent<-as.numeric(as.matrix(Tevent))
 Tentry<-as.numeric(as.matrix(Tentry))
+Tint<-as.numeric(as.matrix(Tint))
 
 X0<-as.numeric(as.matrix(X0))
 Y0<-as.numeric(as.matrix(Y0))
-nmes0<-as.vector(table(IND))
+nmes0<-as.vector(table(IDnum))
 ns0<-length(nmes0)
-
-
-
 
 
 ##### INCLUSION PRIOR 
@@ -235,6 +411,7 @@ INDuniq <- IND[cumsum(nmes0)]
 seqnG <- 0:ng0
 if (!(all(prior0  %in% seqnG))) stop ("The argument prior should contain integers between 0 and ng")
 
+
 ### reduction de Devent, Tevent,Tentry a la taille ns0
 devt <- initial
 tsurv0 <- initial
@@ -242,6 +419,13 @@ tsurv <- initial
 devt <- Devent[cumsum(nmes0)]
 tsurv <- Tevent[cumsum(nmes0)]
 tsurv0 <- Tentry[cumsum(nmes0)]
+tsurvint <- initial
+tsurvint <- Tint[cumsum(nmes0)]
+indsurvint <- initial
+indsurvint[tsurvint<tsurv] <- 1
+
+
+### variable  initialisation 
 
 loglik <- as.double(0)
 ni <- 0
@@ -262,36 +446,15 @@ risq_est <- rep(0,nsim*ng0)
 time_est <- rep(0,nsim)
 surv_est <- rep(0,nsim*ng0)
 
-#### Parametre timeDepVar  ####
-
-nvdepsurv <- 0
-tsurvint <- tsurv
-indsurvint <- rep(0,ns0)
-
-
-if(!missing(TimeDepVar)) stop ("Including a time dependent covariate in the survival model is not yet possible")
-
-
-
-#if(all.equal(TimeDepVar,NULL)==F)
-#{
-#   nvdepsurv <- 1
-#   tsurvint <- tsurv
-#   TimeDepVar[(is.na(TimeDepVar))] <- max(tsurv)
-#   indsurvint[TimeDepVar<tsurv] <- 1
-#   tsurvint[TimeDepVar<tsurv] <- TimeDepVar[TimeDepVar<tsurv]
-#}
-
-
 nrisqtot <- 0
-zitype=0
+zitype <- 0
 # zitype =1 for quant, 2 for equi, 3 for manual
 
 
 
 ##### hazard specification #########################################
 
-# revoir le test ci-dessous : peut-être inclu dans un autre
+# revoir le test ci-dessous : peut-ï¿½tre inclu dans un autre
 carac <- strsplit(hazard,split="-")
 carac <- unlist(carac)   
 if(!(length(carac) %in% c(1,2,3))){stop("Please check and revise the hazard argument according to the format specified in the help.")}
@@ -383,7 +546,7 @@ if (evt != 0){
 
 
 ##### parametre nvarxevt  	    
-nvarxevt <- sum(idxevt==1)+(sum(idxevt==2))*ng0
+nvarxevt <- sum(idxevt==1)+(sum(idxevt==2))*ng0 + nvdepsurv
 if (evt==0) nvarxevt <- 0
 
 
@@ -401,12 +564,13 @@ for(i in 1:ns0){
    }
 }
 if(idtrunc0==1){
-zi0[1] <- min(c(tsurv0,tsurv))
+zi0[1] <- min(tsurv0)
 zi0[nz0] <- max(c(tsurv0,tsurv))
 }
 if(idtrunc0==0){
-zi0[1] <- min(c(tsurv))
-zi0[nz0] <- max(c(tsurv))
+#zi0[1] <- min(c(tsurv),c(tsurvint))
+zi0[1] <- 0
+zi0[nz0] <- max(tsurv)
 }
 minT <- zi0[1]
 maxT <- zi0[nz0]
@@ -459,9 +623,15 @@ NPROB <- 0
 ###############################################################################
 
 if(ng0==1| missing(B)){
-   NVARXEVTinit <- sum(idxevt!=0)
+   NVARXEVTinit <- sum(idxevt!=0) + nvdepsurv
 
-   b1[1:(nprisq0)]<-(1/nprisq0)
+   if (typrisq0==2) {
+      b1[1] <- log(sum(devt)/sum(tsurv[devt==1]))
+      b1[2] <- 0
+   } 
+   else {
+     b1[1:(nprisq0)]<-(1/nprisq0)
+   }
    b1[(1+nprisq0):(nprisq0+NVARXEVTinit)]<-0
    NEF<-nprisq0+NVARXEVTinit+sum(idg0!=0)
    b1[(nprisq0+NVARXEVTinit+1):(NEF)]<-0
@@ -534,9 +704,7 @@ if(missing(B)){
          pred_ss_g2 <- rep(0,nobs0)
          V2 <- rep(0,NPM2*(NPM2+1)/2)
 
-#      cat("Binit",b1,"\n")
-
-init <- .Fortran("Jointhet",as.double(Y0),as.double(X0),as.integer(initial),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(idxevt2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(ppitest2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(evt),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.integer(nvdepsurv),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),as.double(statsc),as.double(risq_est),as.double(surv_est),as.integer(nsim),as.double(time_est))
+init <- .Fortran("Jointhet",as.double(Y0),as.double(X0),as.integer(initial),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(idxevt2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(ppitest2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),as.double(statsc),as.double(risq_est),as.double(surv_est),as.integer(nsim),as.double(time_est),as.integer(logspecif),PACKAGE="lcmm")
 
 
 #      cat("Best",init$best,"\n")
@@ -554,7 +722,6 @@ b[(NPROB+nprisq0+1):(NPROB+nprisq0+ng-1)] <- 1+ (1:(ng-1))/(ng-1)
 	           b[(NPROB+nprisq0*(g-1)+1):(NPROB+nprisq0*g)] <- abs(init$best[1:nprisq0])+(g-(ng+1)/2)*sqrt(init$V[ident])
               }
 }
-
         k <- NPROB+nrisqtot
         l <- nprisq0
         t<- 0
@@ -577,6 +744,7 @@ b[(NPROB+nprisq0+1):(NPROB+nprisq0+ng-1)] <- 1+ (1:(ng-1))/(ng-1)
 ## l pour le vecteur B issu de init (ie nprisq0+NVARXEVTinit)
 
         k <- NPROB+nrisqtot+nvarxevt
+	 if (nvdepsurv==1) b[k] <- 0
         l <- nprisq0+NVARXEVTinit
         t<- 0
         for (i in 1:nvar.exp){
@@ -612,22 +780,36 @@ b[(NPROB+nprisq0+1):(NPROB+nprisq0+ng-1)] <- 1+ (1:(ng-1))/(ng-1)
 #------nom au vecteur best
 #--------------------------------------------
 
-if(ng0==2){
-   names(b)[1:NPROB]<-inddepvar.classmb.nom
+
+#if(ng0==2){
+#   names(b)[1:NPROB]<-inddepvar.classmb.nom
+#}
+
+typR <- as.character(typrisq0)
+typR[typR=="2"] <- "log(Weibull"
+if(logspecif==0){
+typR[typR=="1"] <- "+/-sqrt(piecewise"
+typR[typR=="3"] <- "+/-sqrt(splines"
+}
+if(logspecif==1){
+typR[typR=="1"] <- "log(piecewise"
+typR[typR=="3"] <- "log(splines"
 }
 
 
-
-if(ng0>2){
+if(ng0>=2){
    nom <-rep(inddepvar.classmb.nom,each=ng0-1)
-   nom1 <-paste(nom,".",c(1:(ng0-1)),sep="")  
+   nom1 <-paste(nom," class",c(1:(ng0-1)),sep="")  
    names(b)[1:NPROB]<-nom1
 }
 
-
+hazard.name <- 
 if(ng0==1) {
-    names(b)[(1):(nrisqtot)] <- paste("Survparm",c(1:(nprisq0)),sep="")
-    names(b)[(nrisqtot+1):(nprisq0+nvarxevt)] <- inddepvar.survival#evt
+#    names(b)[(1):(nrisqtot)] <- paste("Survparm",c(1:(nprisq0)),sep="")
+
+     names(b)[(1):(nrisqtot)] <- paste(typR,c(1:(nprisq0)),")",sep="")
+    names(b)[(nrisqtot+1):(nprisq0+nvarxevt-nvdepsurv)] <- inddepvar.survival#evt
+	if (nvdepsurv==1)names(b)[(nprisq0+nvarxevt)] <- paste("I(t>",TimeDepVar.name,")",sep="")
     names(b)[(nrisqtot+NVARXEVTinit+1):(NEF)] <- inddepvar.fixed.nom 
 }
 
@@ -635,17 +817,17 @@ if(ng0==1) {
 if(ng0>1){
 # survie
    if (risqcom0==1){
-       names(b)[(NPROB+1):(NPROB+nrisqtot)] <- paste("Survparm",c(1:(nrisqtot)),sep="")
+       names(b)[(NPROB+1):(NPROB+nrisqtot)] <- paste(typR,c(1:(nrisqtot)),")",sep="")
    }
 
 
    if (risqcom0==2) {
-      names(b)[(NPROB+1):(NPROB+nprisq0)] <- paste("Survparm",c(1:(nprisq0)),sep="")
-      names(b)[(NPROB+nprisq0+1):(NPROB+nrisqtot)] <- paste("SurvPH",c(1:(ng0-1)),sep="")
+      names(b)[(NPROB+1):(NPROB+nprisq0)] <- paste(typR,c(1:(nprisq0)),")",sep="")
+      names(b)[(NPROB+nprisq0+1):(NPROB+nrisqtot)] <- paste("SurvPH class",c(1:(ng0-1)),sep="")
    }
    if (risqcom0==0){
       for (g in 1:ng0){
-	names(b)[((NPROB+nprisq0*(g-1))+1):(NPROB+nprisq0*g)] <- paste("Survparm",c(1:(nprisq0)),".",g,sep="")
+	names(b)[((NPROB+nprisq0*(g-1))+1):(NPROB+nprisq0*g)] <- paste(typR,c(1:(nprisq0)),") class",g,sep="")
       }
    }
 #noms evol
@@ -653,29 +835,30 @@ if(ng0>1){
    nom2<- NULL
    for (i in 1:nvar.exp) {
       if(idg0[i]==2){ 
-          nom <- paste(nom.X0[i],".",c(1:ng0),sep="")	  
+          nom <- paste(X0.names[i]," class",c(1:ng0),sep="")	  
           nom1 <- cbind(nom1,t(nom))
       }
       if(idg0[i]==1){
-         nom1 <- cbind(nom1,nom.X0[i])
+         nom1 <- cbind(nom1,X0.names[i])
       }
 # noms survie  
      
 #idxevt0
       if(idxevt[i]==2){ 
-          nom <- paste(nom.X0[i],".",c(1:ng0),sep="")
+          nom <- paste(X0.names[i]," class",c(1:ng0),sep="")
           nom2 <- cbind(nom2,t(nom))
       }
-      if(idxevt[i]==1) nom2 <- cbind(nom2,nom.X0[i])
+      if(idxevt[i]==1) nom2 <- cbind(nom2,X0.names[i])
    }  
-    names(b)[(nrisqtot+NPROB+1):(nrisqtot+nvarxevt+NPROB)]<- nom2
+    names(b)[(nrisqtot+NPROB+1):(nrisqtot+nvarxevt-nvdepsurv+NPROB)]<- nom2
+    if (nvdepsurv==1)names(b)[(nrisqtot+NPROB+nvarxevt)] <- paste("I(t>",TimeDepVar.name,")",sep="")
     names(b)[(nrisqtot+nvarxevt+NPROB+1):NEF]<- nom1
 
 }
 
 
 if(NVC!=0)names(b)[(NEF+1):(NEF+NVC)] <- paste("Varcov",c(1:(NVC)),sep="")
-if(NW!=0)names(b)[(NEF+NVC+1):(NEF+NVC+NW)] <- paste("Varprop",c(1:(ng0-1)),sep="")
+if(NW!=0)names(b)[(NEF+NVC+1):(NEF+NVC+NW)] <- paste("Varprop class",c(1:(ng0-1)),sep="")
 names(b)[(NEF+NVC+NW+1):(NPM)] <- "Stderr"
 
 
@@ -689,6 +872,7 @@ N[6] <- NW
 N[7] <- ns1
 ############################# AJOUT 10/03/2011
 N[8] <- nz0
+N[9]<- nvdepsurv
 #############################
 idiag <- as.integer(idiag0)
 idea <- as.integer(idea0)
@@ -701,12 +885,9 @@ nv <- as.integer(nv0)
 ################## Verification des parametres d'entree du modele ##################
 
 
-#      cat("Binit",b,"\n")
-
-cat("Be patient, Jointlcmm program is running ... \n")
-
-
-out <- .Fortran("Jointhet",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(idxevt),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),ppitest2=as.double(ppitest0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(evt),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.integer(nvdepsurv),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),statsc=as.double(statsc),risq_est=as.double(risq_est),surv_est=as.double(surv_est),nsim=as.integer(nsim),time_est=as.double(time_est))
+ ptm<-proc.time()
+cat("Be patient, Jointlcmm is running ... \n")
+out <- .Fortran("Jointhet",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(idxevt),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),ppitest2=as.double(ppitest0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),statsc=as.double(statsc),risq_est=as.double(risq_est),surv_est=as.double(surv_est),nsim=as.integer(nsim),time_est=as.double(time_est),as.integer(logspecif),PACKAGE="lcmm")
 
 
 if (!(out$conv %in% c(1,2))){
@@ -753,11 +934,20 @@ if(idiag0==1&NVC>0){
 
 if (nea0>0) {
 predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
-predRE <- cbind(INDuniq,predRE)
-colnames(predRE) <- c(nom.subject,inddepvar.random.nom)
+predRE <- data.frame(INDuniq,predRE)
+colnames(predRE) <- c(subject.name,inddepvar.random.nom)
 }
 
+
+if(ng0>1) {
 ppi<- matrix(out$ppi2,ncol=ng0,byrow=TRUE)
+ppitest<- matrix(out$ppitest2,ncol=ng0,byrow=TRUE)
+}
+else {
+ppi <- matrix(rep(1,ns0),ncol=ng0)
+ppitest <- matrix(rep(1,ns0),ncol=ng0)
+}
+
 
 if(!(out$conv %in% c(1,2))){
 	classif <-rep(NA,ns0)
@@ -766,22 +956,19 @@ if(!(out$conv %in% c(1,2))){
 }
 
 
-ppi<-cbind(INDuniq,classif,ppi)
+ppi<-data.frame(INDuniq,classif,ppi)
 temp<-paste("probYT",1:ng0,sep="")
-colnames(ppi) <- c(nom.subject,"class",temp)
+colnames(ppi) <- c(subject.name,"class",temp)
 rownames(ppi) <- 1:ns0
-
-ppitest<- matrix(out$ppitest2,ncol=ng0,byrow=TRUE)
 if(!(out$conv %in% c(1,2))){
 	classif <-rep(NA,ns0)
 }else{
 	classif<-apply(ppitest,1,which.max)
 }
 
-
-ppitest<-cbind(INDuniq,classif,ppitest)
+ppitest<-data.frame(INDuniq,classif,ppitest)
 temp<-paste("probY",1:ng0,sep="")
-colnames(ppitest) <- c(nom.subject,"class",temp)
+colnames(ppitest) <- c(subject.name,"class",temp)
 rownames(ppitest) <- 1:ns0
 
 
@@ -797,12 +984,12 @@ if((out$conv %in% c(1,2))){
 }
 
 
-pred <- cbind(IND,pred_m,out$resid_m,pred_ss,out$resid_ss,Y0,pred_m_g,pred_ss_g)
+pred <- data.frame(IND,pred_m,out$resid_m,pred_ss,out$resid_ss,Y0,pred_m_g,pred_ss_g)
 
 
 temp<-paste("pred_m",1:ng0,sep="")
 temp1<-paste("pred_ss",1:ng0,sep="")
-colnames(pred)<-c(nom.subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1) 
+colnames(pred)<-c(subject.name,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1) 
 
 names(out$best)<-names(b)
 
@@ -811,7 +998,7 @@ names(out$best)<-names(b)
 
 surv_est <- matrix(out$surv_est,nrow=nsim)
 risq_est <- matrix(out$risq_est,nrow=nsim)
-predSurv <- cbind(out$time_est,risq_est,surv_est)
+predSurv <- data.frame(out$time_est,risq_est,surv_est)
 
 temp<-paste("RiskFct",1:ng0,sep="")
 temp1<-paste("CumRiskFct",1:ng0,sep="")
@@ -820,9 +1007,23 @@ colnames(predSurv)<-c("time",temp,temp1)
 
 # rajouter des arguments en sortie
 ############################# AJOUT survnodes le 10/03/2011
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,N=N,name.mat.cov=inddepvar.random.nom,idiag=idiag0,pred=pred,pprob=ppi,pprobY=ppitest,predRE=predRE,Xnames=nom.X0,cholesky=Cholesky,CIstat=out$statsc,predSurv=predSurv,hazard=list(typrisq0,hazardtype,zi0))
+
+specif <- list(N,ns0,ng0,idea0,idprob0,idg0,idxevt,idiag0,logspecif)
+
+
+survtemp <- update(survival,"~1")
+T0.names <- all.names(survtemp)[-c(1,2)]
+
+Names <- list(Y.name,X0.names,T0.names,prior.name,subject.name,inddepvar.random.nom,TimeDepVar.name)
+### ad
+Names2 <- list(X0.names2,inddepvar.random.nom2)
+### end ad
+## ad
+res <-list(loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,pred=pred,pprob=ppi,pprobY=ppitest,predRE=predRE,cholesky=Cholesky,CIstat=out$statsc,predSurv=predSurv,hazard=list(typrisq0,hazardtype,zi0),specif=specif,Names=Names,Names2=Names2)
 
 ###########################
 class(res) <-c("Jointlcmm")
+cost<-proc.time()-ptm
+cat("The program took", round(cost[3],2), "seconds \n")
 res
 }

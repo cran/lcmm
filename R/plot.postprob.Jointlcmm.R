@@ -1,12 +1,12 @@
 plot.postprob.Jointlcmm <-
 function(x,...){
 if (!inherits(x, "Jointlcmm")) stop("use only with \"Jointlcmm\" objects")
-if(x$ng==1){
+if(x$specif[[3]]==1){
 cat("plot.postprob can only be used when ng > 1  \n")
 }else{
 	if(x$conv==1|x$conv==2) {
-		if(sum(is.na(x$pprob[,3:(x$ng+2)]))==0){
-			for(i in 1 : x$ng){
+		if(sum(is.na(x$pprob[,3:(x$specif[[3]]+2)]))==0){
+			for(i in 1 : x$specif[[3]]){
 				dev.new()
 				xlab1 <- paste("class",i)
 				title.hist <- paste("Posterior probabilities given longitudinal and time-to-event data in class",i)

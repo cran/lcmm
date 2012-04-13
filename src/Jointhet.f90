@@ -1,4 +1,3 @@
-
 !==========================================================
 !
 !      Joint Latent class mixed model for continuous
@@ -20,892 +19,43 @@
 
 
 
-
 !----------------------------------------------------------
 !
 !- Module COMMUN avec les donnees dynamiques
 !
 !----------------------------------------------------------
+	module commun_joint
+		integer,save::ns
+		double precision,dimension(:),allocatable,save::Y,time_cvpl
+		double precision,dimension(:,:),allocatable,save::X
+		integer,dimension(:),allocatable,save::nmes
+		double precision,dimension(:),allocatable,save::Tsurv0,Tsurv,Tsurvint
+		integer,dimension(:),allocatable,save::Devt
+		integer,dimension(:),allocatable,save::ind_survint
+	end module commun_joint
+
+
+
+	module commun_modele_joint
+		integer,save ::ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,logspecif &
+		,nprob,nrisq,nobs,nvarprob,maxmes,nmes_curr,nmes_curr_s
+		integer,dimension(:),allocatable,save ::idxevt,idvdep
+		double precision, dimension(:),allocatable,save::zi
+		integer,dimension(:),allocatable,save::idea,idg,idprob
+		integer,dimension(:),allocatable,save::prior
+		integer ,save::risqcom,nvdepsurv,nvarxevt,typrisq,&
+		nprisq,nz,idtrunc
+		double precision,dimension(:),allocatable,save::Tmm,Tmm1,&
+		Tmm2,Tmm3,Tim,Tim1,Tim2,Tim3,Tmm0,Tmm01,Tmm02,Tmm03,Tim0 &
+		,Tim01,Tim02,Tim03,Tmmt,Tmmt1,Tmmt2,Tmmt3,Timt,Timt1,&
+		Timt2,Timt3
+		double precision,dimension(:),allocatable,save::Tmm_est,Tmm1_est,&
+		Tmm2_est,Tmm3_est,Tim_est,Tim1_est,Tim2_est,Tim3_est
+		double precision,dimension(:),allocatable,save::Tmm_valt,Tmm1_valt, &
+		Tmm2_valt,Tmm3_valt,Tim_valt,Tim1_valt,Tim2_valt,Tim3_valt
+		integer,dimension(:),allocatable::indT
+	end module commun_modele_joint
 
-
-      module communJ
-
-      implicit none
-      integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg &
-      ,nprob,nrisq,nobs,nvarprob,maxmes,evt
-      double precision,dimension(:),allocatable,save::Y
-      double precision,dimension(:,:),allocatable,save ::X
-      integer,dimension(:),allocatable,save::ind_survint
-      integer,dimension(:),allocatable,save ::idxevt,idvdep
-      double precision, dimension(:),allocatable,save::zi
-      integer,dimension(:),allocatable,save ::idea,idg,idprob
-      integer,dimension(:),allocatable,save :: nmes,prior
-      integer ,save::risqcom,nvdepsurv,nvarxevt &
-      ,typrisq,nprisq,nz,idtrunc
-      double precision,dimension(:),allocatable,save::Tsurv0,Tsurv,Tsurvint
-      integer,dimension(:),allocatable,save ::Devt
-      double precision,dimension(:),allocatable,save::Tmm,Tmm1,&
-      Tmm2,Tmm3,Tim,Tim1,Tim2,Tim3,Tmm0,Tmm01,Tmm02,Tmm03,Tim0 &
-      ,Tim01,Tim02,Tim03,Tmmt,Tmmt1,Tmmt2,Tmmt3,Timt,Timt1,&
-      Timt2,Timt3
-      double precision,dimension(:),allocatable,save::Tmm_est,Tmm1_est,&
-      Tmm2_est,Tmm3_est,Tim_est,Tim1_est,Tim2_est,Tim3_est
-      end module communJ
-
-
-
-
-!----------------------------------------------------------
-!
-!     INTERFACE TYPEc
-!
-!----------------------------------------------------------
-      
-
-
-
-      module typej	
-       
-      interface verif1j    
-      subroutine marq98j(b,m,ni,v,rl,ier,istop,ca,cb,dd)
-         integer,intent(in) :: m
-         integer,intent(inout)::ni,ier,istop
-         double precision,dimension(m*(m+3)/2),intent(out)::v
-         double precision,intent(out)::rl
-         double precision,dimension(m),intent(inout)::b	
-	 double precision,intent(inout)::ca,cb,dd 
-      end subroutine marq98j    
-        
-      subroutine derivaj(b,m,v,rl)
-        integer,intent(in)::m
-        double precision,intent(inout)::rl
-        double precision,dimension(m),intent(in)::b
-        double precision,dimension((m*(m+3)/2)),intent(out)::v       
-      end subroutine derivaj
-      
-      subroutine searpasj(vw,step,b,bh,m,delta,fim)
-        integer,intent(in)::m      
-        double precision,dimension(m),intent(in)::b
-        double precision,dimension(m),intent(inout)::bh,delta
-        double precision,intent(inout)::vw,fim,step       
-      end subroutine searpasj
-      
-      subroutine dmfsdj(a,n,eps,ier)
-        integer,intent(in)::n
-        integer,intent(inout)::ier
-        double precision,intent(inout)::eps 
-        double precision,dimension(n*(n+1)/2),intent(inout)::A      
-      end subroutine dmfsdj
-   
-      subroutine valfpaj(vw,fi,b,bk,m,delta)
-        integer,intent(in)::m  
-	double precision,intent(in)::vw
-        double precision,dimension(m),intent(in)::b,delta  
-        double precision,dimension(m),intent(out)::bk 
-        double precision,intent(out)::fi  
-      end subroutine valfpaj
-      
-      subroutine dmaxtj(maxt,delta,m)
-        integer,intent(in)::m
-        double precision,dimension(m),intent(in)::delta 
-        double precision,intent(out)::maxt
-      end subroutine dmaxtj               	                 
-      end interface verif1j  
-
-      interface verif2j
-      subroutine dsinvj(A,N,EPS,IER,DET)
-        integer,intent(in)::n
-        integer,intent(inout)::ier
-        double precision,intent(inout)::eps      
-        double precision,intent(inout),optional::det     
-        double precision,dimension(n*(n+1)/2),intent(inout)::A  
-      end subroutine dsinvj 
-      
-      subroutine dcholej(a,k,nq,idpos)
-      integer,intent(in)::k,nq
-      integer,intent(inout)::idpos
-      double precision,dimension(k*(k+3)/2),intent(inout)::a      
-      end subroutine dcholej     
-      end interface verif2j
-                              
-      end module typej
-
-  
-
-!----------------------------------------------------------
-!
-!     MODULE PARAMETERS
-!
-! Derniere mise a jour : 09/02/2011
-!-----------------------------------------------------------
-
-
-      module parametersj
-          double precision,save::epsa,epsb,epsd
-          integer,save::maxiter
-      end module parametersj
-
-!-------------------------------------------------------------
-!    
-!          MODULE OPTIM avec MARQ98
-!
-!-------------------------------------------------------------
-
-
-      module optimj
-
-      implicit none
-! -Interface permettant la verification des type des arguments      
-      interface verif1j     
-        module procedure marq98j,derivaj,searpasj,dmfsdj,valfpaj
-      end interface verif1j
-      
-      interface verif2j
-        module procedure dsinvj,dcholej,dmaxtj
-      end interface verif2j
-
-      CONTAINS
-!-------------------------------------------------------------
-!                   MARQ98
-!-------------------------------------------------------------
-
-
-      subroutine marq98j(b,m,ni,v,rl,ier,istop,ca,cb,dd)
-
-!
-!  fu = matrice des derivees secondes et premieres
-!
-!  istop: raison de l'arret
-!  1: critere d'arret satisfait (prm=ca, vraisblce=cb, derivee=dd)
-!  2: nb max d'iterations atteints
-!  4: Erreur
-
-      use parametersj
-
-      IMPLICIT NONE
-!   variables globales 
-      integer,intent(in) :: m
-      integer,intent(inout)::ni,ier,istop
-      double precision,dimension(m*(m+3)/2),intent(out)::v
-      double precision,intent(out)::rl
-      double precision,dimension(m),intent(inout)::b
-      double precision,intent(inout)::ca,cb,dd
-      
-!   variables locales            
-      integer::nql,ii,nfmax,idpos,ncount,id,jd,m1,j,i,ij
-      double precision,dimension(m*(m+3)/2)::fu
-      double precision,dimension(m)::delta,b1,bh
-      double precision::da,dm,ga,tr
-      double precision::GHG,funcpaj,det,step,eps,vw,fi,maxt, &
-      z,rl1,th,ep
-     
-             
-      id=0
-      jd=0
-      z=0.d0
-      th=1.d-5
-      eps=1.d-7!1.d-6
-      nfmax=m*(m+1)/2    
-      ca=epsa+1.d0
-      cb=epsb+1.d0
-      rl1=-1.d+10    
-      ni=0
-      istop=0
-      da=0.01d0
-      dm=5.d0
-      nql=1
-      m1=m*(m+1)/2
-      ep=1.d-20
-            
-      Main:Do       
-!   	write(*,*)'avant deriva'         
-        call derivaj(b,m,v,rl)	 
-!	write(*,*)'iteration',ni,'vrais',rl          
-        rl1=rl      
-        dd = 0.d0     
-        fu=0.D0
-        do i=1,m
-           do j=i,m
-              ij=(j-1)*j/2+i
-              fu(ij)=v(ij)
-           end do
-        end do
-
-        call dsinvj(fu,m,ep,ier,det)  
-        if (ier.eq.-1) then
-           dd=epsd+1.d0
-        else
-           GHG = 0.d0
-           do i=1,m
-              do j=1,m
-                 if(j.ge.i) then
-                    ij=(j-1)*j/2+i
-                 else
-                    ij=(i-1)*i/2+j
-                 end if
-                 GHG = GHG + v(m1+i)*fu(ij)*V(m1+j)
-	      end do
-           end do
-           dd=GHG/dble(m)
-        end if
-
-        if(ca.lt.epsa.and.cb.lt.epsb.and.dd.lt.epsd) exit main
-        tr=0.d0
-        do i=1,m
-           ii=i*(i+1)/2
-           tr=tr+dabs(v(ii))
-        end do
-        tr=tr/dble(m)
-
-        ncount=0
-        ga=0.01d0
- 400    do i=1,nfmax+m
-           fu(i)=v(i)
-        end do
-        do i=1,m
-           ii=i*(i+1)/2
-           if (v(ii).ne.0) then
-              fu(ii)=v(ii)+da*((1.d0-ga)*dabs(v(ii))+ga*tr)
-           else
-              fu(ii)=da*ga*tr
-           endif
-        end do
-        call dcholej(fu,m,nql,idpos)
-        if (idpos.ne.0) then
-           ncount=ncount+1
-           if (ncount.le.3.or.ga.ge.1.d0) then
-              da=da*dm
-           else
-              ga=ga*dm
-              if (ga.gt.1.d0) ga=1.d0
-           endif
-           goto 400
-        else
-            do i=1,m
-               delta(i)=fu(nfmax+i)
-               b1(i)=b(i)+delta(i)
-            end do
-            rl=funcpaj(b1,m,id,z,jd,z)
-            if (rl1.lt.rl) then
-               if(da.lt.eps) then
-                  da=eps
-               else
-                  da=da/(dm+2.d0)
-               endif
-               goto 800
-            endif
-         endif
-!      write(6,*) 'loglikelihood not improved '
-         call dmaxtj(maxt,delta,m)
-         if(maxt.eq.0.D0) then
-            vw=th
-         else
-            call dmaxtj(maxt,delta,m)
-            vw=th/maxt
-         endif
-         step=dlog(1.5d0)
-!      write(*,*) 'searpas'
-         call searpasj(vw,step,b,bh,m,delta,fi)
-         rl=-fi
-         if(rl.eq.-1.D9) then
-               istop=4
-!               write(*,*)'searpas problem'
-               goto 110
-          end if
-            
-         do i=1,m
-            delta(i)=vw*delta(i)
-         end do
-         da=(dm-3.d0)*da
-
- 800     cb=dabs(rl1-rl)
-         ca=0.d0
-         do i=1,m
-            ca=ca+delta(i)*delta(i)
-         end do
-!         write(6,*) 'ca =',ca,' cb =',cb,' dd =',dd
-         do i=1,m
-            b(i)=b(i)+delta(i)
-         end do
-
-         ni=ni+1
-         if (ni.ge.maxiter) then
-            istop=2
-!            write(6,*) 'maximum number of iteration reached'
-            goto 110
-         end if	 
-      End do Main       
-      v=0.D0	 
-      v(1:m*(m+1)/2)=fu(1:m*(m+1)/2)
-      istop=1
-    
- 110   continue
-       return    
-       end subroutine marq98j
-
-!------------------------------------------------------------
-!                          DERIVA
-!------------------------------------------------------------
-
-      subroutine derivaj(b,m,v,rl)
-     
-      implicit none
-  
-      integer,intent(in)::m
-      double precision,intent(inout)::rl
-      double precision,dimension(m),intent(in)::b
-      double precision,dimension((m*(m+3)/2)),intent(out)::v     
-      double precision,dimension(m)::fcith
-      integer ::i0,m1,ll,i,k,j
-      double precision::funcpaj,thn,th,z,vl,temp,thi,thj      
-!    
-!     v:matrice d'information+score
-!     calcul de la derivee premiere par "central difference"
-!     calcul des derivees secondes par "forward difference"
-!
-      z=0.d0
-      i0=0
-	
-      rl=funcpaj(b,m,i0,z,i0,z)    
-!      write(*,*)'dans deriva',rl
-
-      if(rl.eq.-1.d9) then
-         goto 123
-      end if
-              
-      do i=1,m
-         th=DMAX1(1.d-7, 1.d-4 * DABS(b(i)))
-         fcith(i)=funcpaj(b,m,i,th,i0,z)
-         if(fcith(i).eq.-1.d9) then
-            rl=-1.d9
-            goto 123
-         end if
-      end do
-      
-      k=0
-      m1=m*(m+1)/2
-      ll=m1
-      Main:do i=1,m
-         ll=ll+1
-         thn=-DMAX1(1.d-7, 1.d-4 * DABS(b(i)))
-         temp=funcpaj( b,m, i,thn,i0,z)
-         if(temp.eq.-1.d9) then
-            rl=-1.d9
-            exit Main
-         end if
-         vl=(fcith(i)-temp)/(2.d0*(-thn))
-         v(ll)=vl
-         do j=1,i
-            k=k+1
-
-            thi=DMAX1(1.d-7, 1.d-4 * DABS(b(i)))
-            thj=DMAX1(1.d-7, 1.d-4 * DABS(b(j)))
-
-            temp=funcpaj(b,m,i,thi,j,thj)
-            if(temp.eq.-1.d9) then
-               rl=-1.d9
-               exit Main
-            end if
-            v(k)=-(temp-fcith(j)-fcith(i)+rl)/(thi*thj)
-         end do
-      end do Main
- 123   continue
-      
-      return
-      end subroutine derivaj
-
-
-
-!------------------------------------------------------------
-!                        SEARPAS
-!------------------------------------------------------------
-
-
-      subroutine searpasj(vw,step,b,bh,m,delta,fim)
-!
-!  MINIMISATION UNIDIMENSIONNELLE
-!
-      implicit none
-       
-      integer,intent(in)::m      
-      double precision,dimension(m),intent(in)::b
-      double precision,intent(inout)::vw
-      double precision,dimension(m),intent(inout)::bh,delta      
-      double precision,intent(inout)::fim,step   
-      double precision::vlw,vlw1,vlw2,vlw3,vm,fi1,fi2,fi3    
-      integer::i 
-
-       vlw1=dlog(vw)
-       vlw2=vlw1+step
-       call valfpaj(vlw1,fi1,b,bh,m,delta)
-       call valfpaj(vlw2,fi2,b,bh,m,delta)       
-
-       if(fi2.ge.fi1) then
-	  vlw3=vlw2
-	  vlw2=vlw1
-	  fi3=fi2
-	  fi2=fi1
-	  step=-step
-
-          vlw1=vlw2+step
-          call valfpaj(vlw1,fi1,b,bh,m,delta)   
-          if(fi1.gt.fi2) goto 50
-       else 
-          vlw=vlw1
-          vlw1=vlw2
-          vlw2=vlw
-          fim=fi1
-          fi1=fi2
-          fi2=fim
-       end if
-
-       do i=1,40
-          vlw3=vlw2
-          vlw2=vlw1
-          fi3=fi2
-          fi2=fi1
-
-          vlw1=vlw2+step
-          call valfpaj(vlw1,fi1,b,bh,m,delta)
-          if(fi1.gt.fi2) goto 50
-          if(fi1.eq.fi2) then
-             fim=fi2
-             vm=vlw2 
-             goto 100
-          end if
-       end do
-!
-!  PHASE 2 APPROXIMATION PAR QUADRIQUE
-!
-50     continue
-!
-!  CALCUL MINIMUM QUADRIQUE
-!
-      vm=vlw2-step*(fi1-fi3)/(2.d0*(fi1-2.d0*fi2+fi3))   
-      call valfpaj(vm,fim,b,bh,m,delta)	
-      if(fim.le.fi2) goto 100
-      vm=vlw2
-      fim=fi2
-100   continue
-      vw=dexp(vm)
-      
-      return
-
-      end subroutine searpasj
-
-
-
-!------------------------------------------------------------
-!                         DCHOLE
-!------------------------------------------------------------
-
-      subroutine dcholej(a,k,nq,idpos)
-
-      implicit none
-      
-      integer,intent(in)::k,nq
-      integer,intent(inout)::idpos
-      double precision,dimension(k*(k+3)/2),intent(inout)::a
-		
-      integer::i,ii,i1,i2,i3,m,j,k2,jmk
-      integer::ijm,irm,jji,jjj,l,jj,iil,jjl,il
-      integer,dimension(k)::is	
-      double precision ::term,xn,diag,p
-      equivalence (term,xn)
-      
-       
-!      ss programme de resolution d'un systeme lineaire symetrique
-!
-!       k ordre du systeme /
-!       nq nombre de seconds membres
-!
-!       en sortie les seconds membres sont remplaces par les solutions
-!       correspondantes
-!
-
-      i2=0
-      ii=0
-      idpos=0
-      k2=k+nq
-!     calcul des elements de la matrice
-      do i=1,k   
-         ii=i*(i+1)/2
-!       elements diagonaux
-         diag=a(ii)
-         i1=ii-i
-         if(i-1.ne.0) goto 1
-         if(i-1.eq.0) goto 4
-1        i2=i-1
-         do l=1,i2
-             m=i1+l
-             p=a(m)
-             p=p*p
-             if(is(l).lt.0) goto 2
-             if(is(l).ge.0) goto 3
-2            p=-p
-3            diag=diag-p
-         end do	 
-         
-4        if(diag.lt.0) goto 5
-         if(diag.eq.0) goto 50
-         if(diag.gt.0) goto 6
-5        is(i)=-1
-         idpos=idpos+1
-         diag=-dsqrt(-diag)
-         a(ii)=-diag
-         goto 7
-6        is(i)=1
-         diag=dsqrt(diag)
-         a(ii)=diag
-!       elements non diagonaux
-7        i3=i+1
-         do j=i3,k2
-            jj=j*(j-1)/2+i
-            jmk=j-k-1
-            if(jmk.le.0) goto 9
-            if(jmk.gt.0) goto 8
-8           jj=jj-jmk*(jmk+1)/2
-9           term=a(jj)
-            if(i-1.ne.0) goto 10
-            if(i-1.eq.0) goto 13 
-10          do l=1,i2
-               iil=ii-l
-               jjl=jj-l
-               p=a(iil)*a(jjl)
-               il=i-l
-               if(is(il).lt.0) goto 11
-               if(is(il).ge.0) goto 12
-11             p=-p
-12             term=term-p
-            end do
-13            a(jj)=term/diag
-	   end do  
-      end do   
-      
-!       calcul des solutions
-      jj=ii-k+1
-      do l=1,nq
-         jj=jj+k
-         i=k-1
-14       jji=jj+i
-         xn=a(jji)
-         if(i-k+1.lt.0) goto 20
-         if(i-k+1.ge.0) goto 22
-20       j=k-1
-21       jjj=jj+j
-         ijm=i+1+j*(j+1)/2
-         xn=xn-a(jjj)*a(ijm)
-         if(j-i-1.le.0) goto 22
-         if(j-i-1.gt.0) goto 30
-30       j=j-1
-         goto 21
-22       irm=(i+1)*(i+2)/2
-         a(jji)=xn/a(irm)
-         if(i.le.0) cycle
-         if(i.gt.0) goto 40
-40       i=i-1
-         go to 14
-      end do
-50    continue
-      return
-      end subroutine dcholej
-
-
-      subroutine dmfsdj(a,n,eps,ier)
-!
-!   FACTORISATION DE CHOLESKY D'UNE MATRICE SDP
-!   MATRICE = TRANSPOSEE(T)*T
-!   ENTREE : TABLEAU A CONTENANT LA PARTIE SUPERIEURE STOCKEE COLONNE
-!            PAR COLONNE DE LA METRICE A FACTORISER
-!   SORTIE : A CONTIENT LA PARTIE SUPPERIEURE DE LA MATRICE triangulaire T
-!
-!   SUBROUTINE APPELE PAR DSINV
-!
-!   N : DIM. MATRICE
-!   EPS : SEUIL DE TOLERANCE
-!   IER = 0 PAS D'ERREUR
-!   IER = -1 ERREUR
-!   IER = K COMPRIS ENTRE 1 ET N, WARNING, LE CALCUL CONTINUE
-!
-      implicit none
-      
-      integer,intent(in)::n
-      integer,intent(inout)::ier
-      double precision,intent(in)::eps 
-      double precision,dimension(n*(n+1)/2),intent(inout)::A
-      double precision :: dpiv,dsum,tol
-      integer::i,k,l,kpiv,ind,lend,lanf,lind
-
-!
-!   TEST ON WRONG INPUT PARAMETER N
-!
-      dpiv=0.d0
-      if (n-1.lt.0) goto 12
-      if (n-1.ge.0) ier=0
-!
-!   INITIALIZE DIAGONAL-LOOP
-!
-      kpiv=0
-      do k=1,n
-          kpiv=kpiv+k
-          ind=kpiv
-          lend=k-1
-!
-!   CALCULATE TOLERANCE
-!
-          tol=dabs(eps*sngl(A(kpiv)))
-!
-!   START FACTORIZATION-LOOP OVER K-TH ROW
-!
-         do i=k,n
-	    dsum=0.d0
-            if (lend.lt.0) goto 2
-            if (lend.eq.0) goto 4
-            if (lend.gt.0) goto 2
-!
-!   START INNER LOOP
-!
-2           do l=1,lend
-               lanf=kpiv-l
-               lind=ind-l
-	       dsum=dsum+A(lanf)*A(lind)
-            end do 
-	      
-!     
-!   END OF INNEF LOOP
-!
-!   TRANSFORM ELEMENT A(IND)
-! 	
-4           dsum=A(ind)-dsum
-            if (i-k.ne.0) goto 10
-            if (i-k.eq.0) goto 5
-!   TEST FOR NEGATIVE PIVOT ELEMENT AND FOR LOSS OF SIGNIFICANCE
-!	
-
-
-5           if (sngl(dsum)-tol.le.0) goto 6
-            if (sngl(dsum)-tol.gt.0) goto 9
-6           if (dsum.le.0) goto 12 
-            if (dsum.gt.0) goto 7
-7           if (ier.le.0) goto 8
-            if (ier.gt.0) goto 9
-8           ier=k-1
-!
-!   COMPUTE PIVOT ELEMENT
-!
-9           dpiv=dsqrt(dsum)
-            A(kpiv)=dpiv
-            dpiv=1.D0/dpiv
-            goto 11
-!
-!   CALCULATE TERMS IN ROW
-!
-10          A(ind)=dsum*dpiv
-11          ind=ind+i
-         end do
-	 ind=ind+i
-      end do
-      
-!
-!   END OF DIAGONAL-LOOP
-!
-      return
-12    ier=-1
-      return
-
-      end subroutine dmfsdj
-
-
-!------------------------------------------------------------
-!                            DSINV
-!------------------------------------------------------------
-
-
-      subroutine dsinvj(A,N,EPS,IER,DET)
-
-!
-!     INVERSION D'UNE MATRICE SYMETRIQUE DEFINIE POSITIVE :
-!
-!     MATRICE = TRANSPOSEE(T)*T
-!     INERSE(MATRICE) = INVERSE(T)*INVERSE(TRANSPOSEE(T))
-!
-!     A : TABLEAU CONTENANT LA PARTIE SUPERIEURE DE LA MATRICE A INVERSER
-!         STOCKEE COLONNE PAR COLONNE
-!     DIM. MATRICE A INVERSER = N
-!     DIM. TABLEAU A = N*(N+1)/2
-!
-!     EPS : SEUIL DE TOLERANCE AU-DESSOUS DUQUEL UN PIVOT EST CONSIDERE
-!           COMME NUL
-!
-!     IER : CODE D'ERREUR
-!         IER=0 PAS D'ERREUR
-!         IER=-1 ERREUR SUR LA DIM.N OU MATRICE PAS DEFINIE POSITIVE
-!         IER=1 PERTE DE SIGNIFICANCE, LE CALCUL CONTINUE
-!
-      implicit none
-      
-      integer,intent(in)::n
-      integer,intent(inout)::ier
-      double precision,intent(inout)::eps      
-      double precision,intent(inout),optional::det     
-      double precision,dimension(n*(n+1)/2),intent(inout)::A     
-      double precision::din,work
-      integer::ind,ipiv,i,j,k,l,min,kend,lhor,lver,lanf
-    
-!
-!     FACTORIZE GIVEN MATRIX BY MEANS OF SUBROUTINE DMFSD
-!     A=TRANSPOSE(T) * T
-!
-
-      call dmfsdj(A,n,eps,ier)
-      
-      det=0.d0
-
-      if (ier.lt.0) goto 9
-      if (ier.ge.0) det=0.d0
-!
-!     INVERT UPPER TRIANGULAR MATRIX T
-!     PREPARE INVERSION-LOOP
-!
-!
-! calcul du log du determinant    
-
-      do i=1,n
-         det=det+dlog(A(i*(i+1)/2))
-      end do
-      det=2*det
-      ipiv=n*(n+1)/2
-      ind=ipiv
-!
-!     INITIALIZE INVERSION-LOOP
-!
-      do i=1,n
-         din=1.d0/A(ipiv)
-         A(ipiv)=din
-         min=n
-         kend=i-1
-         lanf=n-kend
-         if (kend.le.0) goto 5
-         if (kend.gt.0) j=ind
-!
-!     INITIALIZE ROW-LOOP
-!
-         do k=1,kend
-	    work=0.d0
-	    min=min-1
-	    lhor=ipiv
-	    lver=j
-!
-!     START INNER LOOP
-!
-            do l=lanf,min 
-	        lver=lver+1
-		lhor=lhor+l
-                work=work+A(lver)*A(lhor)
-	    end do	    
-!
-!     END OF INNER LOOP
-!
-            A(j)=-work*din
-            j=j-min
-	 end do
-	 
-!
-!     END OF ROW-LOOP
-!
-5        ipiv=ipiv-min 
-         ind=ind-1
-      end do
-      
-!
-!     END OF INVERSION-LOOP
-!
-!     CALCULATE INVERSE(A) BY MEANS OF INVERSE(T)
-!     INVERSE(A) = INVERSE(T) * TRANSPOSE(INVERSE(T))
-!     INITIALIZE MULTIPLICATION-LOOP
-!
-      do i=1,n
-         ipiv=ipiv+i
-	 j=ipiv
-!
-!     INITIALIZE ROW-LOOP
-!
-	 do k=i,n
-	    work=0.d0
-	    lhor=j
-!
-!     START INNER LOOP
-!
-            do l=k,n
-	        lver=lhor+k-i
-		work=work+A(lhor)*A(lver)
-   		lhor=lhor+l
-            end do	    
-!
-!     END OF INNER LOOP
-!       
-            A(j)=work
-            j=j+k
-	 end do
-      end do
-      
-!
-!     END OF ROW-AND MULTIPLICATION-LOOP
-!
-9     return
-      end subroutine dsinvj
-
-!------------------------------------------------------------
-!                          VALFPA
-!------------------------------------------------------------
-
-        subroutine valfpaj(vw,fi,b,bk,m,delta)
-
-        implicit none
-
-        integer,intent(in)::m  
-        double precision,dimension(m),intent(in)::b,delta  
-        double precision,dimension(m),intent(out)::bk 
-        double precision,intent(out)::fi 
-	double precision::vw,funcpaj,z	
-	integer::i0,i
-	
-         z=0.d0
-         i0=1
-         do i=1,m
-            bk(i)=b(i)+dexp(vw)*delta(i)
-	 end do
-         fi=-funcpaj(bk,m,i0,z,i0,z)
-
-         return
-	 
-         end subroutine valfpaj
-
-!------------------------------------------------------------
-!                            MAXT
-!------------------------------------------------------------
-
-
-      subroutine dmaxtj(maxt,delta,m)
-      
-      implicit none
-
-       integer,intent(in)::m
-       double precision,dimension(m),intent(in)::delta
-       double precision,intent(out)::maxt
-       integer::i 
-
-       maxt=Dabs(delta(1))
-       do i=2,m
-         if(Dabs(delta(i)).gt.maxt)then
-	    maxt=Dabs(delta(i))
-	 end if
-       end do 
-            
-       return
-       end subroutine dmaxtj
-
-      end module optimj
 
 
 
@@ -932,23 +82,24 @@
       ,istop,gconv,ppi0,ppitest0,resid_m0,resid_ss0,pred_m_g0     &
       ,pred_ss_g0   &
       ,pred_RE &
-      ,convB,convL,convG,maxiter0,evt0,typrisq0        &
-      ,idtrunc0,risqcom0,nz0,zi0,nvdepsurv0,Tentr0,Tevt0          &
+      ,convB,convL,convG,maxiter0,typrisq0        &
+      ,idtrunc0,risqcom0,nz0,zi0,Tentr0,Tevt0          &
       ,Tsurvint0,devt0,ind_survint0,statsc0,risq_est,risqcum_est,nsim &
-      ,time)
+      ,time,logspecif0)
 
 
 
 
-      use optimj
-      use communJ
-      use parametersj
+      use optim
+      use commun_joint
+      use commun_modele_joint
+      use parameters
 
       IMPLICIT NONE
 
 
 	!Declaration des variables en entree
-      integer,intent(in):: nv0, maxiter0,nsim,nea0
+      integer,intent(in):: nv0, maxiter0,nsim,nea0,logspecif0
       integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npm0
       integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0
       integer,dimension(nv0),intent(in) ::idxevt0
@@ -957,9 +108,8 @@
       double precision,dimension(nobs0),intent(in):: Y0
       double precision,dimension(nobs0*nv0), intent(in) :: X0
       double precision, intent(in) :: convB, convL, convG
-      integer::risqcom0,nvdepsurv0,typrisq0,nz0,idtrunc0
+      integer::risqcom0,typrisq0,nz0,idtrunc0
       integer,dimension(ns0) ::Devt0,ind_survint0
-      integer,intent(in)::evt0
       double precision, dimension(nz0),intent(in)::zi0
 
 	!Declaration des variable en entree et sortie
@@ -984,7 +134,7 @@
 
 	!Variables locales
       integer :: jtemp,i,g,j,npm,ij,ier,k,ktemp,ig,nmestot,it
-      double precision :: eps, ca, cb, dd
+      double precision :: eps, ca, cb, dd,nHT
       double precision, dimension(npm0) :: mvc
       double precision, dimension(npm0*(npm0+3)/2) :: V
       double precision, dimension(nobs0) :: resid_m, resid_ss
@@ -992,11 +142,10 @@
       double precision, dimension(ns0,ng0)::ppi,ppitest
       double precision,dimension(:),allocatable::brisq_est
       integer::nef
+      double precision,external::funcpaj
 
 
-
-
-!      write(*,*)'entree'
+!      write(*,*)'entree',npm0,logspecif0
 
 
 ! *********************************
@@ -1007,8 +156,8 @@
       resid_ss0 = 0.d0
       pred_ss_g0 = 0.d0
       ppi0 =  0.d0
-      ppitest0 =  0.d0 
-      statsc0 =  0.d0  
+      ppitest0 =  0.d0
+      statsc0 =  0.d0
       risq_est =  0.d0
       risqcum_est =  0.d0
       pred_RE=0.d0
@@ -1021,12 +170,37 @@
       time(nsim)=zi0(nz0)
 ! *********************************
 
+
+
+      allocate(idprob(nv0)  &
+     ,idea(nv0),idg(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
+     ,Tsurvint(ns0),ind_survint(ns0),idxevt(nv0)             &
+     ,idvdep(nv0),devt(ns0),prior(ns0))
+
+
+
+      typrisq=typrisq0
+      risqcom=risqcom0
+      idtrunc=idtrunc0
+      Tsurv0=Tentr0
+      Tsurv=Tevt0
+      Tsurvint=Tsurvint0
+      devt=devt0
+      ind_survint=ind_survint0
+      logspecif=logspecif0
+
       maxiter=maxiter0
       maxmes=0
+
+      nvdepsurv=0
+      if(sum(ind_survint).gt.0) then
+         nvdepsurv=1
+      end if
+
       do i=1,ns0
          if (nmes0(i).gt.maxmes) then
             maxmes=nmes0(i)
-         end if
+         end if            
       end do
 
 
@@ -1035,20 +209,36 @@
       epsd=convG
 
 !----------------- allocation generale ---------------------------
-      allocate(Y(ns0*maxmes),idprob(nv0),X(ns0*maxmes,nv0)   &
-     ,idea(nv0),idg(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
-     ,Tsurvint(ns0),ind_survint(ns0),idxevt(nv0)             &
-     ,idvdep(nv0),devt(ns0),prior(ns0))
 
-      typrisq=typrisq0
-      risqcom=risqcom0
-      idtrunc=idtrunc0
-      nvdepsurv=nvdepsurv0
-      Tsurv0=Tentr0
-      Tsurv=Tevt0
-      Tsurvint=Tsurvint0
-      devt=devt0
-      ind_survint=ind_survint0
+
+      allocate(Y(nobs0),X(nobs0,nv0))
+
+
+      nHT=0
+!      do i=1,ns0
+!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.1) then 
+!            nHT=nHT+1
+!         end if
+!         
+!         if(tsurv(i).gt.tsurvint(i).and.ind_survint(i).ne.1) then 
+!            write(*,*)'probleme HT',i,ind_survint(i),tsurvint(i),tsurv(i)
+!         end if
+
+!         if(tsurv(i).le.tsurvint(i).and.ind_survint(i).ne.0) then 
+!            write(*,*)'probleme HT',i,ind_survint(i),tsurvint(i),tsurv(i)
+!         end if
+!      end do
+
+!      write(*,*)'sum',sum(ind_survint),nvdepsurv,nHT
+
+!      nHT=0
+!      do i=1,ns0
+!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.0) then 
+!            nHT=nHT+1
+!         end if
+!      end do
+!      write(*,*)'sum2',nHT
+
 !------------------------
       nz=nz0
       select case (typrisq)
@@ -1078,7 +268,6 @@
       ng=ng0
       nv=nv0
       nobs=nobs0
-      evt=evt0
       if (nwg0.eq.0) then
          nwg=0
       else
@@ -1135,7 +324,6 @@
 
        nrisq=0
 
-      if (evt.ne.0) then
          if (risqcom.eq.1) then
             nrisq=nprisq
          end if
@@ -1145,10 +333,9 @@
          if (risqcom.eq.0) then
             nrisq=nprisq*ng
          end if
-      end if
 ! parms fixes pour les vexp dans la modelisation de l'evenement
 
-      nvarxevt=nvdepsurv0
+      nvarxevt=nvdepsurv
       Do k=1,nv
          If (idxevt(k).eq.1) then
             nvarxevt=nvarxevt+1
@@ -1158,11 +345,6 @@
          end if
       end do
 
-      if (evt.eq.0) then
-         nvarxevt=0
-      end if
-!-----------------------------------------------------------
-! creation des parametres
 
       nea=0
       ncg=0
@@ -1200,6 +382,13 @@
       npm=nef+nvc+nwg+1
 
 
+
+!	write(*,*)'npm',npm,npm0
+      if (npm.ne.npm0)then
+	istop=4
+         goto 1589
+      end if
+
       if (idiag.eq.1) then
          DO j=1,nvc
             B(nef+j)=dsqrt(abs(B(nef+j)))
@@ -1215,7 +404,7 @@
         DO j=1,nvc
             mvc(j)=B(nef+j)
          END DO
-         CALL DMFSDj(mvc,nea,EPS,IER)
+         CALL DMFSD(mvc,nea,EPS,IER)
          DO j=1,nvc
             B(nef+j)=mvc(j)
          END DO
@@ -1242,55 +431,55 @@
       ca=0.d0
       cb=0.d0
       dd=0.d0
-      !	 write(*,*)'B avant marq98',(b(i),i=1,npm)
-      call marq98j(b,npm,ni,v,vrais,ier,istop,ca,cb,dd)
+!      write(*,*)'B avant marq98',npm,(b(i),i=1,npm)
+      call marq98(b,npm,ni,v,vrais,ier,istop,ca,cb,dd,funcpaj)
 
 
 
-      
+
 !        write(*,*)'B apres marq98',(b(i),i=1,npm)
 !      	 write(*,*)'-------fin de optimisation avec marq98-------'
 !               write(*,*)'ier',ier,'istop',istop
 !      	 write(*,*)'ca',ca,'cb',cb,'dd',dd
-!            
+!
 !               write(*,*)
 !               write(*,*)'    FIN OPTIMISATION  ..... '
 !               write(*,*)'istop',istop,'vrais',vrais
-      
 
-   
+
+
 
 
       gconv=0.d0
       gconv(1)=ca
       gconv(2)=cb
       gconv(3)=dd
-      
+
       vopt=0.d0
       vopt(1:npm0*(npm0+1)/2)=v(1:npm0*(npm0+1)/2)
-      
+
       do k=1,nwg+1
          b(nef+nvc+k)=abs(b(nef+nvc+k))
       end do
-      
+
       ! resultats : SE parms transformes
-      
-  
+
+
       if (istop==4 .or. istop==12)then
-         goto 1589         
+         goto 1589
       end if
 
       if (istop.eq.1.or.istop.eq.3) then
          !------ estimation de la variance des probabilites des composantes
-         
+
          if (ng.gt.1) then
             call postprobj(B,npm,ppi,ppitest)
          end if
-         
+
          call residualsj(b,npm,ppi,resid_m,pred_m_g,resid_ss &
               ,pred_ss_g,pred_RE)
-         
-         
+
+
          ig=0
          ij=0
          do i=1,ns
@@ -1309,7 +498,7 @@
                end do
             end do
          end do
-         
+
          call scoretest(b,npm,statsc0)
 
          if (typrisq.eq.3) then
@@ -1318,47 +507,62 @@
                  ,Tim1_est(nsim),Tim2_est(nsim),Tim3_est(nsim))
             call splines_estime(time,nsim)
          end if
-                  
+
          allocate(brisq_est(nprisq))
-         
-         do g=1,ng            
+
+         do g=1,ng
             brisq_est=0.d0
-            if (evt.ne.0) then
-               do k=1,nprisq
+            if (logspecif.eq.1.or.typrisq.eq.2) then
                   if (risqcom.eq.0) then
+               do k=1,nprisq
+                    brisq_est(k)=exp(b(nprob+nprisq*(g-1)+k))
+                  end do
+                  else if (risqcom.eq.1) then
+               do k=1,nprisq
+                    brisq_est(k)=exp(b(nprob+k))
+                  end do
+                  else if (risqcom.eq.2) then
+               do k=1,nprisq
+                    brisq_est(k)=exp(b(nprob+k))
+                  end do
+                  end if
+            else
+                  if (risqcom.eq.0) then
+               do k=1,nprisq
                      brisq_est(k)=b(nprob+nprisq*(g-1)+k) &
                           *b(nprob+nprisq*(g-1)+k)
-                  end if                  
-                  if (risqcom.eq.1) then
+                  end do
+                  elseif (risqcom.eq.1) then
+               do k=1,nprisq
                      brisq_est(k)=b(nprob+k)  &
                           *b(nprob+k)
-                  end if                  
-                  if (risqcom.eq.2) then
+                  end do
+                  elseif (risqcom.eq.2) then
+               do k=1,nprisq
                      brisq_est(k)=b(nprob+k)  &
                           *b(nprob+k)
-                  end if
-               end do
+                  end do
+                end if
             end if
-            
             call fct_risq_estime(brisq_est,time,nsim,g,risq_est,risqcum_est)
-            
+
             if (risqcom.eq.2.and.ng.gt.1.and.g.lt.ng) then
                do i=1,nsim
                   risq_est(nsim*(g-1)+i)=risq_est(nsim*(g-1)+i)*exp(b(nprob+nprisq+g))
                   risqcum_est(nsim*(g-1)+i)=risqcum_est(nsim*(g-1)+i)*exp(b(nprob+nprisq+g))
                end do
-            end if            
+            end if
          end do
-         
+
          deallocate(brisq_est)
-         
+
          if (typrisq.eq.3) then
             deallocate(Tmm_est,Tmm1_est,Tmm2_est,Tmm3_est,Tim_est,Tim1_est,Tim2_est,Tim3_est)
          end if
-        
+
       end if
 
-         
+
  1589 continue
 
 
@@ -1388,6 +592,43 @@
 
       end subroutine jointhet
 
+!-----------------------------------------------------------
+!                        FUNCPA
+!------------------------------------------------------------
+
+	double precision function funcpaj(b,m,id,thi,jd,thj)
+
+
+	use commun_joint,only:ns,nmes
+	use commun_modele_joint,only:nmes_curr
+	implicit none
+
+	integer::m,i,id,jd
+	double precision::rl,thi,thj,funcpij,rli
+	double precision,dimension(m)::b
+
+!	write(*,*)'entree funcpa'
+
+	rl=0.d0
+	rli=0.d0
+	nmes_curr=0
+	do i=1,ns
+		rli =  funcpij(b,m,id,thi,jd,thj,i)
+	       if (rli.eq.-1.d9) then
+			rl = -1.d9
+			goto 468
+		end if
+		rl = rl + rli
+		nmes_curr = nmes_curr + nmes(i)
+
+	end do
+	468 continue
+	funcpaj =rl
+	!	write(*,*)'sortie funcpa',funcpaj
+
+	return
+
+	end function funcpaj
 
 
 
@@ -1396,22 +637,19 @@
 
 
 !-----------------------------------------------------------
-!                        FUNCPA
+!                        FUNCPI
 !------------------------------------------------------------
 
 
+      double precision function funcpij(b,npm,id,thi,jd,thj,i)
+	use commun_joint
+	use commun_modele_joint
+      use optim
 
-
-
-
-      double precision function funcpaj(b,npm,id,thi,jd,thj)
-
-      use communJ
-      use optimj
       IMPLICIT NONE
 
-      integer ::i,j,k,l,m,g,l2,m2,id,jd,jj,npm,it
-      integer ::ier,nmoins,kk
+      integer ::i,j,k,l,m,g,l2,m2,id,jd,jj,npm
+      integer ::ier,nmoins
       double precision,dimension(maxmes,nv) ::Z,P,X00,X2
       double precision,dimension(nvarprob) ::Xprob,bprob
       double precision,dimension(nv,nv) ::Ut,Ut1
@@ -1427,13 +665,13 @@
       double precision,dimension(nrisq)::brisq
       double precision::retard,entretard,vrais_survie
       double precision,dimension(nvarxevt)::bevt,Xevt
-      double precision,dimension(1)::bevtint
-      double precision,dimension(ns,ng)::risq,surv,surv0,  &
+      double precision::bevtint
+      double precision,dimension(ng)::risq,surv,surv0,  &
       survint
       logical::isnan
       integer::nef
 
-
+!	write(*,*)'entree funcpi',i
 
       b1=0.d0
       eps=1.D-20
@@ -1479,55 +717,70 @@
       do g=1,ng
 
          brisq=0.d0
-         if (evt.ne.0) then
-
-            do k=1,nprisq
-
-               if (risqcom.eq.0) then
+         if (logspecif.eq.1.or.typrisq.eq.2) then
+            if (risqcom.eq.0) then
+               do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
+               end do
+            elseif(risqcom.eq.1) then
+               do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+k))
+               end do
+            elseif (risqcom.eq.2) then
+               do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+k))
+               end do
+            end if
+            
+         else
+            if (risqcom.eq.0) then
+               do k=1,nprisq
                   brisq(k)=b1(nprob+nprisq*(g-1)+k) &
-                      *b1(nprob+nprisq*(g-1)+k)
-               end if
-
-               if (risqcom.eq.1) then
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
-               end if
-
-               if (risqcom.eq.2) then
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
-               end if
-
-            end do
-
+                       *b1(nprob+nprisq*(g-1)+k)
+               end do
+            elseif(risqcom.eq.1) then
+               do k=1,nprisq
+                  brisq(k)=b1(nprob+k)*b1(nprob+k)
+               end do
+            elseif (risqcom.eq.2) then
+               do k=1,nprisq
+                  brisq(k)=b1(nprob+k)*b1(nprob+k)
+               end do
+            end if
          end if
+         
 
-
-         call fct_risq(brisq,g,risq,surv,surv0,survint)
+         call fct_risq_i(i,brisq,g,risq,surv,surv0,survint)
 
 
          if (risqcom.eq.2.and.ng.gt.1.and.g.lt.ng) then
-            do i=1,ns
-               risq(i,g)=risq(i,g)*exp(b1(nprob+nprisq+g))
-               surv(i,g)=surv(i,g)*exp(b1(nprob+nprisq+g))
-               survint(i,g)=survint(i,g)*exp(b1(nprob+nprisq+g))
-               surv0(i,g)=surv0(i,g)*exp(b1(nprob+nprisq+g))
-            end do
+               risq(g)=risq(g)*exp(b1(nprob+nprisq+g))
+               surv(g)=surv(g)*exp(b1(nprob+nprisq+g))
+               survint(g)=survint(g)*exp(b1(nprob+nprisq+g))
+               surv0(g)=surv0(g)*exp(b1(nprob+nprisq+g))
          end if
       end do
+
+!      if(tsurvint(i).ne.tsurv(i).and.ind_survint(i).eq.0) then 
+!         write(*,*)'problem',tsurvint(i),tsurv(i)
+!      end if
+!      do g=1,ng
+!         if(surv(g).ne.survint(g).and.ind_survint(i).eq.0) then 
+!            write(*,*)'problem surv',surv(g),survint(g)
+!         end if  
+!         if(surv(g).eq.survint(g).and.ind_survint(i).eq.1) then 
+!            write(*,*)'problem surv ind',surv(g),survint(g)
+!         end if          
+!      end do
+
+      
+
 
 
 ! ----------- boucle sur les individus -------------
       entretard=0.d0
       vrais_survie=0.d0
       vrais=0.d0
-
-      kk=0
-      it=0
-
-!------------------  debut boucle sujet ---------------------
-      DO i=1,ns
-
 
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
 ! creation de Zi
@@ -1538,7 +791,7 @@
             if (idea(k).eq.1) then
                l=l+1
                do j=1,nmes(i)
-                 Z(j,l)=dble(X(it+j,k))
+                 Z(j,l)=dble(X(nmes_curr+j,k))
                end do
             end if
 
@@ -1548,23 +801,21 @@
          Se=0.d0
          Y1=0.d0
          do j=1,nmes(i)
-            kk=kk+1
+      !      kk=kk+1
             Se(j,j)=b1(npm)*b1(npm)
-            Y1(j)=dble(Y(kk))
+            Y1(j)=dble(Y(nmes_curr + j))
          end do
 
 ! creer Xevt:
       Xevt=0.d0
 
-      if (evt.ne.0) then
          l=0
          do k=1,nv
             if (idxevt(k).eq.1.or.idxevt(k).eq.2) then
                l=l+1
-               Xevt(l)=X(it+1,k)
+               Xevt(l)=X(nmes_curr+1,k)
             end if
          end do
-      end if
 
 ! creation de P=Zi*Ut et V=P*P' que si non spec aux classes
 
@@ -1585,10 +836,10 @@
                   Vi(jj)=VC(j,k)
                end do
             end do
-            CALL DSINVj(Vi,nmes(i),eps,ier,det)
+            CALL DSINV(Vi,nmes(i),eps,ier,det)
             if (ier.eq.-1) then
 !               write(*,*)'probleme dsinv'
-               funcpaj=-1.d9
+               funcpij=-1.d9
                goto 654
             end if
 
@@ -1617,26 +868,24 @@
          bevt=0.d0
 
          bevtint=0.d0
-         if (evt.ne.0) then
-            l=1
-            do k=1,nv!warning nvar
-               if (idxevt(k).eq.1) then
-                  bevt(l)=b1(nprob+nrisq+l)
-                  l=l+1
-               end if
-            end do
-
-            if (l-1.ne.nvarxevt-nvdepsurv) then
-!              write(*,*)'probleme nvarxevt'
-               funcpaj=-1.d9
-               goto 654
+         l=1
+         do k=1,nv!warning nvar
+            if (idxevt(k).eq.1) then
+               bevt(l)=b1(nprob+nrisq+l)
+               l=l+1
             end if
-
-            if (nvdepsurv.ne.0) then
-               bevtint(1)=b1(nprob+nrisq+nvarxevt)
-            end if
-
+         end do
+         
+         if (l-1.ne.nvarxevt-nvdepsurv) then
+            !              write(*,*)'probleme nvarxevt'
+            funcpij=-1.d9
+            goto 654
          end if
+         
+         if (ind_survint(i).eq.1) then
+            bevtint=b1(nprob+nrisq+nvarxevt)
+         end if
+
 
 !--------------------------------------------------------------
 
@@ -1648,7 +897,7 @@
             if (idg(k).ne.0) then
                l=l+1
                do j=1,nmes(i)
-		  X00(j,l)=dble(X(it+j,k))
+		  X00(j,l)=dble(X(nmes_curr+j,k))
                end do
                b0(l)=b1(nprob+nrisq+nvarxevt+l)
             end if
@@ -1667,46 +916,69 @@
         vrais=vrais-Y4
 
 !------------------------------------------------------------------
-        if (evt.eq.1) then
-
-           if (Devt(i).eq.1) then
-              if (ind_survint(i).eq.1) then
-                 risq(i,1)=risq(i,1)*exp(bevtint(1))
-              end if
-              if (risq(i,1).le.0.or.isnan(risq(i,1))) then
-!               write(*,*)'probleme risq',risq(i,1)
-                 funcpaj=-1.d9
-                 goto 654
-              end if
-
-              vrais=vrais+2*(log(risq(i,1))+DOT_PRODUCT(Xevt,bevt) &
-                   -exp(DOT_PRODUCT(Xevt,bevt))*(survint(i,1)+     &
-                    exp(bevtint(1))*(surv(i,1)-survint(i,1))))
 
 
-              vrais_survie=vrais_survie+2*(log(risq(i,1))        &
-                 +DOT_PRODUCT(Xevt,bevt)                        &
-                   -exp(DOT_PRODUCT(Xevt,bevt))*(survint(i,1)+  &
-                   exp(bevtint(1))*(surv(i,1)-survint(i,1))))
-
-
+        if (Devt(i).eq.1) then
+           if (ind_survint(i).eq.1) then
+              risq(1)=risq(1)*exp(bevtint)
            end if
-           if (Devt(i).eq.0) then
+           vrais=vrais+2*(log(risq(1))+DOT_PRODUCT(Xevt,bevt) &
+                -exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+     &
+                exp(bevtint)*(surv(1)-survint(1))))
+           
+           
+           vrais_survie=vrais_survie+2*(log(risq(1))        &
+                +DOT_PRODUCT(Xevt,bevt)                        &
+                -exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+  &
+                exp(bevtint)*(surv(1)-survint(1))))
+!        else
+!           vrais=vrais+2*(log(risq(1))+DOT_PRODUCT(Xevt,bevt) &
+!                -exp(DOT_PRODUCT(Xevt,bevt))*surv(1))           
+!           
+!           vrais_survie=vrais_survie+2*(log(risq(1))        &
+!                +DOT_PRODUCT(Xevt,bevt)                        &
+!                -exp(DOT_PRODUCT(Xevt,bevt))*(surv(1)))
+!        end if
+           if (risq(1).le.0.or.isnan(risq(1))) then
+              !               write(*,*)'probleme risq',risq(i,1)
+              funcpij=-1.d9
+              goto 654
+           end if
+                  
+!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then 
+!              write(*,*)'devt1',i,surv(1),survint(1),tsurv(i),Tsurvint(i)
+!           end if
+           
+        end if
+        if (Devt(i).eq.0) then
+!           if (ind_survint(i).eq.1) then
               vrais=vrais-2*exp(DOT_PRODUCT(Xevt,bevt)) &
-                   *(survint(i,1)+exp(bevtint(1))       &
-                   *(surv(i,1)-survint(i,1)))
-
+                   *(survint(1)+exp(bevtint)       &
+                   *(surv(1)-survint(1)))
+           
               vrais_survie=vrais_survie                 &
                    -2*exp(DOT_PRODUCT(Xevt,bevt))      &
-                   *(survint(i,1)+exp(bevtint(1))      &
-                   *(surv(i,1)-survint(i,1)))
+                   *(survint(1)+exp(bevtint)      &
+                   *(surv(1)-survint(1)))
+!           else
+!              vrais=vrais-2*exp(DOT_PRODUCT(Xevt,bevt)) &
+!                   *(surv(1))
+!           
+!              vrais_survie=vrais_survie                 &
+!                   -2*exp(DOT_PRODUCT(Xevt,bevt))      &
+!                   *(surv(1))
+ !          end if
+      
+!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then 
+!              write(*,*)'devt0',i,surv(1),survint(1),tsurv(i),Tsurvint(i)
+!           end if
 
-           end if
-           entretard=entretard-surv0(i,1)*exp(DOT_PRODUCT(Xevt,bevt))
-         end if
-
-
-
+        end if
+        entretard=entretard-surv0(1)*exp(DOT_PRODUCT(Xevt,bevt))
+        
+        
+        
+        
       ELSE
 
 
@@ -1724,11 +996,11 @@
                 do k=1,nv
                    if (idprob(k).eq.1) then
                       l=l+1
-                      Xprob(1+l)=X(it+1,k)
+                      Xprob(1+l)=X(nmes_curr+1,k)
                    end if
                 end do
                 pi=0.d0
-                temp=0.d0	        
+                temp=0.d0
                 Do g=1,ng-1
                    bprob=0.d0
                    do k=1,nvarprob
@@ -1752,12 +1024,12 @@
                if (idg(k).eq.2) then
                   l=l+1
                   do j=1,nmes(i)
-			X2(j,l)=dble(X(it+j,k))
+			X2(j,l)=dble(X(nmes_curr+j,k))
                   end do
                else if (idg(k).eq.1) then
                   m=m+1
                   do j=1,nmes(i)
-                     X00(j,m)=dble(X(it+j,k))
+                     X00(j,m)=dble(X(nmes_curr+j,k))
                   end do
                end if
             end do
@@ -1773,7 +1045,6 @@
 ! bevt
             bevt=0.d0
             bevtint=0.d0
-            if (evt.ne.0) then
 
                m=0
                l=1
@@ -1793,9 +1064,8 @@
 
                end do
                if (nvdepsurv.ne.0) then
-                  bevtint(1)=b1(nprob+nrisq+nvarxevt)
+                  bevtint=b1(nprob+nrisq+nvarxevt)
                end if
-            end if
 
 !     write(*,*)'g=',g,'bevt=',(bevt(k),k=1,l)
 !-------------------------------------------------------
@@ -1844,10 +1114,10 @@
                      end do
                   end do
 
-                  CALL DSINVj(Vi,nmes(i),eps,ier,det)
+                  CALL DSINV(Vi,nmes(i),eps,ier,det)
                   if (ier.eq.-1) then
 !               write(*,*)'probleme dsinv'
-                     funcpaj=-1.d9
+                     funcpij=-1.d9
                      goto 654
                   end if
 
@@ -1876,76 +1146,62 @@
                Y3=Matmul(VC,Y2)
                Y4=DOT_PRODUCT(Y2,Y3)
 
-               if (evt.eq.1) then
 
-
-
-!           if (i.lt.3.and.thi.eq.0.and.thj.eq.0) then 
+!           if (i.lt.3.and.thi.eq.0.and.thj.eq.0) then
 !              write(*,*)'i',i,g,devt(i),ind_survint(i)
 !              write(*,*)'i',i,g,risq(i,g),survint(i,g),surv(i,g)
 !              write(*,*)'i',i,g,tsurv(i),tsurv0(i),tsurvint(i)
 !             write(*,*)'bevt',g,bevt
 !           end if
 
-                  
+
                   if (ind_survint(i).eq.1) then
-                     risq(i,g)=risq(i,g)*exp(bevtint(1))
+                     risq(g)=risq(g)*exp(bevtint)
                   end if
-                  
+
                   if (Devt(i).eq.1) then
-                     expo=expo+pi(g)*risq(i,g)*                        &
+                     expo=expo+pi(g)*risq(g)*                        &
                           exp(DOT_PRODUCT(Xevt,bevt)                    &
                           +(-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))*  &
-                          (survint(i,g)+exp(bevtint(1))*(surv(i,g)      &
-                          -survint(i,g))))
+                          (survint(g)+exp(bevtint)*(surv(g)      &
+                          -survint(g))))
                   end if
                   if (Devt(i).eq.0) then
                      expo=expo+pi(g)*exp((-det-Y4)/2.d0	            &
                           -exp(DOT_PRODUCT(Xevt,bevt))*                 &
-                          (survint(i,g)+exp(bevtint(1))*(surv(i,g)      &
-                          -survint(i,g))))
+                          (survint(g)+exp(bevtint)*(surv(g)      &
+                          -survint(g))))
                   end if
-                  
-                  
-                  
-                  
-               end if
-               
-               if (evt.eq.0) then
-                  expo=expo+pi(g)*exp((-det-Y4)/2.d0)
-               end if
-               retard=retard+pi(g)*exp(-surv0(i,g) &
+
+
+               retard=retard+pi(g)*exp(-surv0(g) &
                     *exp(DOT_PRODUCT(Xevt,bevt)))
-               
+
             end do
-            
-            
-            
+
+
+
             if (expo.le.0.or.isnan(expo).or.expo.gt.1.d30) then
-!               write(*,*)'i',i,Devt(i)         
-!               write(*,*)'Y',Y4,det       
-!               write(*,*)'Y',nmes(i),(Y1(j),j=1,nmes(i)) 
+!               write(*,*)'i',i,Devt(i)
+!               write(*,*)'Y',Y4,det
+!               write(*,*)'Y',nmes(i),(Y1(j),j=1,nmes(i))
 !               do l=1,nea
-!                  write(*,*)'Z',nmes(i),(Z(j,l),j=1,nmes(i)) 
+!                  write(*,*)'Z',nmes(i),(Z(j,l),j=1,nmes(i))
 !               end do
 !               write(*,*)'expo le 0',expo,(pi(g),g=1,ng)
 !               write(*,*)'risq(i,g)',(risq(i,g),g=1,ng)
 !               write(*,*)'surv(i,g)',(surv(i,g),g=1,ng)
 !               write(*,*)'survint(i,g)',(survint(i,g),g=1,ng)
 !               write(*,*)'expo lt 0 funcpa',expo
-               funcpaj=-1.d9
+               funcpij=-1.d9
                goto 654
             end if
-            
+
             entretard=entretard+log(retard)
 
             vrais=vrais+2*log(expo)
 
          END IF
-
-         it=it+nmes(i)
-
-      END DO
 
       if (idtrunc.eq.0) then
          entretard=0.d0
@@ -1958,26 +1214,30 @@
 
       if (vrais.lt.-1.d9) then
 !         write(*,*)'vrais inf -10^9',vrais
-         funcpaj=-1.d9
+         funcpij=-1.d9
          goto 654
        end if
 
 
 ! FIN BOUCLE SUJET
-      funcpaj=vrais/2.D0-entretard
+      funcpij=vrais/2.D0-entretard
 
  654  continue
 
 
 
 
-      if (isnan(funcpaj).or.abs(funcpaj).gt.1.d30) then
+      if (isnan(funcpij).or.abs(funcpij).gt.1.d30) then
 !         write(*,*)'isnan funcpa',vrais
-          funcpaj=-1.d9
+          funcpij=-1.d9
        end if
       return
 
-      end
+      end function funcpij
+
+
+
+
 
 !------------------------------------------------------------
 !                      POSTPROB
@@ -1992,9 +1252,9 @@
 
       subroutine postprobj(b,npm,ppi,ppiy)
 
-
-      use communJ
-      use optimj
+	use commun_joint
+	use commun_modele_joint
+      use optim
 
       implicit none
 
@@ -2015,7 +1275,7 @@
 
       double precision,dimension(nvarxevt)::bevt,Xevt
       double precision,dimension(ns,ng)::risq2
-      double precision,dimension(1)::bevtint
+      double precision::bevtint
       double precision,dimension(nprisq)::brisq
       double precision,dimension(ns,ng)::risq,surv,surv0,  &
       survint
@@ -2065,23 +1325,37 @@
       do g=1,ng
 
          brisq=0.d0
-         if (evt.ne.0) then
-            do k=1,nprisq
+         if (logspecif.eq.1.or.typrisq.eq.2) then
                if (risqcom.eq.0) then
+                 do k=1,nprisq
+                   brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
+               end do
+               elseif (risqcom.eq.1) then
+                do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+k))
+                end do
+               elseif (risqcom.eq.2) then
+             do k=1,nprisq
+                brisq(k)=exp(b1(nprob+k))
+              end do
+            endif
+        else
+               if (risqcom.eq.0) then
+              do k=1,nprisq
                   brisq(k)=b1(nprob+nprisq*(g-1)+k)   &
                       *b1(nprob+nprisq*(g-1)+k)
-               end if
-               if (risqcom.eq.1) then
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
-               end if
+               end do
+               elseif (risqcom.eq.1) then
+                do k=1,nprisq
+                  brisq(k)=b1(nprob+k) *b1(nprob+k)
 
-               if (risqcom.eq.2) then
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
-               end if
-            end do
-         end if
+                end do
+               elseif (risqcom.eq.2) then
+               do k=1,nprisq
+                brisq(k)=b1(nprob+k)*b1(nprob+k)
+               end do
+              end if
+        end if
 !         write(*,*)'g=',g,'brisq=',(brisq(k),k=1,nrisq)
 
          call fct_risq(brisq,g,risq,surv,surv0,survint)
@@ -2119,7 +1393,6 @@
 
 
          Xevt=0.d0
-         if (evt.ne.0) then
             l=0
             do k=1,nv
                if (idxevt(k).eq.1.or.idxevt(k).eq.2) then
@@ -2128,7 +1401,6 @@
                end if
 
             end do
-         end if
 ! creation de s2*I et Y1
 
          Se=0.d0
@@ -2156,7 +1428,7 @@
             end do
          end do
 
-         CALL DSINVj(Vi,nmes(i),eps,ier,det)
+         CALL DSINV(Vi,nmes(i),eps,ier,det)
          if (ier.eq.-1) then
             ppiy=-1.d0
 	    ppi=-1.d0
@@ -2235,7 +1507,6 @@
 ! bevt
             bevt=0.d0
             bevtint=0.d0
-            if (evt.ne.0) then
                m=0
                l=1
                do k=1,nv
@@ -2252,9 +1523,8 @@
 
                end do
                if (nvdepsurv.ne.0) then
-                  bevtint(1)=b1(nprob+nrisq+nvarxevt)
+                  bevtint=b1(nprob+nrisq+nvarxevt)
                end if
-            end if
 
           nmoins=0
           l2=0
@@ -2294,7 +1564,7 @@
                 end do
              end do
 
-             CALL DSINVj(Vi,nmes(i),eps,ier,det)
+             CALL DSINV(Vi,nmes(i),eps,ier,det)
              if (ier.eq.-1) then
                 ppi=-1.d0
 		ppiy=-1.d0
@@ -2324,7 +1594,7 @@
 
 	  risq2(i,g)=risq(i,g)
           if (ind_survint(i).eq.1) then
-             risq2(i,g)=risq(i,g)*exp(bevtint(1))
+             risq2(i,g)=risq(i,g)*exp(bevtint)
           end if
 
           fi(g)=fi(g)- nmes(i)*log(dble(2*3.14159265))
@@ -2335,10 +1605,10 @@
 
 
           fevt=log(risq2(i,g))+DOT_PRODUCT(bevt,Xevt)
-	  if (evt.eq.1)then
+
               fi(g)=fi(g)+Devt(i)*fevt-exp(DOT_PRODUCT(Xevt,bevt))* &
-              (survint(i,g)+exp(bevtint(1))*(surv(i,g)-survint(i,g)))
-	  end if
+              (survint(i,g)+exp(bevtint)*(surv(i,g)-survint(i,g)))
+
 	  fi(g)=exp(fi(g))
 
 
@@ -2371,9 +1641,9 @@
 
       subroutine residualsj(b1,npm,ppi,resid_m,pred_m_g,resid_ss, &
       pred_ss_g,pred_RE)
-
-      use communJ
-      use optimj
+	use commun_joint
+	use commun_modele_joint
+      use optim
       implicit none
       integer ::i,j,k,l,m,g,l2,m2,jj,npm
       integer ::ier,nmoins,nmes_cur,n2,nmoins2,kk
@@ -2410,7 +1680,7 @@
 
 !      write(*,*)'nvc',nvc,'nea',nea,'nwg',nwg,'nef',nef
 ! creation de Ut, decomposition de cholesky pour G
-  
+
       Ut=0.d0
       If (idiag.eq.1) then
          do j=1,nea
@@ -2447,9 +1717,9 @@
       nmes_cur=0
       kk=0
       do i=1,ns
-        
+
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
-        
+
 ! creation de Zi
 
          Z=0.d0
@@ -2499,7 +1769,7 @@
                end do
             end do
 
-            CALL DSINVj(Vi,nmes(i),eps,ier,det)
+            CALL DSINV(Vi,nmes(i),eps,ier,det)
             if (ier.eq.-1) then
                do j=1,nmes(i)
                   resid_m(nmes_cur+j)=9999.d0
@@ -2684,7 +1954,7 @@
                      Vi(jj)=VC(j,k)
                   end do
                end do
-               CALL DSINVj(Vi,nmes(i),eps,ier,det)
+               CALL DSINV(Vi,nmes(i),eps,ier,det)
                if (ier.eq.-1) then
                   do j=1,nmes(i)
                      resid_m(nmes_cur+j)=9999.d0
@@ -2768,8 +2038,8 @@
 
 
       subroutine fct_risq(brisq,g,risq,surv,surv0,survint)
-
-      use communJ
+	use commun_joint
+	use commun_modele_joint
 
       implicit none
 ! risq contient le risque instantane d'evenement
@@ -2787,15 +2057,15 @@
 
          if (typrisq.eq.2) then
 
-            surv(i,g)=((tsurv(i))*brisq(1))**brisq(2)
+            surv(i,g)=brisq(1)*(tsurv(i))**brisq(2)
 
-            risq(i,g)=(brisq(1)**brisq(2))*brisq(2) &
+            risq(i,g)=brisq(1)*brisq(2) &
                 *(Tsurv(i))**(brisq(2)-1)
             if (idtrunc.eq.1) then
-               surv0(i,g)=((tsurv0(i))*brisq(1))**brisq(2)
+               surv0(i,g)=brisq(1)*(tsurv0(i))**brisq(2)
             end if
             if (ind_survint(i).eq.1) then
-               survint(i,g)=((tsurvint(i))*brisq(1)) &
+               survint(i,g)=brisq(1)*(tsurvint(i)) &
       **brisq(2)
             else
                survint(i,g)=surv(i,g)
@@ -2829,7 +2099,7 @@
                survint(i,g)=surv(i,g)
             end if
          end if
-         
+
          if (typrisq.eq.3) then
             !------------ survie et risq pour Tsurv ----------------
             ll=0
@@ -2848,14 +2118,14 @@
                   som=som+brisq(ii)
                end do
             end if
-            
+
             surv(i,g)=som+brisq(ll)*Tim3(i)+brisq(ll+1)*Tim2(i) &
                  +brisq(ll+2)*Tim1(i)+brisq(ll+3)*Tim(i)
             risq(i,g)=brisq(ll)*Tmm3(i)+brisq(ll+1)*Tmm2(i)     &
                  +brisq(ll+2)*Tmm1(i)+brisq(ll+3)*Tmm(i)
-            
+
             !------------ survie et risq pour Tsurv0 ----------------
-            
+
             if (idtrunc.eq.1) then
                ll=0
                if (Tsurv0(i).eq.zi(nz)) then
@@ -2868,15 +2138,20 @@
                      ll=kk-1
                   end if
                end do
+!               if (ll.lt.1.or.ll.gt.nz-1) then
+!                  write(*,*) 'probleme dans fct_risq splines'
+!                  write(*,*) 'll=',ll,'T=',Tsurv0(i)
+!                  stop
+!               end if
                if (ll.gt.1) then
                   do ii=1,ll-1
                      som=som+brisq(ii)
                   end do
                end if
-               
+
                surv0(i,g)=som+brisq(ll)*Tim03(i)+brisq(ll+1)*Tim02(i) &
-                    +brisq(ll+2)*Tim01(i)+brisq(ll+3)*Tim0(i)              
-               
+                    +brisq(ll+2)*Tim01(i)+brisq(ll+3)*Tim0(i)
+
             end if
 
             !------------ survie et risq pour Tsurvint ----------------
@@ -2894,26 +2169,190 @@
                      ll=kk-1
                   end if
                end do
+!               if (ll.lt.1.or.ll.gt.nz-1) then
+!                  write(*,*) 'probleme dans fct_risq splines'
+!                  write(*,*) 'll=',ll,'T=',Tsurvint(i)
+!                  stop
+!               end if
                if (ll.gt.1) then
                   do ii=1,ll-1
                      som=som+brisq(ii)
                   end do
                end if
-               
+
                survint(i,g)=som+brisq(ll)*Timt3(i)+brisq(ll+1)*Timt2(i) &
                     +brisq(ll+2)*Timt1(i)+brisq(ll+3)*Timt(i)
-               
+
             else
                survint(i,g)=surv(i,g)
             end if
-            
+
          end if
       end do
-  
+
 
       end subroutine fct_risq
 
+!---------------------------------------------------------------
+!
+      !FCT_RISQI
+!
+!---------------------------------------------------------------
 
+
+      subroutine fct_risq_i(i,brisq,g,risq,surv,surv0,survint)
+	use commun_joint
+	use commun_modele_joint
+
+      implicit none
+! risq contient le risque instantane d'evenement
+! surv contient le risq cumule d'evenement et non la fonction de survie directe
+
+
+      double precision, dimension(nprisq)::brisq
+      integer ::i,g,ll,kk,ii,l,j
+      double precision,dimension(ng)::risq,surv,surv0,survint
+      double precision::som
+
+
+         if (typrisq.eq.2) then
+
+            surv(g)=brisq(1)*(tsurv(i))**brisq(2)
+
+            risq(g)=brisq(1)*brisq(2)*(tsurv(i))**(brisq(2)-1)
+            if (idtrunc.eq.1) then
+               surv0(g)=brisq(1)*(tsurv0(i))**brisq(2)
+            end if
+            if (ind_survint(i).eq.1) then
+               survint(g)=brisq(1)*(tsurvint(i))**brisq(2)
+            else
+               survint(g)=surv(g)
+            end if
+
+         end if
+
+         if (typrisq.eq.1) then
+            do j=1,nz-1
+               som=0.d0
+               do l=1,j-1
+                  som=som+brisq(l)*(zi(l+1)-zi(l))
+               end do
+               if (idtrunc.eq.1) then
+                  if (Tsurv0(i).ge.zi(j).and.Tsurv0(i).le.zi(j+1)) then
+                     surv0(g)=som+brisq(j)*(Tsurv0(i)-zi(j))
+                  end if
+               end if
+               if (Tsurv(i).ge.zi(j).and.Tsurv(i).le.zi(j+1)) then
+                  surv(g)=som+brisq(j)*(Tsurv(i)-zi(j))
+                  risq(g)=brisq(j)
+               end if
+               if (ind_survint(i).eq.1) then
+                  if (Tsurvint(i).ge.zi(j).and.Tsurvint(i).le.zi(j+1)) &
+                       then
+                     survint(g)=som+brisq(j)*(Tsurvint(i)-zi(j))
+                  end if
+               end if
+            end do
+            if (ind_survint(i).eq.0) then
+               survint(g)=surv(g)
+            end if
+         end if
+
+         if (typrisq.eq.3) then
+            !------------ survie et risq pour Tsurv ----------------
+            ll=0
+            if (Tsurv(i).eq.zi(nz)) then
+               ll=nz-1
+            end if
+            som=0.d0
+            do kk=2,nz
+               if ((Tsurv(i).ge.zi(kk-1)).and.(Tsurv(i).lt.zi(kk))) &
+                    then
+                  ll=kk-1
+               end if
+            end do
+            if (ll.gt.1) then
+               do ii=1,ll-1
+                  som=som+brisq(ii)
+               end do
+            end if
+
+            surv(g)=som+brisq(ll)*Tim3(i)+brisq(ll+1)*Tim2(i) &
+                 +brisq(ll+2)*Tim1(i)+brisq(ll+3)*Tim(i)
+            risq(g)=brisq(ll)*Tmm3(i)+brisq(ll+1)*Tmm2(i)     &
+                 +brisq(ll+2)*Tmm1(i)+brisq(ll+3)*Tmm(i)
+
+            !------------ survie et risq pour Tsurv0 ----------------
+
+            if (idtrunc.eq.1) then
+               ll=0
+               if (Tsurv0(i).eq.zi(nz)) then
+                  ll=nz-1
+               end if
+               som=0.d0
+               do kk=2,nz
+                  if ((Tsurv0(i).ge.zi(kk-1)).and.(Tsurv0(i).lt.zi(kk))) &
+                       then
+                     ll=kk-1
+                  end if
+               end do
+!               if (ll.lt.1.or.ll.gt.nz-1) then
+!                  write(*,*) 'probleme dans fct_risq splines'
+!                  write(*,*) 'll=',ll,'T=',Tsurv0(i)
+!                  stop
+!               end if
+               if (ll.gt.1) then
+                  do ii=1,ll-1
+                     som=som+brisq(ii)
+                  end do
+               end if
+
+               surv0(g)=som+brisq(ll)*Tim03(i)+brisq(ll+1)*Tim02(i) &
+                    +brisq(ll+2)*Tim01(i)+brisq(ll+3)*Tim0(i)
+
+            end if
+
+            !------------ survie et risq pour Tsurvint ----------------
+
+
+            if (ind_survint(i).eq.1) then
+
+!        	write(*,*)'i',i,tsurvint(i),ind_survint(i),tsurv(i),tsurv0(i)
+!        	write(*,*)timt3(i),Timt2(i),timt1(i)
+
+               ll=0
+               if (Tsurvint(i).eq.zi(nz)) then
+                  ll=nz-1
+               end if
+               som=0.d0
+               do kk=2,nz
+                  if((Tsurvint(i).ge.zi(kk-1)).and.(Tsurvint(i).lt.zi(kk))) &
+                       then
+                     ll=kk-1
+                  end if
+               end do
+!               if (ll.lt.1.or.ll.gt.nz-1) then
+!                  write(*,*) 'probleme dans fct_risq splines'
+!                  write(*,*) 'll=',ll,'T=',Tsurvint(i)
+!                  stop
+!               end if
+               if (ll.gt.1) then
+                  do ii=1,ll-1
+                     som=som+brisq(ii)
+                  end do
+               end if
+
+               survint(g)=som+brisq(ll)*Timt3(i)+brisq(ll+1)*Timt2(i) &
+                    +brisq(ll+2)*Timt1(i)+brisq(ll+3)*Timt(i)
+
+            else
+               survint(g)=surv(g)
+            end if
+
+         end if
+
+
+      end subroutine fct_risq_i
 
 
 
@@ -2930,7 +2369,8 @@
 
 
       subroutine splines()
-     	use communJ
+ 	use commun_joint
+	use commun_modele_joint
       	implicit none
 
 	integer::i,k,n,l
@@ -2965,7 +2405,7 @@
         Timt2=0.d0
         Timt3=0.d0
 
-        
+
 
 
 
@@ -3039,7 +2479,7 @@
 
 !------------------- Tsurv0 --------------------------
 
-        if (idtrunc.eq.1) then 
+        if (idtrunc.eq.1) then
 
            do k=2,n-2
               if ((Tsurv0(i).ge.zi(k-1)).and.   &
@@ -3047,11 +2487,11 @@
                  l=k-1
               end if
            end do
-           
+
            if (Tsurv0(i).eq.zi(n-2)) then
               l=n-3
            end if
-           
+
            ht = Tsurv0(i)-zi(l)
            htm = Tsurv0(i)-zi(l-1)
            h2t = Tsurv0(i)-zi(l+2)
@@ -3068,11 +2508,11 @@
            hn = zi(l+1)-zi(l-2)
            hh3 = zi(l+1)-zi(l-3)
            hh2 = zi(l+2)-zi(l-2)
-           
+
            if (Tsurv0(i).ne.zi(nz-2)) then
-              
+
               Tmm03(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
-              
+
               Tmm02(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
                    +((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))   &
                    +((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
@@ -3080,18 +2520,18 @@
                    +((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))    &
                    +((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
               Tmm0(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
-              
+
            end if
-           
+
            if (Tsurv0(i).eq.zi(n-2)) then
-              
+
               Tmm03(i) = 0.d0
               Tmm02(i) = 0.d0
               Tmm01(i) = 0.d0
               Tmm0(i) = 4.d0/h
-              
+
            end if
-           
+
            Tim03(i) = (0.25d0*(Tsurv0(i)-zi(l-3))*Tmm03(i))  &
                 +(0.25d0*hh2*Tmm02(i))           &
                 +(0.25d0*h3m*Tmm01(i))+(0.25d0*h4*Tmm0(i))
@@ -3099,7 +2539,7 @@
                 +(h3m*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
            Tim01(i) = (htm*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
            Tim0(i) = ht*Tmm0(i)*0.25d0
-           
+
         end if
 
 
@@ -3163,8 +2603,7 @@
            Timt1(i) = (htm*Tmmt1(i)*0.25d0)+(h4*Tmmt(i)*0.25d0)
 	   Timt(i) = ht*Tmmt(i)*0.25d0
 
-	end if
-        if (ind_survint(i).eq.1) then
+        else
            Timt3(i) =Tim3(i)
            Timt2(i) =Tim2(i)
            Timt1(i) =Tim1(i)
@@ -3187,8 +2626,9 @@
 
 
       subroutine scoretest(b,npm,statsc)
-      use communJ
-      use optimj
+ 	use commun_joint
+	use commun_modele_joint
+      use optim
       implicit none
 
       double precision,intent(out)::statsc
@@ -3220,7 +2660,7 @@
 
       double precision,dimension(nvarxevt)::bevt,Xevt
       double precision,dimension(ns,ng)::risq2
-      double precision,dimension(1)::bevtint
+      double precision::bevtint
       double precision,dimension(nprisq)::brisq
       double precision,dimension(ns,ng)::risq,surv,surv0, &
       survint
@@ -3267,22 +2707,38 @@
       do g=1,ng
 
          brisq=0.d0
-         if (evt.ne.0) then
-            do k=1,nprisq
+         if (logspecif.eq.1.or.typrisq.eq.2) then
                if (risqcom.eq.0) then
+                do k=1,nprisq
+                   brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
+                end do
+		 elseif (risqcom.eq.1) then
+            do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+k))
+               end do
+               else if (risqcom.eq.2) then
+            do k=1,nprisq
+                  brisq(k)=exp(b1(nprob+k))
+               end do
+            end if
+            else
+
+               if (risqcom.eq.0) then
+                do k=1,nprisq
                   brisq(k)=b1(nprob+nprisq*(g-1)+k)  &
                       *b1(nprob+nprisq*(g-1)+k)
-               end if
-               if (risqcom.eq.1) then
+                end do
+		 elseif (risqcom.eq.1) then
+            do k=1,nprisq
                   brisq(k)=b1(nprob+k)  &
                       *b1(nprob+k)
-               end if
-
-               if (risqcom.eq.2) then
+               end do
+               else if (risqcom.eq.2) then
+            do k=1,nprisq
                   brisq(k)=b1(nprob+k)  &
                       *b1(nprob+k)
-               end if
-            end do
+               end do                  
+            end if
          end if
 
          call fct_risq(brisq,g,risq,surv,surv0,survint)
@@ -3362,7 +2818,7 @@
             end do
          end do
 
-         CALL DSINVj(Vi,nmes(i),eps,ier,det)
+         CALL DSINV(Vi,nmes(i),eps,ier,det)
          if (ier.eq.-1) then
             ppi=-1.d0
             go to 147
@@ -3382,7 +2838,6 @@
        end if
 
        Xevt=0.d0
-       if (evt.ne.0) then
           l=0
           do k=1,nv
              if (idxevt(k).eq.1.or.idxevt(k).eq.2) then
@@ -3390,7 +2845,6 @@
                 Xevt(l)=X(it+1,k)
              end if
           end do
-       end if
 
 ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
        if (prior(i).ne.0) then
@@ -3468,7 +2922,6 @@
 ! bevt
           bevt=0.d0
           bevtint=0.d0
-          if (evt.ne.0) then
              m=0
              l=1
              do k=1,nv
@@ -3484,9 +2937,8 @@
                 end if
              end do
              if (nvdepsurv.ne.0) then
-                bevtint(1)=b1(nprob+nrisq+nvarxevt)
+                bevtint=b1(nprob+nrisq+nvarxevt)
              end if
-          end if
 
 !    variance covariance si spec aux classes :
 
@@ -3515,7 +2967,7 @@
                 end do
              end do
 
-             CALL DSINVj(Vi,nmes(i),eps,ier,det)
+             CALL DSINV(Vi,nmes(i),eps,ier,det)
              if (ier.eq.-1) then
                 PPI=-1.d0
                 goto 147
@@ -3563,7 +3015,7 @@
 !--------- calcul de fevt --------------
           risq2(i,g)=risq(i,g)
           if (ind_survint(i).eq.1) then
-             risq2(i,g)=risq(i,g)*exp(bevtint(1))
+             risq2(i,g)=risq(i,g)*exp(bevtint)
           end if
           fevt=log(risq2(i,g))+DOT_PRODUCT(bevt,Xevt)
 
@@ -3573,17 +3025,15 @@
           fi(g)=fi(g)/(2.d0)
           fi1(g)=exp(fi(g))
 
-	  if (evt.eq.1) then
                fi(g)=fi(g)+Devt(i)*fevt-exp(DOT_PRODUCT(Xevt,bevt))* &
-                         (survint(i,g)+exp(bevtint(1))*(surv(i,g)    &
+                         (survint(i,g)+exp(bevtint)*(surv(i,g)    &
                          -survint(i,g)))
-	  end if
 	  fi(g)=exp(fi(g))
 
 ! statr du score et var pour sujet i :test global
 
           risqcum=exp(DOT_PRODUCT(Xevt,bevt))*               &
-                 (survint(i,g)+exp(bevtint(1))*(surv(i,g)   &
+                 (survint(i,g)+exp(bevtint)*(surv(i,g)   &
                  -survint(i,g)))
 
 !          write(*,*)i,'ebb',((Ebb(j,k),j=1,nea),k=1,nea)
@@ -3607,7 +3057,7 @@
 !            do j=1,nea
 !               write(*,*)'bb',BB(j,:)
 !            end do
-!            write(*,*)'coef',coef       
+!            write(*,*)'coef',coef
 !            write(*,*)'bb avec coef'
 !            do j=1,nea
 !               write(*,*)retard(j,:)
@@ -3655,7 +3105,7 @@
          varscore=varscore+totretard
       end if
 
-      
+
 ! Calcul de la variance empirique du score (cf Freedman Am Stat 2007)
 
        varscore2=0.D0
@@ -3667,13 +3117,13 @@
           END DO
           varscore2(j,k)=varscore2(j,k)- Statscore(j)  &
      *Statscore(k)/dble(ns)
-        END DO 
-       END DO      
+        END DO
+       END DO
 
 
        vars=0.d0
        vars2=0.d0
-       
+
       jj=0
       do j=1,nea
          do k=j,nea
@@ -3683,13 +3133,13 @@
          end do
       end do
 
-!      CALL DSINVj(vars,nea,eps,ier,det)
+!      CALL DSINV(vars,nea,eps,ier,det)
 !      if (ier.eq.-1) then
 !         write(*,*)'dsinv varscore ier',ier,'det',det
 !         write(*,*)'VarsCore', (Vars(j),j=1,nea*(nea+1)/2)
 !      endif
 
-      CALL DSINVj(vars2,nea,eps,ier,det) 
+      CALL DSINV(vars2,nea,eps,ier,det)
       if (ier.eq.-1) then
 !         write(*,*)'dsinv varscore2 ier',ier,'det',det
 !         write(*,*)'VarsCore2', (Vars2(j),j=1,nea*(nea+1)/2)
@@ -3698,7 +3148,7 @@
       else
          vars=vars2
       end if
-      
+
       statsc=0.D0
 
       DO j=1,nea
@@ -3748,7 +3198,7 @@
 
 
 !-------------------------------------------------------------------
-! 
+!
 !!  FCT_RISQ ESTIME
 !
 !-------------------------------------------------------------------
@@ -3757,8 +3207,9 @@
 
 
       subroutine fct_risq_estime(brisq,time,nsim,g,risq,surv)
-
-      use communJ
+	use commun_joint
+	use commun_modele_joint
+ !     use communJ
 
       implicit none
 ! risq contient le risque instantane d'evenement
@@ -3775,11 +3226,11 @@
       l=0
       do i=1,nsim
          if (typrisq.eq.2) then
-            surv(nsim*(g-1)+i)=((time(i))*brisq(1))**brisq(2)
-            risq(nsim*(g-1)+i)=(brisq(1)**brisq(2))*brisq(2) &
+            surv(nsim*(g-1)+i)=brisq(1)*(time(i))**brisq(2)
+            risq(nsim*(g-1)+i)=brisq(1)*brisq(2) &
                  *(time(i))**(brisq(2)-1)
          end if
-         
+
          if (typrisq.eq.1) then
             do j=1,nz-1
                som=0.d0
@@ -3792,7 +3243,7 @@
                end if
             end do
          end if
-         
+
          if (typrisq.eq.3) then
             !------------ survie et risq pour Tsurv ----------------
             ll=0
@@ -3811,17 +3262,17 @@
                   som=som+brisq(ii)
                end do
             end if
-            
+
             surv(nsim*(g-1)+i)=som+brisq(ll)*Tim3_est(i)+brisq(ll+1)*Tim2_est(i) &
-                 +brisq(ll+2)*Tim1_est(i)+brisq(ll+3)*Tim_est(i)                    
+                 +brisq(ll+2)*Tim1_est(i)+brisq(ll+3)*Tim_est(i)
             risq(nsim*(g-1)+i)=brisq(ll)*Tmm3_est(i)+brisq(ll+1)*Tmm2_est(i)     &
                  +brisq(ll+2)*Tmm1_est(i)+brisq(ll+3)*Tmm_est(i)
-            
+
          end if
       end do
-      
-      
-      
+
+
+
     end subroutine fct_risq_estime
 
 
@@ -3831,7 +3282,7 @@
 
 
 !-------------------------------------------------------------------
-! 
+!
 !!  SPLINES ESTIMES
 !
 !-------------------------------------------------------------------
@@ -3842,7 +3293,8 @@
 
 
       subroutine splines_estime(time,nsim)
-     	use communJ
+	use commun_joint
+	use commun_modele_joint
       	implicit none
 
 	integer::i,k,n,l
@@ -3853,7 +3305,6 @@
 
 
         Tmm_est=0.d0
-
         Tmm1_est=0.d0
         Tmm2_est=0.d0
         Tmm3_est=0.d0
@@ -3864,7 +3315,7 @@
 
         l=0
 
-        
+
         zi(-2)=zi(1)
         zi(-1)=zi(1)
         zi(0)=zi(1)

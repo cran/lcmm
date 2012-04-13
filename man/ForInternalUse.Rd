@@ -1,5 +1,6 @@
 \name{ForInternalUse}
 \alias{mixture}
+\alias{factor.names}
 \alias{.Ordlcmm}
 \alias{.Contlcmm}
 

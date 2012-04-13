@@ -7,6 +7,7 @@ cat("Heterogenous linear mixed model", "\n")
 cat("     fitted by maximum likelihood method", "\n")
 
 cl <- x$call
+cl$B <- NULL
 cat(" \n")
 dput(cl)
 cat(" \n")
@@ -20,10 +21,10 @@ cat(paste("     Number of parameters:", length(x$best))," \n")
 cat(" \n")
 cat("Iteration process:", "\n")
 
-if(x$conv==1) cat("Convergence criteria satisfied")
-if(x$conv==2) cat("Maximum number of iteration reached without convergence")
+if(x$conv==1) cat("     Convergence criteria satisfied")
+if(x$conv==2) cat("     Maximum number of iteration reached without convergence")
 if(x$conv==4|x$conv==12) {
-cat("The program stopped abnormally. No results can be displayed.\n")
+cat("     The program stopped abnormally. No results can be displayed.\n")
 }else{
 
 cat(" \n")
@@ -72,7 +73,7 @@ if(NPROB>0){
 cat("Fixed effects in the class-membership model:\n" )
 cat("(the class of reference is the last class) \n")
 
-tmp <- cbind(coef[1:NPROB],se[1:NPROB],wald[1:NPROB],pwald[1:NPROB])
+tmp <- cbind(round(coef[1:NPROB],5),round(se[1:NPROB],5),round(wald[1:NPROB],3),round(pwald[1:NPROB],5))
 dimnames(tmp) <- list(names(coef)[1:NPROB], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp)
@@ -83,7 +84,7 @@ cat("\n")
 
 cat("Fixed effects in the longitudinal model:\n" )
 
-tmp <- cbind(coef[(NPROB+1):(NPROB+NEF)],se[(NPROB+1):(NPROB+NEF)],wald[(NPROB+1):(NPROB+NEF)],pwald[(NPROB+1):(NPROB+NEF)])
+tmp <- cbind(round(coef[(NPROB+1):(NPROB+NEF)],5),round(se[(NPROB+1):(NPROB+NEF)],5),round(wald[(NPROB+1):(NPROB+NEF)],3),round(pwald[(NPROB+1):(NPROB+NEF)],5))
 dimnames(tmp) <- list(names(coef)[(NPROB+1):(NPROB+NEF)], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp)
@@ -125,8 +126,8 @@ cat("\n")
 std <- cbind(coef[NPM],se[NPM])
 colnames(std) <-c("coef","se") 
 rownames(std) <-"Residual standard error:"
-if(NW>=1) {
-nom <- paste("Proportional variance coefficient",c(1:(x$ng-1)))
+if((NW>=1)&(x$ng>1)) {
+nom <- paste("Proportional coefficient class",c(1:(x$ng-1)),sep="")
 std <-cbind(coef[(NPROB+NEF+NVC+1):NPM],se[(NPROB+NEF+NVC+1):NPM]) 
 rownames(std) <- c(nom,"Residual standard error")
 colnames(std) <-c("coef","se") 
