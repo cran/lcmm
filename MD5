@@ -1,4 +1,4 @@
-06035b692c87e37da16f434e3ae9c95f *DESCRIPTION
+d61ff769cdde6f530705ffdbaeb2fc3c *DESCRIPTION
 42b66d80ba3244a2650661e881ebee0c *NAMESPACE
 b1a3ae69fed90a3fb1f822acd5d5240f *NEWS
 96322d894c65ce7ba28c028595ad9377 *R/Contlcmm.R
@@ -48,7 +48,7 @@ f2192e9a94e42c2dd828aa66923c538a *man/data_Jointlcmm.Rd
 4fccfaebf36ba226e3e5f8d3a2e181c6 *man/data_hlme.Rd
 06b91f3d40f006e0c9c921fbac95dd37 *man/epoce.Rd
 66b181f3093280ed6e814d16b9bc5da3 *man/hlme.Rd
-d0c474d25f3badc564bc52c80010f510 *man/lcmm-package.Rd
+5703b7bf84fccc7d54856eaf5c2926b5 *man/lcmm-package.Rd
 80a740923414da59715a31ed15a6355d *man/lcmm.Rd
 df8cfaf7cd3c4a83e4341f440cf14aff *man/plot.baselinerisk.Rd
 3ddf29c0b65b3e0acb2e9643b989a744 *man/plot.epoce.Rd
@@ -62,6 +62,8 @@ dad1405ac16b16326555abde4dcfd9c1 *man/postprob.Rd
 0c368b20c97a21b35d7e9d5e5501b619 *man/summary.lcmm.Rd
 c73c050c7f4e6226cb8e9be8bb2eaef3 *src/AOptim.f90
 65a2297bfa64daa7e4d5ed4c25850b38 *src/Jointhet.f90
+f5227c501b57082a0166372eb816aba5 *src/Makevars.in
+74fab28769a987a2230fd6cd5213ed79 *src/Makevars.win
 c559db9e2dcef9310700180b2b6d6b32 *src/cvpl.f90
 2ff2710c8b60d9e59c00b9d00d33de80 *src/hetmixCont.f90
 63fed48993db2a87ed6e764be5a6643c *src/hetmixOrd.f90
