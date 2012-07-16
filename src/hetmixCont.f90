@@ -1623,7 +1623,6 @@
 
 
 
-
 ! en prevision de l'extension au conjoint
       nrisq=0
       nvarxevt=0
@@ -1643,10 +1642,10 @@
 
       minY=zitr0(1)
       maxY=zitr0(nbzitr0)
-      
+
       rangeY=0
       if (Ydiscret.eq.1) rangeY=maxY-minY
-      
+
 
       epsY=epsY0
       idlink=idlink0
@@ -1720,7 +1719,13 @@
                X(it,k)=X0(ktemp)
             end do
          end do
+         
+!         write(*,*)'X k:',X(1:50,k)
       end do
+
+
+
+
 
 ! creation des parametres
 
@@ -1758,6 +1763,12 @@
 
       nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1
       npm=nef+nvc+nwg+ntrtot
+
+
+
+!       write(*,*)'idlink',idlink
+!       write(*,*)'idea',idea
+!       write(*,*)'NVC',nvc
 
 
 
@@ -1862,7 +1873,7 @@
 !               end do
 !            end do
 
-            if (Ydiscret.eq.1) then 
+            if (Ydiscret.eq.1) then
                id=0
                thi=0.d0
                call vrais_discret(b,npm,id,thi,id,thi,vraisdiscret)
@@ -1871,7 +1882,9 @@
 !               call vrais_cont(b,npm,id,thi,id,thi,vraisdiscret)
 !               write(*,*)'vrais_cont',vraisdiscret
 
+!               write(*,*)'avant UACV'
                call computUACV(b,npm,rlindiv,vopt,UACV)
+!               write(*,*)'arpes UACV'
             end if
 
          end if
@@ -1885,9 +1898,13 @@
 
       deallocate(Y,X,idprob,idea,idg,nmes,prior)
 
-      
+
       deallocate(zitr,mm,mm1,mm2,im,im1,im2)
 
+
+
+
+!      write(*,*)'fin'
       return
       end subroutine hetmixCont
 
@@ -2603,6 +2620,8 @@
 !     calcul de la vraisemblance par composante
        f=0.d0
        fi=0.d0
+            b2=0.d0
+            b0=0.d0
        do g=1,ng
           nmoins=0
           l2=0
@@ -2881,7 +2900,7 @@
                do k=1,nea
                     pred_RE((i-1)*nea+k)=9999.d0
                 end do
-               goto 654            
+               goto 654
                end if
                if (ll.gt.1) then
                   do ii=2,ll
@@ -2892,7 +2911,7 @@
                Y1(j)=bb+som +splaa(ll-2)*im2(nmestot) &
                  +splaa(ll-1)*im1(nmestot)+splaa(ll)*im(nmestot)
 
-               Yobs(nmes_cur+j)=Y1(j)   
+               Yobs(nmes_cur+j)=Y1(j)
 
 
             end do
@@ -3223,7 +3242,7 @@
       use communc
 
       implicit none
-      
+
       integer ::j,i,jj,l,k,ier
       double precision ::ht,htm,ht2,ht3,h,hh,h2,h3,h2n,hn,hht
 
@@ -3301,15 +3320,15 @@
       double precision Function beta_densite(X,a,b)
 
       implicit none
-      
+
       double precision :: beta,a,b,gammln,X
- 
+
       beta=exp(gammln(a+b)-gammln(a)-gammln(b))
-      
+
       beta_densite=((X)**(a-1))*((1-X)**(b-1))*beta
 
       return
-      
+
       end Function beta_densite
 
 
@@ -3318,12 +3337,12 @@
       double precision Function gammln(xx)
 
 ! retourne la valeur ln(gamma(xx)) pour xx>0
-      implicit none 
-      
+      implicit none
+
       integer::j
       double precision:: ser,stp,tmp,x,y,xx
       double precision,dimension(6)::cof
-      
+
       save cof,stp
 
       data cof,stp/76.18009172947146d0,-86.50532032941677d0, &
@@ -3342,7 +3361,7 @@
       gammln=tmp+log(stp*ser/x)
 
       return
-      
+
       end Function gammln
 
 
@@ -3358,9 +3377,9 @@
       double precision Function betai(a,b,x)
 
       implicit none
-      
+
       double precision :: a,b,x,bt,betaCF,gammln,temp
-      
+
       if(x.lt.0.d0.or.x.gt.1.d0) then
             betai=999.d0
             return
@@ -3388,7 +3407,7 @@
          betai=1.-bt*temp/b
          return
       end if
-      
+
       end Function betai
 
 ! betaCF est utilisï¿½ par betai
@@ -3396,13 +3415,13 @@
       double precision Function betaCF(a,b,x)
 
       implicit none
-      
+
       integer ::m,m2
       integer,parameter ::maxit=100
       double precision ::a,b,x,aa,c,d,del,h,qab,qam,qap
       double precision,parameter::eps=3.e-7,fpmin=1.e-30
 
-      
+
       qab=a+b
       qap=a+1
       qam=a-1
@@ -3452,9 +3471,9 @@
       subroutine transfo_estimee(b,npm,nsim,marker,transfY)
 
       use communc
-      
+
       implicit none
-      
+
       double precision,dimension(nsim)::marker,transfY
       double precision,dimension(ntrtot)::splaa
       double precision::aa1,bb1,dd1,aa,bb,betai,eps,pas,ytemp,cc1
@@ -3552,9 +3571,9 @@
         subroutine estim_splines_ssstd(nsim,aa,test,transf)
 
        use communc
-       
+
        implicit none
-       
+
        integer::nsim,j,k,l
        double precision,dimension(nsim)::mmm,mmm1,mmm2 &
       ,iim,iim1,iim2,transf,test
@@ -3669,26 +3688,26 @@
 
 
       subroutine vrais_cont(b,m,id,thi,jd,thj,vraiscont)
-	
+
 
         use communc,only:ns,nmes
         use donnees_indivc,only:nmescur
-	
+
         implicit none
-	
+
         integer::m,i,id,jd
         double precision::thi,thj,vrais_cont_i,vraiscont
         double precision,dimension(m)::b
-        
+
         vraiscont=0.d0
         nmescur=0
         do i=1,ns
            vraiscont = vraiscont + vrais_cont_i(b,m,id,thi,jd,thj,i)
            nmescur = nmescur + nmes(i)
         end do
-        
+
         return
-        
+
       end subroutine vrais_cont
 
 
@@ -3700,32 +3719,32 @@
 
 
       subroutine vrais_discret(b,m,id,thi,jd,thj,vraisdiscret)
-	
+
 
         use communc,only:ns,nmes
         use donnees_indivc,only:nmescur
-	
+
         implicit none
-	
+
         integer::m,i,id,jd
         double precision::thi,thj,vrais_discret_i,vraisdiscret
         double precision,dimension(m)::b
-        
+
         vraisdiscret=0.d0
         nmescur=0
         do i=1,ns
            vraisdiscret = vraisdiscret + vrais_discret_i(b,m,id,thi,jd,thj,i)
            nmescur = nmescur + nmes(i)
         end do
-        
+
         return
-         
+
       end subroutine vrais_discret
 
 
 
       double precision function vrais_discret_i(b,npm,id,thi,jd,thj,i)
-        
+
         use communc
         use optim
         use donnees_indivc
@@ -3747,24 +3766,24 @@
         double precision,dimension(rangeY) :: valY
         double precision,dimension(rangeY,3) :: imseuil
         double precision,dimension(-1:ntrtot-3)::splaa
-        
-        
+
+
         allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),seuils(rangeY))
-        
+
         b1=0.d0
         do k=1,npm
            b1(k)=b(k)
         end do
- 
+
       if (id.ne.0) b1(id)=b1(id)+thi
       if (jd.ne.0) b1(jd)=b1(jd)+thj
-        
+
 
 !        write(*,*)'b1',b1
-        
+
         ! ============ creation des seuils pour le calcul de vrais
-        
-        
+
+
         seuils=0.d0
         if (idlink.eq.0) then  ! Linear link
            do k=1,rangeY
@@ -3772,42 +3791,42 @@
               ytemp1=(minY+k-1-b1(nef+nvc+nwg+1))/abs(b1(nef+nvc+nwg+2))
               seuils(k)=(ytemp+ytemp1)/2
            end do
-           
+
         else if (idlink.eq.1) then  ! Beta link
-           
+
            aa1=exp(b1(nef+nvc+nwg+1))/ &
                 (1+exp(b1(nef+nvc+nwg+1)))
            bb1=exp(b1(nef+nvc+nwg+2))/ &
                 (1+exp(b1(nef+nvc+nwg+2)))
            bb1=aa1*(1.d0-aa1)*bb1
-           
+
            cc1=abs(b1(nef+nvc+nwg+3))
-           
+
            dd1=abs(b1(npm))
-           
+
            aa=aa1*aa1*(1-aa1)/bb1-aa1
            bb=aa*(1-aa1)/aa1
-           
+
            do k=1,rangeY
-!      creation des seuils 
+!      creation des seuils
 ! soit milieu echelle Lambda + ATTENTION CHANGEMENT TAILLE VALY
 !              ytemp=(minY+k-minY+epsY)/(maxY-minY+2*epsY)
 !              ytemp1=(minY+k-1-minY+epsY)/(maxY-minY+2*epsY)
-!              seuils(k)=(betai(aa,bb,ytemp1)+betai(aa,bb,ytemp)-2*cc1)/dble(2*dd1)     
+!              seuils(k)=(betai(aa,bb,ytemp1)+betai(aa,bb,ytemp)-2*cc1)/dble(2*dd1)
 
 ! soit milieu echelle Y
               ytemp=dble(minY+k-5.d-1-minY+epsY)/dble(maxY-minY+2*epsY)
-              seuils(k)=(betai(aa,bb,ytemp)-cc1)/dble(dd1)     
+              seuils(k)=(betai(aa,bb,ytemp)-cc1)/dble(dd1)
            end do
-           
+
         else if (idlink.eq.2) then ! Splines link
-           
+
           bb=b1(nef+nvc+nwg+1)
           splaa=0.d0
           do kk=2,ntrtot
              splaa(kk-3)=b1(nef+nvc+nwg+kk)*b1(nef+nvc+nwg+kk)
-          end do         
-          
+          end do
+
 
           valY=minY
           imseuil=0.d0
@@ -3821,8 +3840,8 @@
          ! creation des seuils : soit ValY au milieu +0.5
           nspl=rangeY
           do k=1,rangeY
-             valY(k)=k-5.d-1
-          end do          
+             valY(k)=minY+k-5.d-1
+          end do
 
           call splines_seuils(nspl,valY,imseuil,ier)
           if(ier.eq.-1) then
@@ -3833,7 +3852,7 @@
 
           Do k=1,rangeY
 
-!      creation des seuils 
+!      creation des seuils
 ! Si milieu de Lambda : changer def de Val(Y) au dessus + de commentariser la deuxième partie
 ! soit milieu echelle Y, alors mettre  "valY(k)=k-5.d-1" et garder que la première partie ci-dessous
              ll=0
@@ -3859,10 +3878,10 @@
              end if
              seuils(k)=bb+ som +splaa(ll-2)*imseuil(k,3)  &
                   +splaa(ll-1)*imseuil(k,2)+splaa(ll)*imseuil(k,1)
-       
+
 ! Que si milieu intervalle echelle Lambda
 !             ! puis h(k+1)
-!             
+!
 !             ll=0
 !             if (ValY(k+1).eq.zitr(ntrtot-2)) then
 !                ll=ntrtot-3
@@ -3880,18 +3899,18 @@
 !                do ii=2,ll
 !                   som=som+splaa(ii-3)
 !                end do
-!             end if             
-!             
+!             end if
+!
 !             seuils(k)=seuils(k)+ bb+ som +splaa(ll-2)*imseuil(k+1,3)  &
 !                  +splaa(ll-1)*imseuil(k+1,2)+splaa(ll)*imseuil(k+1,1)
-!            
+!
 !             seuils(k)=seuils(k)/2.d0
- 
+
 
           end do
-      
 
-!      if (i.eq.1) then 
+
+!      if (i.eq.1) then
 !         do k=1,nspl
 !            write(*,*)'imseuil',(imseuil(k,l),l=1,3)
 !         end do
@@ -3934,7 +3953,7 @@
 ! ----------- boucle sur les individus -------------
       vraisdiscret=0.d0
       numpat=i
-      
+
       ! -------- creation de Vi = ZiGZi'+se*seIni ----------
 ! creation de Zi
 
@@ -3948,12 +3967,12 @@
             end do
          end if
       end do
-      
+
       ! cas 1 : ng=1
-      
+
       if (ng.eq.1) then
-         
-         
+
+
          b0=0.d0
          l=0
          X00=0.d0
@@ -3971,41 +3990,41 @@
                end if
             end if
          end do
-         
-         
+
+
          mu=0.d0
-         mu=matmul(X00,b0)	
+         mu=matmul(X00,b0)
 
 !         write(*,*)'mu',mu
-         
-         if (nea.gt.0) then 
-            temp=vraisobsc()	
+
+         if (nea.gt.0) then
+            temp=vraisobsc()
          else
             Xea=0.d0
             call vraistotc(nea,Xea,nf,temp)
          end if
-         
-         
+
+
          if(temp.lt.1.d-300) then
 !            write(*,*)'temp a 1.d-300',i
             temp=1.d-300
          end if
-         
+
          vraisdiscret=vraisdiscret+log(temp)
-         
-         
-         !            if(thi.eq.0.and.thj.eq.0) then 
+
+
+         !            if(thi.eq.0.and.thj.eq.0) then
          !               write(*,*)'i',i,temp,log(temp),vrais
          !            end if
-         
+
          ! cas 2 :  ng>1  composantes
       else
-         
+
          if (prior(i).ne.0) then
             pi=0.d0
             pi(prior(i))=1.d0
          else
-            
+
             ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
             Xprob=0.d0
             Xprob(1)=1
@@ -4023,21 +4042,21 @@
                do k=1,nvarprob
                   bprob(k)=b1((k-1)*(ng-1)+g)
                end do
-               
+
                temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
-               
+
                pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
-               
+
             end do
-            
+
             pi(ng)=1/(1+temp)
-            
+
             do g=1,ng-1
                pi(g)=pi(g)*pi(ng)
             end do
-            
+
          end if
-         
+
          ! creation des vecteurs de variables explicatives
          l=0
          m=0
@@ -4056,7 +4075,7 @@
                end do
             end if
          end do
-         
+
          b2=0.d0
          b0=0.d0
          expo=0.d0
@@ -4094,8 +4113,8 @@
                   end if
                end if
             end do
-            
-            
+
+
             !               if (thi.eq.0.and.thj.eq.0) then
             !                if (i.eq.1) then
             !                    write(*,*)'g',g,b2
@@ -4103,48 +4122,48 @@
             !                    stop
             !                    end if
             !                    end if
-            
-            
+
+
             ! variance covariance si spec aux classes :
-            
+
             Ut1=Ut
             if (nwg.ne.0.and.g.ne.ng) then
                Ut1=Ut*abs(b1(nef+nvc+g))
             end if
-            
+
             mu=0.d0
             mu=matmul(X00,b0)+matmul(X2,b2)
-            
-            if (nea.gt.0) then 
-               temp=vraisobsc()	
+
+            if (nea.gt.0) then
+               temp=vraisobsc()
             else
                Xea=0.d0
                call vraistotc(nea,Xea,nf,temp)
             end if
-            
+
             if (temp.lt.1.d-300) then
-               
+
 !               write(*,*)'temp a 1.d-300',i
                temp=1.d-300
             end if
             expo = expo+pi(g)*temp
-            
-            
+
+
          end do
          vraisdiscret=vraisdiscret+log(expo)
-         
+
       end if
       ! FIN BOUCLE SUJET
-      
+
  2587 continue
       deallocate(Ut1,mu,Z,seuils)
-      !            if(thi.eq.0.and.thj.eq.0) then 
+      !            if(thi.eq.0.and.thj.eq.0) then
       !               write(*,*)'funcpao',funcpao
       !            end if
-      
+
       vrais_discret_i=vraisdiscret
       return
-      
+
     end function vrais_discret_i
 
 
@@ -4179,13 +4198,13 @@
          do k = 2,ntrtot-2
             if ((ValY(i).ge.zitr(k-1)).and.(ValY(i).lt.zitr(k)))then
                l=k-1
-            endif            
-         end do         
-         
+            endif
+         end do
+
          if (ValY(i).eq.zitr(ntrtot-2)) then
             l=ntrtot-3
          end if
-         
+
          ht2 = zitr(l+1)-ValY(i)
          htm= ValY(i)-zitr(l-1)
          ht = ValY(i)-zitr(l)
@@ -4197,29 +4216,29 @@
          h2n=zitr(l+2)-zitr(l-1)
          h2= zitr(l+2)-zitr(l)
          h3= zitr(l+3)-zitr(l)
-         
+
          if (ValY(i).ne.zitr(ntrtot-2)) then
             mmseuil(3) = (3.d0*ht2*ht2)/(hh*h*hn)
             mmseuil(2) = (3.d0*htm*ht2)/(h2n*hh*h)+(3.d0*ht*ht3)/(h2*h*h2n)
-            mmseuil(1)  = (3.d0*ht*ht)/(h3*h2*h)            
+            mmseuil(1)  = (3.d0*ht*ht)/(h3*h2*h)
          end if
          if (ValY(i).eq.zitr(ntrtot-2)) then
             mmseuil(3) = 0.d0
             mmseuil(2) = 0.d0
             mmseuil(1)  = 3.d0/h
          end if
-         
+
          if (mmseuil(3).lt.0.or.mmseuil(2).lt.0.or.mmseuil(1).lt.0)then
             ier=-1
 !            write(*,*)'mmseuil',mmseuil(3),mmseuil(2),mmseuil(1)
             goto 765
          end if
-         
+
          imseuil(i,3)=hht*mmseuil(3)/(3.d0)+ h2n*mmseuil(2)/(3.d0) &
               +h3*mmseuil(1)/(3.d0)
          imseuil(i,2)=htm*mmseuil(2)/(3.d0)+h3*mmseuil(1)/(3.d0)
          imseuil(i,1)=ht*mmseuil(1)/(3.d0)
-         
+
       end do
 765     continue
 
@@ -4286,25 +4305,25 @@
               npg=30
               ! on definit les points
               call gaussher(gauss,npg)
-              
+
               ! boucle pour faire l'integration multiple
               do j=1,npg
                  Xea(1)=gauss(1,j)
                  call vraistotc(nea,Xea,nf2,funvls)
                  result(1)=result(1)+funvls*gauss(2,j)
               end do
-              
+
               if (result(1).le. 1.d-300) then
                  result(1)=1.d-300
               end if
-              
+
               vraisobsc=result(1)
               return
-           
+
         end if
 
 
-           
+
 
       end function vraisobsc
 
@@ -4339,22 +4358,22 @@
       nf2=nf2
 
 
-      
+
 
       mu1=0.d0
       ui=0.d0
-      if (NDIM2.ge.1) then 
+      if (NDIM2.ge.1) then
          ui=MATMUL(Ut1,Xea)
          mu1=mu+MATMUL(Z,ui)
-      else		
-         mu1=mu		 
+      else
+         mu1=mu
       end if
 
-!      if (i.lt.3) then 
+!      if (i.lt.3) then
 !    write(*,*)'seuils',seuils
 !         write(*,*)'mu1',mu1
 !         write(*,*)'mu',mu
-!         write(*,*)'Xea',Xea         
+!         write(*,*)'Xea',Xea
 !      end if
 
 
@@ -4395,8 +4414,8 @@
          end if
 
       end do
-      
-!      if (i.lt.3) then 
+
+!      if (i.lt.3) then
 !         write(*,*)'vraistotc',vraisind
 !      end if
 
@@ -4408,7 +4427,7 @@
 
 
 !===========================================================
-!      DERIV pour UACV 
+!      DERIV pour UACV
 !===========================================================
 
 
@@ -4418,9 +4437,9 @@
 ! par Fisher scoring empirique
         use communc
         use donnees_indivc,only:nmescur
-        
+
 	IMPLICIT NONE
-	
+
 	double precision::vrais_discret_i,vrais_cont_i, &
              rldiscret,UACV,trace,th0,thn,th,rlcont
 	double precision,dimension(m,1)::Uscore, Uscore2
@@ -4429,7 +4448,7 @@
 	double precision,dimension(m,m)::J_cond,H_1,MAT
         double precision,dimension(ns)::rlindiv
 	integer::m,i,k,id,j
-	
+
 	J_cond=0.d0
 	th0=0.d0
 	rlindiv=0.d0
@@ -4437,16 +4456,16 @@
 
 
 
-        
+
 
 
 ! Calcul des gradients par sujets et totaux
-	nmescur=0   
+	nmescur=0
         rldiscret=0.d0
 	rlcont=0.d0
 	DO i=1,ns
            Uscore=0.d0
-           Uscore2=0.d0	
+           Uscore2=0.d0
            rlindiv(i)=vrais_discret_i(b,m,id,th0,id,th0,i)
            rldiscret=rldiscret+rlindiv(i)
            rlcont=rlcont+vrais_cont_i(b,m,id,th0,id,th0,i)
@@ -4473,7 +4492,7 @@
               H_1(k,j) = vopt(j+k*(k-1)/2)
            end do
 	end do
-           
+
         MAT=MATMUL(H_1,J_cond)
         trace=0.d0
         do k=1,m
@@ -4482,7 +4501,7 @@
 
         rldiscret=rldiscret/dble(ns)
         UACV=-rldiscret+trace/dble(ns-1)
-        
+
 !        write(*,*)'rldiscret',rldiscret,trace
 !        write(*,*)'rlcont',ns,rlcont
 

@@ -12,7 +12,8 @@ This function fits joint latent class mixed models for a longitudinal outcome an
 Jointlcmm(fixed, mixture, random, subject, classmb, ng=1, idiag=FALSE,
  nwg=FALSE, survival,hazard="Weibull",hazardtype="Specific", 
 hazardnodes=NULL,TimeDepVar=NULL,data, B, convB=1e-4, convL=1e-4, 
-convG=1e-4, maxiter=150, nsim=100, prior,logscale=FALSE)
+convG=1e-4, maxiter=150, nsim=100, prior,logscale=FALSE, 
+subset=NULL, na.action=1)
 }
 
 
@@ -83,6 +84,10 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
  \item{data}{
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
 }
+  \item{subset}{
+a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
+ \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
 
 

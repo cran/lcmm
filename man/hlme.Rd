@@ -14,7 +14,7 @@ This model is limited to a Gaussian outcome.
 \usage{
 hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
  nwg = FALSE, data, B,convB=0.0001,convL=0.0001,convG=0.0001,prior,
- maxiter=500)
+ maxiter=500, subset=NULL, na.action=1)
 }
 
 
@@ -66,6 +66,10 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
 }
 \item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=300.}
+  \item{subset}{
+a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
+  \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
 
 
@@ -115,7 +119,6 @@ The list returned is:
 \item{niter}{number of Marquardt iterations}
 \item{dataset}{dataset}
 \item{N}{internal information used in related functions}
-\item{name.mat.cov}{internal information used in related functions}
 \item{idiag}{internal information used in related functions}
 \item{pred}{table of individual predictions and residuals; it includes marginal predictions (pred_m), marginal residuals (resid_m), subject-specific predictions (pred_ss) and subject-specific residuals 
 (resid_ss) averaged over classes, the observation (obs) and finally the class-specific marginal and subject-specific predictions 

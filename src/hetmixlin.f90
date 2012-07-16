@@ -891,6 +891,8 @@
 !     calcul de la vraisemblance par composante
        f=0.d0
        fi=0.d0
+            b2=0.d0
+            b0=0.d0
        do g=1,ng
           nmoins=0
           l2=0

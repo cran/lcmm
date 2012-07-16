@@ -1,6 +1,6 @@
 
 
-plot.predict.hlme <- function(x,newdata,var.time,legend.loc="topright",ylim=NULL,...){
+plot.predict.hlme <- function(x,newdata,var.time,legend.loc="topright",ylim=NULL,na.action=1,...){
 
 if(missing(var.time)) stop("The argument var.time should be specified")
 if(missing(newdata)) stop("The argument newdata should be specified")
@@ -21,7 +21,6 @@ dev.new()
 
 
 newdata<-newdata[sort.list(newdata[,var.time]),] 
-X <- newdata[,var.time]
 
 #------------> changement Cecile 10/04/2012
 ## add 12/04/2012
@@ -42,83 +41,117 @@ X2 <- NULL
 b1 <- NULL
 b2 <- NULL
 
+if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
 
-### add 11/04/2012
-ff <- x$call
-ff$fixed <- ff$mixture <- ff$random<- ff$subject<- ff$classmb<- ff$ng<- ff$idiag<-
-ff$nwg<- ff$B<- ff$convB<- ff$convL<- ff$convG<- ff$prior<- ff$maxiter<-NULL
-
-
-## fixed
-fit <- ff
-temp <- formula(x$call$fixed)
-fit$formula <- formula(paste("~",temp[3],sep=""))
-fit$data <- newdata1
-fit[[1]] <- as.name("model.frame")
-fit <- eval(fit, sys.parent()) 
-X_fixed <- if (!is.empty.model(attr(fit, "terms")))model.matrix(attr(fit, "terms"), fit, contrasts)
-if(colnames(X_fixed)[1]=="(Intercept)"){
-	colnames(X_fixed)[1] <- "intercept"
+if(na.action==1){
+	na.action=na.omit
 }else{
-	X_fixed <- cbind(intercept=rep(1,length(X_fixed[,1])),X_fixed)
+	na.action=na.fail
 }
 
-## mixture
+
+
+### Traitement des donnees manquantes
+
+mcall <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+#mcall <- x$call[c(1,match(c("data"),names(x$call),0))]
+mcall$na.action <- na.action
+mcall$data <- newdata1
+
+# fixed
+m <- mcall
+m$formula <- formula(paste("~",x$call$fixed[3],sep=""))
+m[[1]] <- as.name("model.frame")	
+m <- eval(m, sys.parent()) 
+na.fixed <- attr(m,"na.action")
+
+# mixture
 if(!is.null(x$call$mixture)){
-	fit <- ff
-	fit$formula <- x$call$mixture
-	fit$data <- newdata1
-	fit[[1]] <- as.name("model.frame")
-	fit <- eval(fit, sys.parent()) 
-	X_mixture <- if (!is.empty.model(attr(fit, "terms")))model.matrix(attr(fit, "terms"), fit, contrasts)
-	if(colnames(X_mixture)[1]=="(Intercept)"){
-		colnames(X_mixture)[1] <- "intercept"
-		int.mixture <- 1
-	}
-	id.X_mixture <- 1
+	m <- mcall
+	m$formula <- x$call$mixture
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+	na.mixture <- attr(m,"na.action")
 }else{
-	id.X_mixture <- 0
+	na.mixture <- NULL
 }
 
-## mixture
+# random
 if(!is.null(x$call$random)){
-	fit <- ff
-	fit$formula <- x$call$random
-	fit$data <- newdata1
-	fit[[1]] <- as.name("model.frame")
-	fit <- eval(fit, sys.parent()) 
-	X_random <- if (!is.empty.model(attr(fit, "terms")))model.matrix(attr(fit, "terms"), fit, contrasts)
-	if(colnames(X_random)[1]=="(Intercept)"){
-		colnames(X_random)[1] <- "intercept"
-		int.random <- 1
-	}
-	id.X_random <- 1
+	m <- mcall
+	m$formula <- x$call$random
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+ 	na.random <- attr(m,"na.action")
 }else{
-	id.X_random <- 0
+	na.random <- NULL
+}
+# classmb
+if(!is.null(x$call$classmb)){ 
+	m <- mcall	
+	m$formula <- x$call$classmb	
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+ 	na.classmb <- attr(m,"na.action")
+}else{
+	na.classmb <- NULL
+}
+## Table sans donnees manquante: newdata
+na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
+if(!is.null(na.action)){
+	newdata1 <- newdata1[-na.action,]
 }
 
+
+X <- newdata1[,var.time]
+
+
+## Construction de nouvelles var eplicatives sur la nouvelle table
+## fixed
+	
+	X_fixed <- model.matrix(formula(paste("~",x$call$fixed[3],sep="")),data=newdata1)
+	if(colnames(X_fixed)[1]=="(Intercept)"){
+		colnames(X_fixed)[1] <- "intercept"
+		int.fixed <- 1
+	}	
+## mixture
+	if(!is.null(x$call$mixture)){
+		X_mixture <- model.matrix(formula(x$call$mixture),data=newdata1)	
+		if(colnames(X_mixture)[1]=="(Intercept)"){
+			colnames(X_mixture)[1] <- "intercept"
+			int.mixture <- 1
+		}
+		id.X_mixture <- 1
+	}else{
+		id.X_mixture <- 0
+	}	
+## random
+	if(!is.null(x$call$random)){
+		X_random <- model.matrix(formula(x$call$random),data=newdata1)	
+		if(colnames(X_random)[1]=="(Intercept)"){
+			colnames(X_random)[1] <- "intercept"
+			int.random <- 1
+		}
+		id.X_random <- 1
+	}else{
+		id.X_random <- 0
+	}	
 ## classmb
-if(!is.null(x$call$classmb)){
-	fit <- ff
-	fit$formula <- x$call$classmb
-	fit$data <- newdata1
-	fit[[1]] <- as.name("model.frame")
-	fit <- eval(fit, sys.parent()) 
-	X_classmb <- if (!is.empty.model(attr(fit, "terms")))model.matrix(attr(fit, "terms"), fit, contrasts)
-	if(colnames(X_classmb)[1]=="(Intercept)"){
+	if(!is.null(x$call$classmb)){ 
+		X_classmb <- model.matrix(formula(x$call$classmb),data=newdata1)
 		colnames(X_classmb)[1] <- "intercept"
 		id.X_classmb <- 1
+	}else{
+		id.X_classmb <- 0
 	}
-	id.X_classmb <- 1
-}else{
-	id.X_classmb <- 0
-}
-
+## Construction des var expli
 newdata1 <- X_fixed
+
+
 if(id.X_mixture == 1){
 	for(i in 1:length(colnames(X_mixture))){
 		if((colnames(X_mixture)[i] %in% colnames(newdata1))==F){
-			newdata1 <- unique(cbind(newdata1,X_mixture[,i]))
+			newdata1 <- cbind(newdata1,X_mixture[,i])
 			
 		}
 	}
@@ -126,17 +159,18 @@ if(id.X_mixture == 1){
 if(id.X_random == 1){
 	for(i in 1:length(colnames(X_random))){
 		if((colnames(X_random)[i] %in% colnames(newdata1))==F){
-			newdata1 <- unique(cbind(newdata1,X_random[,i]))
+			newdata1 <- cbind(newdata1,X_random[,i])
 		}	 
 	}
 }
 if(id.X_classmb == 1){
 	for(i in 1:length(colnames(X_classmb))){
 		if((colnames(X_classmb)[i] %in% colnames(newdata1))==F){
-			newdata1 <- unique(cbind(newdata1,X_classmb[,i],deparse.level=0))	 
+			newdata1 <- cbind(newdata1,X_classmb[,i],deparse.level=0)	 
 		}	
 	}
 }
+
 
 ##end add 11/04/2012
 

@@ -11,9 +11,9 @@ Plot of class-specific marginal predictions for the longitudinal outcome
 This function provides the class-specific predicted trajectories stemmed from a \code{hlme}, \code{lcmm} or \code{Jointlcmm} object.
 }
 \usage{
-\method{plot.predict}{hlme}(x,newdata,var.time,legend.loc="topright",ylim=NULL,\dots)
-\method{plot.predict}{lcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,\dots)
-\method{plot.predict}{Jointlcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,\dots)
+\method{plot.predict}{hlme}(x,newdata,var.time,legend.loc="topright",ylim=NULL,na.action=1,...)
+\method{plot.predict}{lcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,na.action=1,...)
+\method{plot.predict}{Jointlcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,na.action=1,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,7 +21,7 @@ This function provides the class-specific predicted trajectories stemmed from a 
 an object inheriting from classes \code{hlme}, \code{lcmm} or \code{Jointlcmm} representing respectively a fitted latent class linear mixed-effects model, a general latent class mixed model or a joint latent class mixed model.
 }
   \item{newdata}{
-data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames (in the same order). Names of data frame should be exactly x$Xnames.
+data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames2. Names of data frame should be exactly x$Xnames2 that is the names of covariates specified in \code{lcmm} call
 }
   \item{var.time}{
 A character string containing the name of the variable that corresponds to time in the data frame (x axis in the plot).
@@ -34,6 +34,8 @@ keyword for the position of the legend from the list \code{"bottomright"}, \code
   \item{ylim}{
 optional numeric vector of length 2, giving the y coordinate range.
 }
+ \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
   \item{\dots}{
 further arguments to be passed to or from other methods.
           They are ignored in this function.

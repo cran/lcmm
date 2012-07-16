@@ -12,3 +12,5 @@ hetmixOrd.o: hetmixOrd.f90
 	$(F77) $(SAFE_FFLAGS) -c -o hetmixOrd.o hetmixOrd.f90
 hetmixCont.o: hetmixCont.f90
 	$(F77) $(SAFE_FFLAGS) -c -o hetmixCont.o hetmixCont.f90
+predictCont.o: predictCont.f90
+	$(F77) $(SAFE_FFLAGS) -c -o predictCont.o predictCont.f90

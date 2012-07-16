@@ -1,7 +1,7 @@
 
 ############################### Fonction Jointlcmm ###################################
 
-epoce <- function(model,pred.times,var.time,newdata=NULL){
+epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1){
 
 cl <- match.call()
 if(missing(var.time)) stop("The argument var.time should be specified")
@@ -24,6 +24,16 @@ if(!missing(newdata)){
 	new.data <- TRUE
 #### Priorname dedans si Priorname diff 0 + Priorname de type integer
 } 
+
+
+if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
+
+if(na.action==1){
+	na.action=na.omit
+}else{
+	na.action=na.fail
+}
+
 
 
 ######### RECUP SPECIFICATION ##########################
@@ -72,132 +82,61 @@ if(missing(newdata)){
 	data <- newdata
 }
 
-
-
-
-### DEP VAR
-Y0 <- data[,model$Names[[1]]]
-nobs0 <- length(Y0)
-
-### SURVIVAL TIMES
-
-if (length(model$Names[[3]])==2) {
-Tevent <- data[,model$Names[[3]][1]]
-Devent <- data[,model$Names[[3]][2]]
-Tentry <- rep(0,nobs0)
-}
-if (length(model$Names[[3]])==3) {
-Tentry <- data[,model$Names[[3]][1]]
-Tevent <- data[,model$Names[[3]][2]]
-Devent <- data[,model$Names[[3]][3]]
-}
-
-if ((max(Tevent)>max(model$hazard[[3]]))&(model$hazard[[1]]!=2)) stop("The maximal time of event in the new dataset should not be greater than the maximal time of event in the dataset used in Jointlcmm.")
-
-
-
-#### TimeDepVar
-nvdepsurv <- model$specif[[1]][9]
-Tint <- Tevent
-indsurvint <- rep(0,length= model$specif[[2]])
-if(nvdepsurv!=0)  {
-Tint <- data[,model$Names[[7]]]
-Tint[(is.na(Tint))] <- Tevent[(is.na(Tint))]
-Tint[Tint>Tevent] <- Tevent[Tint>Tevent]
-Tint[Tint<Tentry] <- Tentry[Tint<Tentry]
-if (length(Tint[Tint>Tentry])==0) Tint <- Tevent
-}
-
-
-
-
-### ad
-fit <- model$call
-mCall <- fit
-mSurv <- fit
-mCall$fixed<-mCall$mixture<-mCall$random<-mCall$subject<-mCall$classmb<-mCall$ng<-mCall$idiag<-mCall$nwg<-
-mCall$survival<-mCall$hazard<-mCall$hazardtype<-mCall$hazardnodes<-mCall$TimeDepVar<-mCall$B<-mCall$convB<-
-mCall$convL<-mCall$convG<-mCall$maxiter<-mCall$nsim<-mCall$prior<-mCall$logscale<-NULL
-mSurv$fixed<-mSurv$mixture<-mSurv$random<-mSurv$subject<-mSurv$classmb<-mSurv$ng<-mSurv$idiag<-mSurv$nwg<-
-mSurv$hazard<-mSurv$hazardtype<-mSurv$hazardnodes<-mSurv$TimeDepVar<-mSurv$B<-mSurv$convB<-
-mSurv$convL<-mSurv$convG<-mSurv$maxiter<-mSurv$nsim<-mSurv$prior<-mSurv$data<-mSurv$logscale<-NULL
-mCall$data <- data
-mSurv$data <- data
-### ad
 int.fixed <- 0
 int.mixture <- 0
 int.random <- 0
 int.classmb <- 0
+#7/05/2012
+### Traitement des donnees manquantes
+# fixed
+mcall <- model$call[c(1,match(c("data"),names(model$call),0))]
+mcall$na.action <- na.action
+mcall$subset <- subset
+mcall$data <- data	
 
-########## For fixed
-m <- mCall
-m$formula <- fit$fixed
+m <- mcall
+m$formula <- model$call$fixed
 m[[1]] <- as.name("model.frame")	
 m <- eval(m, sys.parent()) 
-mt <- attr(m, "terms")
-X_fixed <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts) 	
-if(colnames(X_fixed)[1]=="(Intercept)"){
-	colnames(X_fixed)[1] <- "intercept"
-	int.fixed <- 1
-}
+na.fixed <- attr(m,"na.action")
 
-########## For mixture
-if(!is.null(fit$mixture)){
-	m <- mCall
-	m$formula <- fit$mixture
+# mixture
+if(!is.null(model$call$mixture)){
+	m <- mcall
+	m$formula <- model$call$mixture
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_mixture <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_mixture)[1]=="(Intercept)"){
-		colnames(X_mixture)[1] <- "intercept"
-		int.mixture <- 1
-	}
-	id.X_mixture <- 1
+	na.mixture <- attr(m,"na.action")	
 }else{
-	id.X_mixture <- 0
+	na.mixture <- NULL
 }
-########## For random
-if(!is.null(fit$random)){
-	m <- mCall
-	m$formula <- fit$random
+# random
+if(!is.null(model$call$random)){
+	m <- mcall
+	m$formula <- model$call$random
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms")
-	X_random <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_random)[1]=="(Intercept)"){
-		colnames(X_random)[1] <- "intercept"
-		int.random <- 1
-	}
-	id.X_random <- 1
+ 	na.random <- attr(m,"na.action")
 }else{
-	id.X_random <- 0
+	na.random <- NULL
 }
-########## For classmb
-if(!is.null(fit$classmb)){ 
-	m <- mCall
-	m$formula <- fit$classmb
+# classmb
+if(!is.null(model$call$classmb)){ 
+	m <- mcall	
+	m$formula <- model$call$classmb	
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms")
-	X_classmb <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts) 
-	colnames(X_classmb)[1] <- "intercept"	
-	id.X_classmb <- 1
+ 	na.classmb <- attr(m,"na.action")
 }else{
-	id.X_classmb <- 0
+	na.classmb <- NULL
 }
-varX0.names <- NULL
-varX0.names <- c(varX0.names,colnames(X_fixed))
-if(id.X_mixture == 1) varX0.names <- c(varX0.names,colnames(X_mixture))
-if(id.X_random == 1) varX0.names <- c(varX0.names,colnames(X_random))
-if(id.X_classmb == 1) varX0.names <- c(varX0.names,colnames(X_classmb))
-varX0.names <- unique(varX0.names)
-
+#7/05/2012
 ########## For survival
-if(!is.null(fit$survival)){ 
-	res.evt <- mSurv$survival
+if(!is.null(model$call$survival)){ 
+	res.evt <- model$call$survival
 	class(res.evt) <- "formula"
 	tmp.res <- res.evt
+
 	res.evt <- terms(res.evt,"mixture") 
 	inddep.surv <- attr(res.evt, "term.labels")
 	ind.mixture <- untangle.specials(res.evt, "mixture", 1)
@@ -212,18 +151,28 @@ if(!is.null(fit$survival)){
 		      names.survival <- paste(names.survival,tmp.su[i],sep="+")
 	      }
 	}
-
-	m <- mCall
+#7/05/2012
+	m <- mcall
 	m$formula <- update(tmp.res,names.survival)
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") #m devient de class "formula" et "terms"
-	X_survival <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
+	m[[1]] <- as.name("model.frame")
+	m <- eval(m, sys.parent())
+	na.survival <- attr(m,"na.action")
+
+## Table sans donnees manquante: newdata
+	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival))
+	if(!is.null(na.action)){
+		newdata1 <- data[-na.action,]
+	}else{
+		newdata1 <- data
+	}
+
+#7/05/2012
+	X_survival <- model.matrix(formula(update(tmp.res,names.survival)),data=newdata1)
+
 	if(colnames(X_survival)[1]=="(Intercept)"){
 		colnames(X_survival)[1] <- "intercept"
 		int.survival <- 1
 	}
-
 	if(length(inddepvar.Mixt) > 0){
 		inddepvar.Mixt <- colnames(X_survival)[grep(inddepvar.Mixt,colnames(X_survival))]
 		inddepvar.noMixt <- colnames(X_survival)[!(colnames(X_survival) %in% inddepvar.Mixt)][-1]
@@ -234,7 +183,92 @@ if(!is.null(fit$survival)){
 	id.X_survival <- 1
 }else{
 	id.X_survival <- 0
+#7/05/2012
+	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
+	if(!is.null(na.action)){
+		newdata1 <- data[-na.action,]
+	}else{
+		newdata1 <- data
+	}
+#7/05/2012
 }
+
+### DEP VAR
+Y0 <- newdata1[,model$Names[[1]]]
+nobs0 <- length(Y0)
+### SURVIVAL TIMES
+
+if (length(model$Names[[3]])==2) {
+Tevent <- newdata1[,model$Names[[3]][1]]
+Devent <- newdata1[,model$Names[[3]][2]]
+Tentry <- rep(0,nobs0)
+}
+if (length(model$Names[[3]])==3) {
+Tentry <- newdata1[,model$Names[[3]][1]]
+Tevent <- newdata1[,model$Names[[3]][2]]
+Devent <- newdata1[,model$Names[[3]][3]]
+}
+
+if ((max(Tevent)>max(model$hazard[[3]]))&(model$hazard[[1]]!=2)) stop("The maximal time of event in the new dataset should not be greater than the maximal time of event in the dataset used in Jointlcmm.")
+
+#### TimeDepVar
+nvdepsurv <- model$specif[[1]][9]
+Tint <- Tevent
+indsurvint <- rep(0,length= model$specif[[2]])
+if(nvdepsurv!=0)  {
+Tint <- newdata1[,model$Names[[7]]]
+Tint[(is.na(Tint))] <- Tevent[(is.na(Tint))]
+Tint[Tint>Tevent] <- Tevent[Tint>Tevent]
+Tint[Tint<Tentry] <- Tentry[Tint<Tentry]
+if (length(Tint[Tint>Tentry])==0) Tint <- Tevent
+}
+## Construction de nouvelles var eplicatives sur la nouvelle table
+## fixed
+	
+	X_fixed <- model.matrix(formula(model$call$fixed),data=newdata1)
+	if(colnames(X_fixed)[1]=="(Intercept)"){
+		colnames(X_fixed)[1] <- "intercept"
+		int.fixed <- 1
+	}
+## mixture
+	if(!is.null(model$call$mixture)){
+		X_mixture <- model.matrix(formula(model$call$mixture),data=newdata1)	
+		if(colnames(X_mixture)[1]=="(Intercept)"){
+			colnames(X_mixture)[1] <- "intercept"
+			int.mixture <- 1
+		}
+		id.X_mixture <- 1
+	}else{
+		id.X_mixture <- 0
+	}
+## random
+	if(!is.null(model$call$random)){
+		X_random <- model.matrix(formula(model$call$random),data=newdata1)	
+		if(colnames(X_random)[1]=="(Intercept)"){
+			colnames(X_random)[1] <- "intercept"
+			int.random <- 1
+		}
+		id.X_random <- 1
+	}else{
+		id.X_random <- 0
+	}
+## classmb
+	if(!is.null(model$call$classmb)){ 
+		X_classmb <- model.matrix(formula(model$call$classmb),data=newdata1)
+		colnames(X_classmb)[1] <- "intercept"
+		id.X_classmb <- 1
+	}else{
+		id.X_classmb <- 0
+	}
+
+varX0.names <- NULL
+varX0.names <- c(varX0.names,colnames(X_fixed))
+if(id.X_mixture == 1) varX0.names <- c(varX0.names,colnames(X_mixture))
+if(id.X_random == 1) varX0.names <- c(varX0.names,colnames(X_random))
+if(id.X_classmb == 1) varX0.names <- c(varX0.names,colnames(X_classmb))
+varX0.names <- unique(varX0.names)
+
+
 if(id.X_survival == 1) varX0.names <- unique(c(varX0.names,colnames(X_survival)))
 ### construction de X0
 ## var expli
@@ -272,6 +306,7 @@ if(id.X_survival == 1){
 colnames(X0) <- varX0.names
 X0 <- as.data.frame(X0)
 
+
 ### end ad 2/04/2012
 
 ### VAR EXP : attention intercept or no 
@@ -287,16 +322,16 @@ X0 <- as.data.frame(X0)
 ### end ad 2/04/2012
 
 ### IND
+
 if(missing(newdata)){
-	IND <- data[,colnames(model$pprob)[1]]
+	IND <- newdata1[,colnames(model$pprob)[1]]
 }else{
-	IND <- data[,model$Names[[5]]]
+	IND <- newdata1[,model$Names[[5]]]
 }
 IDnum <- as.numeric(IND)
 
 ### Time
-Time<-data[,var.time]
-
+Time<-newdata1[,var.time]
 
 
 #### PRIOR : A REVOIR EN ENTIER ?????????????????
@@ -306,10 +341,9 @@ if(is.null(model$Priorname)){
 PRIOR <- seq(0,length=length(IND))} 
 else
 {
-PRIOR <- data[,model$Priorname]
+PRIOR <- newdata1[,model$Priorname]
 PRIOR[(is.na(PRIOR))] <- 0
 }
-
 
 
 ###### DATA SORTING on IND variable
@@ -338,7 +372,6 @@ nmes0<-as.vector(table(IDnum))
 ns0<-length(nmes0)
 
 INDuniq <- IND[cumsum(nmes0)]
-
 
 #cat(paste("vopt",length(vopt))," \n")
 #cat(paste(vopt),"\n")
@@ -417,6 +450,10 @@ contrib[contrib==0] <- NA
 if (!is.null(newdata)){
 out$epoir <- rep(NA,length(pred.times))
 }
+out$epoir[out$epoir==1.e9] <- NA
+out$rl[out$rl==-1.e9] <- NA
+
+
 cvpl <- cbind(pred.times,out$ns_vect,out$nevt_vect,-out$rl,out$epoir)
 colnames(cvpl) <- c("pred. times"," N at risk","N events","MPOL","CVPOL")
 rownames(cvpl) <- rep(" ",length(cvpl[,1]))

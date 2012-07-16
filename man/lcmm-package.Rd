@@ -2,21 +2,21 @@
 \alias{lcmm-package}
 \docType{package}
 \title{
-Estimation of Latent Class Mixed Models and Joint Latent Class Mixed Models for quantitative, bounded quantitative, discrete and ordinal longitudinal outcomes and a right-censored left-truncated time-to-event.
+Estimation of Mixed Models, Latent Class Mixed Models and Joint Latent Class Mixed Models for different types of outcomes (quantitative, bounded, curvilinear and ordinal outcomes).
 }
 \description{
-This package provides functions for the estimation of latent class mixed models (LCMM) and joint latent class mixed models (JLCMM) using a maximum likelihood method.
+This package provides functions for the estimation of latent class mixed models (LCMM) and joint latent class mixed models (JLCM) using a maximum likelihood method. It also estimates mixed models for curvilinear and ordinal longitudinal outcomes (with or without latent classes of trajectories).
 }
 \details{
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.5.2 \cr
-Date: \tab 2012-04-16 \cr
+Version: \tab 1.5.6 \cr
+Date: \tab 2012-07-16\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
-The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative and discrete longitudinal outcomes using \code{lcmm} function, and joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
+The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function, and joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
 
 Please report to the maintainer any bug or comment regarding the package for future updates. 
 }

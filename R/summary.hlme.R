@@ -16,7 +16,8 @@ cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$dataset),"\n")
 cat(paste("     Number of subjects:", x$ns),"\n")
 cat(paste("     Number of observations:", length(x$pred[,1])),"\n")
-cat(paste("     Number of latents classes:", x$ng), "\n")
+if(length(x$na.action))cat(paste("     Number of observations deleted:",length(x$na.action)),"\n")
+cat(paste("     Number of latent classes:", x$ng), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
 cat(" \n")
 cat("Iteration process:", "\n")
@@ -100,8 +101,8 @@ Mat.cov <- diag(coef[(NPROB+NEF+1):(NPROB+NEF+NVC)])
 }else{
 Mat.cov <- matrix(coef[(NPROB+NEF+1)],ncol=1)
 }
-colnames(Mat.cov) <-x$name.mat.cov 
-rownames(Mat.cov) <-x$name.mat.cov 
+colnames(Mat.cov) <-x$Xnames[x$idea0==1]
+rownames(Mat.cov) <-x$Xnames[x$idea0==1]
 Mat.cov[lower.tri(Mat.cov)] <- 0
 Mat.cov[upper.tri(Mat.cov)] <- NA
 
@@ -111,9 +112,9 @@ cat("\n")
 
 
 if(x$idiag==0){
-Mat.cov<-matrix(0,ncol=length(x$name.mat.cov),nrow=length(x$name.mat.cov))
-colnames(Mat.cov) <-x$name.mat.cov 
-rownames(Mat.cov) <-x$name.mat.cov 
+Mat.cov<-matrix(0,ncol=sum(x$idea0),nrow=sum(x$idea0))
+colnames(Mat.cov) <-x$Xnames[ x$idea0==1]
+rownames(Mat.cov) <-x$Xnames[ x$idea0==1]
 Mat.cov[upper.tri(Mat.cov,diag=TRUE)]<-coef[(NPROB+NEF+1):(NPROB+NEF+NVC)]
 Mat.cov <-t(Mat.cov)
 Mat.cov[upper.tri(Mat.cov)] <- NA

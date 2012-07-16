@@ -34,6 +34,7 @@ Cecile Proust-Lima and Benoit Liquet
 
 \examples{
 
+\dontrun{
 
 #### Estimation of homogeneous mixed models with different assumed link functions,
 #### a quadratic mean trajectory for the latent process with independent random 
@@ -90,5 +91,5 @@ par(new=TRUE)
 plot(transfo[,1]~transfo[,5],xlim=c(-10,5),col=4,type='l',xlab="",ylab="",bty="l")
 legend(x="bottomright",legend=colnames(transfo[,2:5]),col=1:4,lty=1,inset=.02,bty="n")
 
-
+}
 }

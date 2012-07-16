@@ -30,81 +30,81 @@
 !     INTERFACE TYPEc
 !
 !----------------------------------------------------------
-      
 
 
 
-      module type	
-       
-      interface verif1   
+
+      module type
+
+      interface verif1
       subroutine marq98(b,m,ni,v,rl,ier,istop,ca,cb,dd,namefunc)
          integer,intent(in) :: m
          integer,intent(inout)::ni,ier,istop
          double precision,dimension(m*(m+3)/2),intent(out)::v
          double precision,intent(out)::rl
-         double precision,dimension(m),intent(inout)::b	
-	 double precision,intent(inout)::ca,cb,dd 
+         double precision,dimension(m),intent(inout)::b
+	 double precision,intent(inout)::ca,cb,dd
          double precision,external::namefunc
-      end subroutine marq98    
-        
+      end subroutine marq98
+
       subroutine deriva(b,m,v,rl,namefunc)
         integer,intent(in)::m
         double precision,intent(inout)::rl
         double precision,dimension(m),intent(in)::b
-        double precision,dimension((m*(m+3)/2)),intent(out)::v    
-        double precision,external::namefunc   
+        double precision,dimension((m*(m+3)/2)),intent(out)::v
+        double precision,external::namefunc
       end subroutine deriva
-      
+
       subroutine searpas(vw,step,b,bh,m,delta,fim,namefunc)
-        integer,intent(in)::m      
+        integer,intent(in)::m
         double precision,dimension(m),intent(in)::b
         double precision,dimension(m),intent(inout)::bh,delta
-        double precision,intent(inout)::vw,fim,step  
+        double precision,intent(inout)::vw,fim,step
         double precision,external::namefunc
       end subroutine searpas
-      
+
       subroutine dmfsd(a,n,eps,ier)
         integer,intent(in)::n
-        integer,intent(inout)::ier
-        double precision,intent(inout)::eps 
-        double precision,dimension(n*(n+1)/2),intent(inout)::A      
+        integer,intent(out)::ier
+        double precision,intent(in)::eps
+        double precision,dimension(n*(n+1)/2),intent(inout)::A
       end subroutine dmfsd
-   
+
       subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
-        integer,intent(in)::m  
+        integer,intent(in)::m
 	double precision,intent(in)::vw
-        double precision,dimension(m),intent(in)::b,delta  
-        double precision,dimension(m),intent(out)::bk 
+        double precision,dimension(m),intent(in)::b,delta
+        double precision,dimension(m),intent(out)::bk
         double precision,intent(out)::fi
-        double precision,external::namefunc  
+        double precision,external::namefunc
       end subroutine valfpa
-      
+
       subroutine dmaxt(maxt,delta,m)
         integer,intent(in)::m
-        double precision,dimension(m),intent(in)::delta 
+        double precision,dimension(m),intent(in)::delta
         double precision,intent(out)::maxt
-      end subroutine dmaxt              	                 
-      end interface verif1  
+      end subroutine dmaxt
+      end interface verif1
 
       interface verif2
       subroutine dsinv(A,N,EPS,IER,DET)
         integer,intent(in)::n
-        integer,intent(inout)::ier
-        double precision,intent(inout)::eps      
-        double precision,intent(inout),optional::det     
-        double precision,dimension(n*(n+1)/2),intent(inout)::A  
-      end subroutine dsinv 
-      
+        integer,intent(out)::ier
+        double precision,intent(in)::eps
+        double precision,intent(out),optional::det
+        double precision,dimension(n*(n+1)/2),intent(inout)::A
+      end subroutine dsinv
+
       subroutine dchole(a,k,nq,idpos)
       integer,intent(in)::k,nq
       integer,intent(inout)::idpos
-      double precision,dimension(k*(k+3)/2),intent(inout)::a      
-      end subroutine dchole    
+      double precision,dimension(k*(k+3)/2),intent(inout)::a
+      end subroutine dchole
       end interface verif2
-                              
+
       end module type
 
-  
+
 
 !----------------------------------------------------------
 !
@@ -120,7 +120,7 @@
       end module parameters
 
 !-------------------------------------------------------------
-!    
+!
 !          MODULE OPTIM avec MARQ98
 !
 !-------------------------------------------------------------
@@ -129,11 +129,11 @@
       module optim
 
       implicit none
-! -Interface permettant la verification des type des arguments      
-      interface verif1   
+! -Interface permettant la verification des type des arguments
+      interface verif1
         module procedure marq98,deriva,searpas,dmfsd,valfpa
       end interface verif1
-      
+
       interface verif2
         module procedure dsinv,dchole,dmaxt
       end interface verif2
@@ -157,15 +157,15 @@
       use parameters
 
       IMPLICIT NONE
-!   variables globales 
+!   variables globales
       integer,intent(in) :: m
       integer,intent(inout)::ni,ier,istop
       double precision,dimension(m*(m+3)/2),intent(out)::v
       double precision,intent(out)::rl
       double precision,dimension(m),intent(inout)::b
       double precision,intent(inout)::ca,cb,dd
-      
-!   variables locales            
+
+!   variables locales
       integer::nql,ii,nfmax,idpos,ncount,id,jd,m1,j,i,ij
       double precision,dimension(m*(m+3)/2)::fu
       double precision,dimension(m)::delta,b1,bh
@@ -173,17 +173,17 @@
       double precision::GHG,det,step,eps,vw,fi,maxt, &
       z,rl1,th,ep
       double precision,external::namefunc
-     
-             
+
+
       id=0
       jd=0
       z=0.d0
       th=1.d-5
       eps=1.d-7!1.d-6
-      nfmax=m*(m+1)/2    
+      nfmax=m*(m+1)/2
       ca=epsa+1.d0
       cb=epsb+1.d0
-      rl1=-1.d+10    
+      rl1=-1.d+10
       ni=0
       istop=0
       da=0.01d0
@@ -191,14 +191,13 @@
       nql=1
       m1=m*(m+1)/2
       ep=1.d-20
-            
-      Main:Do       
-!   	write(*,*)'avant deriva'         
-        call deriva(b,m,v,rl,namefunc)
 
-!	write(*,*)'iteration',ni,'vrais',rl          
-        rl1=rl      
-        dd = 0.d0     
+      Main:Do
+!   	write(*,*)'avant deriva'
+        call deriva(b,m,v,rl,namefunc)
+!	write(*,*)'iteration',ni,'vrais',rl
+        rl1=rl
+        dd = 0.d0
         fu=0.D0
         do i=1,m
            do j=i,m
@@ -207,7 +206,7 @@
            end do
         end do
 
-        call dsinv(fu,m,ep,ier,det)  
+        call dsinv(fu,m,ep,ier,det)
         if (ier.eq.-1) then
            dd=epsd+1.d0
         else
@@ -288,7 +287,7 @@
 !               write(*,*)'searpas problem'
                goto 110
           end if
-            
+
          do i=1,m
             delta(i)=vw*delta(i)
          end do
@@ -309,14 +308,14 @@
             istop=2
 !            write(6,*) 'maximum number of iteration reached'
             goto 110
-         end if	 
-      End do Main       
-      v=0.D0	 
+         end if
+      End do Main
+      v=0.D0
       v(1:m*(m+1)/2)=fu(1:m*(m+1)/2)
       istop=1
-    
+
  110   continue
-       return    
+       return
        end subroutine marq98
 
 !------------------------------------------------------------
@@ -324,32 +323,32 @@
 !------------------------------------------------------------
 
       subroutine deriva(b,m,v,rl,namefunc)
-     
+
       implicit none
-  
+
       integer,intent(in)::m
       double precision,intent(inout)::rl
       double precision,dimension(m),intent(in)::b
-      double precision,dimension((m*(m+3)/2)),intent(out)::v     
+      double precision,dimension((m*(m+3)/2)),intent(out)::v
       double precision,dimension(m)::fcith
       integer ::i0,m1,ll,i,k,j
-      double precision::thn,th,z,vl,temp,thi,thj  
-      double precision,external::namefunc    
-!    
+      double precision::thn,th,z,vl,temp,thi,thj
+      double precision,external::namefunc
+!
 !     v:matrice d'information+score
 !     calcul de la derivee premiere par "central difference"
 !     calcul des derivees secondes par "forward difference"
 !
       z=0.d0
       i0=0
-	
-      rl=namefunc(b,m,i0,z,i0,z)    
+
+      rl=namefunc(b,m,i0,z,i0,z)
 !      write(*,*)'dans deriva',rl
 
       if(rl.eq.-1.d9) then
          goto 123
       end if
-              
+
       do i=1,m
          th=DMAX1(1.d-7, 1.d-4 * DABS(b(i)))
          fcith(i)=namefunc(b,m,i,th,i0,z)
@@ -358,7 +357,7 @@
             goto 123
          end if
       end do
-      
+
       k=0
       m1=m*(m+1)/2
       ll=m1
@@ -387,7 +386,7 @@
          end do
       end do Main
  123   continue
-      
+
       return
       end subroutine deriva
 
@@ -403,32 +402,33 @@
 !  MINIMISATION UNIDIMENSIONNELLE
 !
       implicit none
-       
-      integer,intent(in)::m      
+
+      integer,intent(in)::m
       double precision,dimension(m),intent(in)::b
       double precision,intent(inout)::vw
-      double precision,dimension(m),intent(inout)::bh,delta      
-      double precision,intent(inout)::fim,step   
-      double precision::vlw,vlw1,vlw2,vlw3,vm,fi1,fi2,fi3    
-      integer::i 
+      double precision,dimension(m),intent(inout)::bh,delta
+      double precision,intent(inout)::fim,step
+      double precision::vlw,vlw1,vlw2,vm,fi1,fi2,fi3
+!      double precision::vlw3
+      integer::i
       double precision,external::namefunc
 
        vlw1=dlog(vw)
        vlw2=vlw1+step
        call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
-       call valfpa(vlw2,fi2,b,bh,m,delta,namefunc)       
+       call valfpa(vlw2,fi2,b,bh,m,delta,namefunc)
 
        if(fi2.ge.fi1) then
-	  vlw3=vlw2
+!	  vlw3=vlw2
 	  vlw2=vlw1
 	  fi3=fi2
 	  fi2=fi1
 	  step=-step
 
           vlw1=vlw2+step
-          call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)   
+          call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
           if(fi1.gt.fi2) goto 50
-       else 
+       else
           vlw=vlw1
           vlw1=vlw2
           vlw2=vlw
@@ -438,7 +438,7 @@
        end if
 
        do i=1,40
-          vlw3=vlw2
+!          vlw3=vlw2
           vlw2=vlw1
           fi3=fi2
           fi2=fi1
@@ -448,7 +448,7 @@
           if(fi1.gt.fi2) goto 50
           if(fi1.eq.fi2) then
              fim=fi2
-             vm=vlw2 
+             vm=vlw2
              goto 100
           end if
        end do
@@ -459,14 +459,14 @@
 !
 !  CALCUL MINIMUM QUADRIQUE
 !
-      vm=vlw2-step*(fi1-fi3)/(2.d0*(fi1-2.d0*fi2+fi3))   
-      call valfpa(vm,fim,b,bh,m,delta,namefunc)	
+      vm=vlw2-step*(fi1-fi3)/(2.d0*(fi1-2.d0*fi2+fi3))
+      call valfpa(vm,fim,b,bh,m,delta,namefunc)
       if(fim.le.fi2) goto 100
       vm=vlw2
       fim=fi2
 100   continue
       vw=dexp(vm)
-      
+
       return
 
       end subroutine searpas
@@ -480,18 +480,18 @@
       subroutine dchole(a,k,nq,idpos)
 
       implicit none
-      
+
       integer,intent(in)::k,nq
       integer,intent(inout)::idpos
       double precision,dimension(k*(k+3)/2),intent(inout)::a
-		
+
       integer::i,ii,i1,i2,i3,m,j,k2,jmk
       integer::ijm,irm,jji,jjj,l,jj,iil,jjl,il
-      integer,dimension(k)::is	
+      integer,dimension(k)::is
       double precision ::term,xn,diag,p
       equivalence (term,xn)
-      
-       
+
+
 !      ss programme de resolution d'un systeme lineaire symetrique
 !
 !       k ordre du systeme /
@@ -506,7 +506,7 @@
       idpos=0
       k2=k+nq
 !     calcul des elements de la matrice
-      do i=1,k   
+      do i=1,k
          ii=i*(i+1)/2
 !       elements diagonaux
          diag=a(ii)
@@ -522,8 +522,8 @@
              if(is(l).ge.0) goto 3
 2            p=-p
 3            diag=diag-p
-         end do	 
-         
+         end do
+
 4        if(diag.lt.0) goto 5
          if(diag.eq.0) goto 50
          if(diag.gt.0) goto 6
@@ -545,7 +545,7 @@
 8           jj=jj-jmk*(jmk+1)/2
 9           term=a(jj)
             if(i-1.ne.0) goto 10
-            if(i-1.eq.0) goto 13 
+            if(i-1.eq.0) goto 13
 10          do l=1,i2
                iil=ii-l
                jjl=jj-l
@@ -557,9 +557,9 @@
 12             term=term-p
             end do
 13            a(jj)=term/diag
-	   end do  
-      end do   
-      
+	   end do
+      end do
+
 !       calcul des solutions
       jj=ii-k+1
       do l=1,nq
@@ -606,10 +606,10 @@
 !   IER = K COMPRIS ENTRE 1 ET N, WARNING, LE CALCUL CONTINUE
 !
       implicit none
-      
+
       integer,intent(in)::n
-      integer,intent(inout)::ier
-      double precision,intent(in)::eps 
+      integer,intent(out)::ier
+      double precision,intent(in)::eps
       double precision,dimension(n*(n+1)/2),intent(inout)::A
       double precision :: dpiv,dsum,tol
       integer::i,k,l,kpiv,ind,lend,lanf,lind
@@ -647,23 +647,23 @@
                lanf=kpiv-l
                lind=ind-l
 	       dsum=dsum+A(lanf)*A(lind)
-            end do 
-	      
-!     
+            end do
+
+!
 !   END OF INNEF LOOP
 !
 !   TRANSFORM ELEMENT A(IND)
-! 	
+!
 4           dsum=A(ind)-dsum
             if (i-k.ne.0) goto 10
             if (i-k.eq.0) goto 5
 !   TEST FOR NEGATIVE PIVOT ELEMENT AND FOR LOSS OF SIGNIFICANCE
-!	
+!
 
 
 5           if (sngl(dsum)-tol.le.0) goto 6
             if (sngl(dsum)-tol.gt.0) goto 9
-6           if (dsum.le.0) goto 12 
+6           if (dsum.le.0) goto 12
             if (dsum.gt.0) goto 7
 7           if (ier.le.0) goto 8
             if (ier.gt.0) goto 9
@@ -682,7 +682,7 @@
 11          ind=ind+i
          end do
       end do
-      
+
 !
 !   END OF DIAGONAL-LOOP
 !
@@ -720,22 +720,22 @@
 !         IER=1 PERTE DE SIGNIFICANCE, LE CALCUL CONTINUE
 !
       implicit none
-      
+
       integer,intent(in)::n
-      integer,intent(inout)::ier
-      double precision,intent(inout)::eps      
-      double precision,intent(inout),optional::det     
-      double precision,dimension(n*(n+1)/2),intent(inout)::A     
+      integer,intent(out)::ier
+      double precision,intent(in)::eps
+      double precision,intent(out),optional::det
+      double precision,dimension(n*(n+1)/2),intent(inout)::A
       double precision::din,work
       integer::ind,ipiv,i,j,k,l,min,kend,lhor,lver,lanf
-    
+
 !
 !     FACTORIZE GIVEN MATRIX BY MEANS OF SUBROUTINE DMFSD
 !     A=TRANSPOSE(T) * T
 !
 
       call dmfsd(A,n,eps,ier)
-      
+
       det=0.d0
 
       if (ier.lt.0) goto 9
@@ -745,7 +745,7 @@
 !     PREPARE INVERSION-LOOP
 !
 !
-! calcul du log du determinant    
+! calcul du log du determinant
 
       do i=1,n
          det=det+dlog(A(i*(i+1)/2))
@@ -775,25 +775,25 @@
 !
 !     START INNER LOOP
 !
-            do l=lanf,min 
+            do l=lanf,min
 	        lver=lver+1
 		lhor=lhor+l
                 work=work+A(lver)*A(lhor)
-	    end do	    
+	    end do
 !
 !     END OF INNER LOOP
 !
             A(j)=-work*din
             j=j-min
 	 end do
-	 
+
 !
 !     END OF ROW-LOOP
 !
-5        ipiv=ipiv-min 
+5        ipiv=ipiv-min
          ind=ind-1
       end do
-      
+
 !
 !     END OF INVERSION-LOOP
 !
@@ -817,15 +817,15 @@
 	        lver=lhor+k-i
 		work=work+A(lhor)*A(lver)
    		lhor=lhor+l
-            end do	    
+            end do
 !
 !     END OF INNER LOOP
-!       
+!
             A(j)=work
             j=j+k
 	 end do
       end do
-      
+
 !
 !     END OF ROW-AND MULTIPLICATION-LOOP
 !
@@ -840,14 +840,14 @@
 
         implicit none
 
-        integer,intent(in)::m  
-        double precision,dimension(m),intent(in)::b,delta  
-        double precision,dimension(m),intent(out)::bk 
-        double precision,intent(out)::fi 
-	double precision::vw,z	
+        integer,intent(in)::m
+        double precision,dimension(m),intent(in)::b,delta
+        double precision,dimension(m),intent(out)::bk
+        double precision,intent(out)::fi
+	double precision::vw,z
 	integer::i0,i
         double precision,external::namefunc
-	
+
          z=0.d0
          i0=1
          do i=1,m
@@ -856,7 +856,7 @@
          fi=-namefunc(bk,m,i0,z,i0,z)
 
          return
-	 
+
          end subroutine valfpa
 
 !------------------------------------------------------------
@@ -865,21 +865,21 @@
 
 
       subroutine dmaxt(maxt,delta,m)
-      
+
       implicit none
 
        integer,intent(in)::m
        double precision,dimension(m),intent(in)::delta
        double precision,intent(out)::maxt
-       integer::i 
+       integer::i
 
        maxt=Dabs(delta(1))
        do i=2,m
          if(Dabs(delta(i)).gt.maxt)then
 	    maxt=Dabs(delta(i))
 	 end if
-       end do 
-            
+       end do
+
        return
        end subroutine dmaxt
 

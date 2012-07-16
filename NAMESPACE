@@ -24,8 +24,10 @@ S3method(plot.postprob,Jointlcmm)
 S3method(postprob,Jointlcmm)
 S3method(plot.baselinerisk,Jointlcmm)
 S3method(plot.survival,Jointlcmm)
+S3method(predictY,lcmm)
+
 
 S3method(print,epoce)
 S3method(summary,epoce)
 
-export(plot.predict,plot.postprob,postprob,plot.baselinerisk,plot.survival)
+export(plot.predict,plot.postprob,postprob,plot.baselinerisk,plot.survival,predictY)

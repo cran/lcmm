@@ -1,14 +1,94 @@
-lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=500,nsim=100,prior,range=NULL)
+lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,na.action=1)
 {
 
-m <- match.call()
+mm <- match.call()
 if(missing(fixed)) stop("The argument Fixed must be specified in any model")
 if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
 
 
+
+
+
+
+
+if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
+
+if(na.action==1){
+	na.action=na.omit
+}else{
+	na.action=na.fail
+}
+#cat("ide :")
+#cat(ide0,"\n")
+#cat(zitr,"\n")
+#7/05/2012
+### Traitement des donnees manquantes
+# fixed
+if(missing(fixed)) stop("The argument Fixed must be specified in any model")
+if(class(fixed)!="formula") stop("The argument fixed must be a formula")
+m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+m$formula <- terms(fixed)
+m$na.action <- na.action
+m[[1]] <- as.name("model.frame")	
+m <- eval(m, sys.parent()) 
+na.fixed <- attr(m,"na.action")
+
+# mixture
+if(!missing(mixture)){
+	if(class(mixture)=="formula"){	
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+	m$formula <- terms(mixture)
+	m$na.action <- na.action
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+	na.mixture <- attr(m,"na.action")
+	}	
+}else{
+	na.mixture <- NULL
+}
+
+# random
+if(!missing(random)){
+	if(class(random)=="formula"){	
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+	m$formula <- terms(random)
+	m$na.action <- na.action
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+ 	na.random <- attr(m,"na.action")
+	}
+}else{
+	na.random <- NULL
+}
+
+# classmb
+if(!missing(classmb)){ 
+	if(class(classmb)=="formula"){	
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]	
+	m$formula <- terms(classmb)
+	m$na.action <- na.action
+	m[[1]] <- as.name("model.frame")	
+	m <- eval(m, sys.parent()) 
+ 	na.classmb <- attr(m,"na.action")
+	}
+}else{
+	na.classmb <- NULL
+}
+
+na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
+#7/05/2012
+
+
+
 attr.fixed <- attributes(terms(fixed))
 depvar <- as.character(attr.fixed$variables[2])
+if(!is.null(na.action)){
+Y0 <- data[-na.action,depvar]
+}else{
 Y0 <- data[,depvar]
+}
+
+
 
 minY0 <- min(Y0)
 maxY0 <- max(Y0)
@@ -22,9 +102,9 @@ maxY0 <- range[2]
 if(all.equal((maxY0-minY0),0) == T){
 	stop("All the values of the dependent variable are the same. No estimation can be performed in that case.")
 }
-if((any(is.na(Y0))==TRUE)){
-	stop("The dependent variable should not contain any missing value")
-}
+#if((any(is.na(Y0))==TRUE)){
+#	stop("The dependent variable should not contain any missing value")
+#}
 
 if(length(grep("-",unlist(strsplit(link,split="")))) > 2){
 	stop("Please check and revise the 'link' argument according to the format given in the help.")
@@ -149,20 +229,31 @@ if (idlink0!=3) {
 	}
 }
 
-#cat("ide :")
-#cat(ide0,"\n")
-#cat(zitr,"\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
 result <- switch(link
-,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
+,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
 
-,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
+,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
 
-,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=m,Ydiscrete)
-,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=m,Ydiscrete))
+,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
+,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,na.action=na.action))
 
 }
 

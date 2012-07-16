@@ -19,9 +19,10 @@ cat(" \n")
 cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$dataset),"\n")
 cat(paste("     Number of subjects:", x$specif[[2]]),"\n")
+if(length(x$na.action))cat(paste("     Number of observations deleted:",length(x$na.action)),"\n")
 cat(paste("     Number of repeated measures:", length(x$pred[,1])),"\n")
 cat(paste("     Number of events: ", x$specif[[1]][7]," (",round(x$specif[[1]][7]*100/x$specif[[2]],2),"%)"),"\n")
-cat(paste("     Number of latents classes:", x$specif[[3]]), "\n")
+cat(paste("     Number of latent classes:", x$specif[[3]]), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
 
 
@@ -68,7 +69,9 @@ cat("Goodness-of-fit statistics:", "\n")
 cat(paste("     maximum log-likelihood:", round(x$loglik,2))," \n")
 cat(paste("     AIC:", round(-2*x$loglik+2*length(x$best),2))," \n")
 cat(paste("     BIC:", round(-2*x$loglik+length(x$best)*log(x$specif[[2]]),2))," \n")
+if(!is.na(x$CIstat)){
 cat(paste("     Score test statistic for CI assumption: ", round(x$CIstat,3)," (p-value=",round((1-pchisq(x$CIstat,sum(x$specif[[4]]))),4),")" ,sep=""))
+}
 cat(" \n")
 cat(" \n")
 cat("Maximum Likelihood Estimates:", "\n")
@@ -146,8 +149,8 @@ Mat.cov <- diag(coef[(NEF+1):(NEF+NVC)])
 }else{
 Mat.cov <- matrix(coef[(NEF+1)],ncol=1)
 }
-colnames(Mat.cov) <-x$Names[[6]] 
-rownames(Mat.cov) <-x$Names[[6]] 
+colnames(Mat.cov) <-x$Names[[2]][x$specif[[4]]!=0] 
+rownames(Mat.cov) <-x$Names[[2]][x$specif[[4]]!=0] 
 Mat.cov[lower.tri(Mat.cov)] <- 0
 Mat.cov[upper.tri(Mat.cov)] <- NA
 
@@ -157,9 +160,9 @@ cat("\n")
 
 
 if(x$specif[[8]]==0){
-Mat.cov<-matrix(0,ncol=length(x$Names[[6]]),nrow=length(x$Names[[6]]))
-colnames(Mat.cov) <-x$Names[[6]]  
-rownames(Mat.cov) <-x$Names[[6]]  
+Mat.cov<-matrix(0,ncol=sum(x$specif[[4]]),nrow=sum(x$specif[[4]]))
+colnames(Mat.cov) <-x$Names[[2]][x$specif[[4]]!=0] 
+rownames(Mat.cov) <-x$Names[[2]][x$specif[[4]]!=0] 
 Mat.cov[upper.tri(Mat.cov,diag=TRUE)]<-coef[(NEF+1):(NEF+NVC)]
 Mat.cov <-t(Mat.cov)
 Mat.cov[upper.tri(Mat.cov)] <- NA

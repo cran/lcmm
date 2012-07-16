@@ -134,7 +134,7 @@
 
 	!Variables locales
       integer :: jtemp,i,g,j,npm,ij,ier,k,ktemp,ig,nmestot,it
-      double precision :: eps, ca, cb, dd,nHT
+      double precision :: eps, ca, cb, dd
       double precision, dimension(npm0) :: mvc
       double precision, dimension(npm0*(npm0+3)/2) :: V
       double precision, dimension(nobs0) :: resid_m, resid_ss
@@ -200,7 +200,7 @@
       do i=1,ns0
          if (nmes0(i).gt.maxmes) then
             maxmes=nmes0(i)
-         end if            
+         end if
       end do
 
 
@@ -214,17 +214,17 @@
       allocate(Y(nobs0),X(nobs0,nv0))
 
 
-      nHT=0
+!      nHT=0
 !      do i=1,ns0
-!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.1) then 
+!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.1) then
 !            nHT=nHT+1
 !         end if
-!         
-!         if(tsurv(i).gt.tsurvint(i).and.ind_survint(i).ne.1) then 
+!
+!         if(tsurv(i).gt.tsurvint(i).and.ind_survint(i).ne.1) then
 !            write(*,*)'probleme HT',i,ind_survint(i),tsurvint(i),tsurv(i)
 !         end if
 
-!         if(tsurv(i).le.tsurvint(i).and.ind_survint(i).ne.0) then 
+!         if(tsurv(i).le.tsurvint(i).and.ind_survint(i).ne.0) then
 !            write(*,*)'probleme HT',i,ind_survint(i),tsurvint(i),tsurv(i)
 !         end if
 !      end do
@@ -233,7 +233,7 @@
 
 !      nHT=0
 !      do i=1,ns0
-!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.0) then 
+!         if(tsurv(i).gt.tsurvint(i).and.Devt(i).eq.0) then
 !            nHT=nHT+1
 !         end if
 !      end do
@@ -256,7 +256,7 @@
         end select
 
       prior=0
-      ppi0=0.d0
+      ppi=0.d0
       ppitest=0.d0
       resid_m0=0.d0
       resid_ss0=0.d0
@@ -582,11 +582,6 @@
 ! 100  continue
 
 
-
-
-
-
-
       return
 
 
@@ -653,9 +648,11 @@
       double precision,dimension(maxmes,nv) ::Z,P,X00,X2
       double precision,dimension(nvarprob) ::Xprob,bprob
       double precision,dimension(nv,nv) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se
+!      double precision,dimension(maxmes,maxmes) ::VC,Se
+      double precision,dimension(:,:),allocatable ::VC,Se
       double precision,dimension(npm) :: b,b1
-      double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
+!      double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
+      double precision,dimension(:),allocatable ::Vi
       double precision,dimension(nv) :: b0,b2
       double precision :: vrais,eps,det
       double precision ::thi,thj,temp
@@ -673,9 +670,16 @@
 
 !	write(*,*)'entree funcpi',i
 
+
+      allocate(VC(maxmes,maxmes),Se(maxmes,maxmes),Vi(maxmes*(maxmes+1)/2))
+      VC=0.d0
+      Vi=0.d0
+      Se=0.d0
+      funcpij=0.d0
+
+
       b1=0.d0
       eps=1.D-20
-
       do k=1,npm
          b1(k)=b(k)
       end do
@@ -697,8 +701,6 @@
             end do
          end do
       end if
-
-
       If (idiag.eq.0) then
          do j=1,nea
             do k=1,j
@@ -731,7 +733,7 @@
                   brisq(k)=exp(b1(nprob+k))
                end do
             end if
-            
+
          else
             if (risqcom.eq.0) then
                do k=1,nprisq
@@ -748,7 +750,7 @@
                end do
             end if
          end if
-         
+
 
          call fct_risq_i(i,brisq,g,risq,surv,surv0,survint)
 
@@ -761,19 +763,19 @@
          end if
       end do
 
-!      if(tsurvint(i).ne.tsurv(i).and.ind_survint(i).eq.0) then 
+!      if(tsurvint(i).ne.tsurv(i).and.ind_survint(i).eq.0) then
 !         write(*,*)'problem',tsurvint(i),tsurv(i)
 !      end if
 !      do g=1,ng
-!         if(surv(g).ne.survint(g).and.ind_survint(i).eq.0) then 
+!         if(surv(g).ne.survint(g).and.ind_survint(i).eq.0) then
 !            write(*,*)'problem surv',surv(g),survint(g)
-!         end if  
-!         if(surv(g).eq.survint(g).and.ind_survint(i).eq.1) then 
+!         end if
+!         if(surv(g).eq.survint(g).and.ind_survint(i).eq.1) then
 !            write(*,*)'problem surv ind',surv(g),survint(g)
-!         end if          
+!         end if
 !      end do
 
-      
+
 
 
 
@@ -875,13 +877,13 @@
                l=l+1
             end if
          end do
-         
+
          if (l-1.ne.nvarxevt-nvdepsurv) then
             !              write(*,*)'probleme nvarxevt'
             funcpij=-1.d9
             goto 654
          end if
-         
+
          if (ind_survint(i).eq.1) then
             bevtint=b1(nprob+nrisq+nvarxevt)
          end if
@@ -925,16 +927,16 @@
            vrais=vrais+2*(log(risq(1))+DOT_PRODUCT(Xevt,bevt) &
                 -exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+     &
                 exp(bevtint)*(surv(1)-survint(1))))
-           
-           
+
+
            vrais_survie=vrais_survie+2*(log(risq(1))        &
                 +DOT_PRODUCT(Xevt,bevt)                        &
                 -exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+  &
                 exp(bevtint)*(surv(1)-survint(1))))
 !        else
 !           vrais=vrais+2*(log(risq(1))+DOT_PRODUCT(Xevt,bevt) &
-!                -exp(DOT_PRODUCT(Xevt,bevt))*surv(1))           
-!           
+!                -exp(DOT_PRODUCT(Xevt,bevt))*surv(1))
+!
 !           vrais_survie=vrais_survie+2*(log(risq(1))        &
 !                +DOT_PRODUCT(Xevt,bevt)                        &
 !                -exp(DOT_PRODUCT(Xevt,bevt))*(surv(1)))
@@ -944,18 +946,18 @@
               funcpij=-1.d9
               goto 654
            end if
-                  
-!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then 
+
+!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then
 !              write(*,*)'devt1',i,surv(1),survint(1),tsurv(i),Tsurvint(i)
 !           end if
-           
+
         end if
         if (Devt(i).eq.0) then
 !           if (ind_survint(i).eq.1) then
               vrais=vrais-2*exp(DOT_PRODUCT(Xevt,bevt)) &
                    *(survint(1)+exp(bevtint)       &
                    *(surv(1)-survint(1)))
-           
+
               vrais_survie=vrais_survie                 &
                    -2*exp(DOT_PRODUCT(Xevt,bevt))      &
                    *(survint(1)+exp(bevtint)      &
@@ -963,22 +965,22 @@
 !           else
 !              vrais=vrais-2*exp(DOT_PRODUCT(Xevt,bevt)) &
 !                   *(surv(1))
-!           
+!
 !              vrais_survie=vrais_survie                 &
 !                   -2*exp(DOT_PRODUCT(Xevt,bevt))      &
 !                   *(surv(1))
  !          end if
-      
-!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then 
+
+!           if(ind_survint(i).eq.1.and.thi.eq.0.and.thj.eq.0) then
 !              write(*,*)'devt0',i,surv(1),survint(1),tsurv(i),Tsurvint(i)
 !           end if
 
         end if
         entretard=entretard-surv0(1)*exp(DOT_PRODUCT(Xevt,bevt))
-        
-        
-        
-        
+
+
+
+
       ELSE
 
 
@@ -1224,7 +1226,7 @@
 
  654  continue
 
-
+      deallocate(VC,Se,Vi)
 
 
       if (isnan(funcpij).or.abs(funcpij).gt.1.d30) then
@@ -1262,13 +1264,13 @@
       double precision,dimension(maxmes,nv) ::Z,P,X0,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nv,nv) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se
+      double precision,dimension(:,:),allocatable ::VC,Se
       double precision,dimension(npm) :: b,b1
-      double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
+      double precision,dimension(:),allocatable ::Vi
       double precision,dimension(nv) :: b0,b2,bprob
       double precision :: eps,det
       double precision ::temp
-      double precision ::Y4,f,fevt
+      double precision ::Y4,fevt
       double precision,dimension(ng) ::fi,pi,fi1
       double precision,dimension(ns,ng) ::ppiy,ppi
       double precision,dimension(maxmes) :: mu,Y1,Y2,Y3
@@ -1283,9 +1285,17 @@
       eps=1.D-20
       ppiy=0.D0
       ppi=0.D0
+      b1=0.d0
       do k=1,npm
          b1(k)=b(k)
       end do
+
+      allocate(VC(maxmes,maxmes),Se(maxmes,maxmes),Vi(maxmes*(maxmes+1)/2))
+      VC=0.d0
+      Vi=0.d0
+      Se=0.d0
+      risq2=0.d0
+
 
 
 !----------- rappel des parametres utilises ---------
@@ -1294,7 +1304,7 @@
 
       Ut=0.d0
       If (idiag.eq.1) then
-         do j=1,nea
+          do j=1,nea
             do k=1,nea
                if (j.eq.k) then
                   Ut(j,k)=b1(nef+j)
@@ -1499,9 +1509,11 @@
 
 
 !     calcul de la vraisemblance par composante
-       f=0.d0
+ 
        fi=0.d0
-
+       fi1=0.d0
+       b0=0.d0
+       b2=0.d0
 
        do g=1,ng
 ! bevt
@@ -1592,7 +1604,7 @@
           Y3=MATMUL(VC,Y2)
           Y4=DOT_PRODUCT(Y2,Y3)
 
-	  risq2(i,g)=risq(i,g)
+	      risq2(i,g)=risq(i,g)
           if (ind_survint(i).eq.1) then
              risq2(i,g)=risq(i,g)*exp(bevtint)
           end if
@@ -1601,7 +1613,7 @@
           fi(g)=fi(g) -det
           fi(g)=fi(g) - Y4
           fi(g)=fi(g)/(2.d0)
-          fi1(g)=exp(fi(g))
+          fi1(g)=dexp(fi(g))
 
 
           fevt=log(risq2(i,g))+DOT_PRODUCT(bevt,Xevt)
@@ -1624,6 +1636,9 @@
 
 
  147  continue
+
+
+      deallocate(VC,Vi,Se)
 
       return
 
@@ -1650,10 +1665,11 @@
       double precision,dimension(maxmes,nv) ::Z,P,X0,X2
       double precision,dimension(nv) ::Xprob,err2
       double precision,dimension(nv,nv) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se,VC1
+      double precision,dimension(:,:),allocatable ::VC,Se,VC1
       double precision,dimension(npm) ::b1
-      double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
-      double precision,dimension(nv) :: b0,b2,bprob,b3
+      double precision,dimension(:),allocatable ::Vi
+      double precision,dimension(nv) :: b0,b2,bprob
+!      double precision,dimension(nv) ::b3
       double precision :: eps,det
       double precision ::temp
       double precision,dimension(nv,maxmes)::Valea
@@ -1667,6 +1683,12 @@
 	integer::nef
 
 
+
+      allocate(VC(maxmes,maxmes),VC1(maxmes,maxmes),Se(maxmes,maxmes),Vi(maxmes*(maxmes+1)/2))
+      VC=0.d0
+      VC1=0.d0
+      Vi=0.d0
+      Se=0.d0
 
 
 
@@ -1902,7 +1924,7 @@
                n2=0
                b0=0.d0
                b2=0.d0
-               b3=0.d0
+!               b3=0.d0
                nmoins2=0
                do k=1,nv
                   if (idg(k).eq.1) then
@@ -1916,11 +1938,11 @@
                   end if
                   IF (IDEA(k).EQ.1.and.idg(k).eq.1) THEN
                      n2=n2+1
-                     b3(n2)=b1(nprob+nrisq+nvarxevt+nmoins2+1)
+!                     b3(n2)=b1(nprob+nrisq+nvarxevt+nmoins2+1)
                      nmoins2=nmoins2+1
                   else if(IDEA(k).EQ.1.and.idg(k).eq.2) THEN
                      n2=n2+1
-                     b3(n2)=b1(nprob+nrisq+nvarxevt+nmoins2+g)
+!                     b3(n2)=b1(nprob+nrisq+nvarxevt+nmoins2+g)
                      nmoins2=nmoins2+1
                   end if
                end do
@@ -2020,6 +2042,9 @@
       end do
 
  654  continue
+
+      deallocate(VC,VC1,Vi,Se)
+      return
 
       end subroutine residualsj
 
@@ -2632,13 +2657,14 @@
       implicit none
 
       double precision,intent(out)::statsc
+
       double precision::survmarg,risqcum,risqcum0,coef
       double precision,dimension(nea,nea)::totretard,retard,varSi
-      double precision,dimension(ns,nea)::stat
+      double precision,dimension(:,:),allocatable::stat,ppi
       double precision,dimension(nea):: statscore,RE
-      double precision,dimension(ns):: Somtest
+!      double precision,dimension(ns):: Somtest
       double precision,dimension(nea,nea)::varscore,varscore2
-      double precision,dimension(nea*(nea+1))::vars,vars2
+      double precision,dimension(nea*(nea+1)/2)::vars,vars2
       double precision,dimension(nea,nea)::BB,Ebb,Varb
       double precision,dimension(nea,maxmes)::BZT,BZV
       double precision,dimension(maxmes,nea)::  Z,P
@@ -2647,28 +2673,49 @@
       double precision,dimension(maxmes,nv) ::X0,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se
+      double precision,dimension(:,:),allocatable ::VC,Se
       double precision,dimension(npm) :: b,b1
-      double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
+      double precision,dimension(:),allocatable ::Vi
       double precision,dimension(nv) :: b0,b2,bprob
       double precision :: eps,det
       double precision ::temp
       double precision ::Y4,f,fevt
-      double precision,dimension(ng) ::fi,pi,fi1
-      double precision,dimension(ns,ng) ::ppi
+      double precision,dimension(ng) ::fi,pi
       double precision,dimension(maxmes) :: mu,Y1,Y2,Y3
 
       double precision,dimension(nvarxevt)::bevt,Xevt
-      double precision,dimension(ns,ng)::risq2
       double precision::bevtint
       double precision,dimension(nprisq)::brisq
-      double precision,dimension(ns,ng)::risq,surv,surv0, &
-      survint
-
+!     double precision,dimension(ns,ng)::risq,surv,surv0, &
+!      survint,risq2
+      double precision,dimension(:,:),allocatable::risq,surv,surv0, &
+      survint,risq2
 
       eps=1.d-20
-      ppi=0.D0
-      b1=b
+      b1=0.d0
+      do k=1,npm
+         b1(k)=b(k)
+      end do
+
+
+
+      allocate(risq(ns,ng),surv(ns,ng),surv0(ns,ng),survint(ns,ng),risq2(ns,ng))
+      allocate(stat(ns,nea),ppi(ns,ng))
+      stat=0.d0
+      ppi=0.d0
+      risq=0.d0
+      surv=0.d0
+      surv0=0.d0
+      survint=0.d0
+
+      allocate(VC(maxmes,maxmes),Se(maxmes,maxmes),Vi(maxmes*(maxmes+1)/2))
+      VC=0.d0
+      Vi=0.d0
+      Se=0.d0
+      risq2=0.d0
+      statsc=0.d0
+
+
 
 !----------- rappel des parametres utilises ---------
 
@@ -2676,7 +2723,7 @@
 
       Ut=0.d0
       If (idiag.eq.1) then
-         do j=1,nea
+          do j=1,nea
             do k=1,nea
                if (j.eq.k) then
                   Ut(j,k)=b1(nef+j)
@@ -2709,37 +2756,36 @@
          brisq=0.d0
          if (logspecif.eq.1.or.typrisq.eq.2) then
                if (risqcom.eq.0) then
-                do k=1,nprisq
+                 do k=1,nprisq
                    brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
-                end do
-		 elseif (risqcom.eq.1) then
-            do k=1,nprisq
-                  brisq(k)=exp(b1(nprob+k))
                end do
-               else if (risqcom.eq.2) then
-            do k=1,nprisq
-                  brisq(k)=exp(b1(nprob+k))
-               end do
-            end if
-            else
-
-               if (risqcom.eq.0) then
+               elseif (risqcom.eq.1) then
                 do k=1,nprisq
-                  brisq(k)=b1(nprob+nprisq*(g-1)+k)  &
-                      *b1(nprob+nprisq*(g-1)+k)
+                  brisq(k)=exp(b1(nprob+k))
                 end do
-		 elseif (risqcom.eq.1) then
-            do k=1,nprisq
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
+               elseif (risqcom.eq.2) then
+             do k=1,nprisq
+                brisq(k)=exp(b1(nprob+k))
+              end do
+            endif
+        else
+               if (risqcom.eq.0) then
+              do k=1,nprisq
+                  brisq(k)=b1(nprob+nprisq*(g-1)+k)   &
+                      *b1(nprob+nprisq*(g-1)+k)
                end do
-               else if (risqcom.eq.2) then
-            do k=1,nprisq
-                  brisq(k)=b1(nprob+k)  &
-                      *b1(nprob+k)
-               end do                  
-            end if
-         end if
+               elseif (risqcom.eq.1) then
+                do k=1,nprisq
+                  brisq(k)=b1(nprob+k) *b1(nprob+k)
+
+                end do
+               elseif (risqcom.eq.2) then
+               do k=1,nprisq
+                brisq(k)=b1(nprob+k)*b1(nprob+k)
+               end do
+              end if
+        end if
+!         write(*,*)'g=',g,'brisq=',(brisq(k),k=1,nrisq)
 
          call fct_risq(brisq,g,risq,surv,surv0,survint)
 
@@ -2754,21 +2800,16 @@
 
       end do
 
-       varscore=0.d0
-       statscore=0.d0
-       totretard=0.d0
-       stat=0.d0
+
+      varscore=0.d0
+      statscore=0.d0
+      totretard=0.d0
+      stat=0.d0
 
 ! ----------- boucle sur les individus -------------
       kk=0
       it=0
       do i=1,ns
-
-	if (i==1) then
-		it=0
-	else
-		it=it+nmes(i-1)
-	end if
 
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
 
@@ -2787,6 +2828,15 @@
          end do
 
 
+         Xevt=0.d0
+            l=0
+            do k=1,nv
+               if (idxevt(k).eq.1.or.idxevt(k).eq.2) then
+                  l=l+1
+                  Xevt(l)=X(it+1,k)
+               end if
+
+            end do
 ! creation de s2*I et Y1
 
          Se=0.d0
@@ -2820,7 +2870,7 @@
 
          CALL DSINV(Vi,nmes(i),eps,ier,det)
          if (ier.eq.-1) then
-            ppi=-1.d0
+            statsc=9999.d0
             go to 147
          end if
 
@@ -2837,14 +2887,7 @@
          end do
        end if
 
-       Xevt=0.d0
-          l=0
-          do k=1,nv
-             if (idxevt(k).eq.1.or.idxevt(k).eq.2) then
-                l=l+1
-                Xevt(l)=X(it+1,k)
-             end if
-          end do
+
 
 ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
        if (prior(i).ne.0) then
@@ -2898,10 +2941,11 @@
 !     calcul de la vraisemblance par composante
        f=0.d0
        fi=0.d0
-
        retard=0.d0
        survmarg=0.d0
        varSi=0.d0
+       b0=0.d0
+       b2=0.d0
 
        do g=1,ng
           nmoins=0
@@ -2920,25 +2964,26 @@
           end do
 
 ! bevt
-          bevt=0.d0
-          bevtint=0.d0
-             m=0
-             l=1
-             do k=1,nv
-                if (idxevt(k).eq.1) then
-                   bevt(l)=b1(nprob+nrisq+m+1)
-                   l=l+1
-                   m=m+1
-                end if
-                if (idxevt(k).eq.2) then
-                   bevt(l)=b1(nprob+nrisq+m+g)
-                   l=l+1
-                   m=m+ng
-                end if
-             end do
-             if (nvdepsurv.ne.0) then
-                bevtint=b1(nprob+nrisq+nvarxevt)
-             end if
+             bevt=0.d0
+            bevtint=0.d0
+               m=0
+               l=1
+               do k=1,nv
+                  if (idxevt(k).eq.1) then
+                     bevt(l)=b1(nprob+nrisq+m+1)
+                     l=l+1
+                     m=m+1
+                  end if
+                  if (idxevt(k).eq.2) then
+                     bevt(l)=b1(nprob+nrisq+m+g)
+                     l=l+1
+                     m=m+ng
+                  end if
+
+               end do
+               if (nvdepsurv.ne.0) then
+                  bevtint=b1(nprob+nrisq+nvarxevt)
+               end if
 
 !    variance covariance si spec aux classes :
 
@@ -2969,7 +3014,7 @@
 
              CALL DSINV(Vi,nmes(i),eps,ier,det)
              if (ier.eq.-1) then
-                PPI=-1.d0
+                statsc=9999.d0
                 goto 147
              end if
 
@@ -3023,18 +3068,17 @@
           fi(g)=fi(g)-det
           fi(g)=fi(g)- Y4
           fi(g)=fi(g)/(2.d0)
-          fi1(g)=exp(fi(g))
 
-               fi(g)=fi(g)+Devt(i)*fevt-exp(DOT_PRODUCT(Xevt,bevt))* &
-                         (survint(i,g)+exp(bevtint)*(surv(i,g)    &
-                         -survint(i,g)))
-	  fi(g)=exp(fi(g))
+          risqcum=exp(DOT_PRODUCT(Xevt,bevt))*               &
+                 (survint(i,g)+dexp(bevtint)*(surv(i,g)   &
+                 -survint(i,g)))
+!	   write(*,*)'i',i,fi(g),Devt(i),fevt,risqcum 
+           temp=fi(g)+Devt(i)*fevt-risqcum
+	   fi(g)=0.d0 	
+	   fi(g)=dexp(temp)
 
 ! statr du score et var pour sujet i :test global
 
-          risqcum=exp(DOT_PRODUCT(Xevt,bevt))*               &
-                 (survint(i,g)+exp(bevtint)*(surv(i,g)   &
-                 -survint(i,g)))
 
 !          write(*,*)i,'ebb',((Ebb(j,k),j=1,nea),k=1,nea)
          do j=1,nea
@@ -3053,20 +3097,7 @@
             coef=pi(g)*exp(-risqcum0) &
                              *risqcum0*(risqcum0-1.d0)
             retard=retard+coef*BB
-
-!            do j=1,nea
-!               write(*,*)'bb',BB(j,:)
-!            end do
-!            write(*,*)'coef',coef
-!            write(*,*)'bb avec coef'
-!            do j=1,nea
-!               write(*,*)retard(j,:)
-!            end do
          end if
-
-
-
-
 
 !          write(*,*)'i',i,g,risqcum,risqcum0
        end do !Fin boucle sur les groupes g
@@ -3091,12 +3122,13 @@
           end do
        end do
 ! verification de la somme des probabilites egalent a 1:Somtest
-       Somtest=0.d0
+!       Somtest=0.d0
        do g=1,ng
 	  ppi(i,g)=pi(g)*fi(g)/f
-	  Somtest(i)=Somtest(i)+ppi(i,g)
+!	  Somtest(i)=Somtest(i)+ppi(i,g)
        end do
 
+	it=it+nmes(i)
     end do
 ! fin boucle sujets
 
@@ -3164,8 +3196,13 @@
 
 
  147  continue
+      deallocate(VC,Se,Vi,stat,ppi)
+      deallocate(risq,surv,surv0,survint,risq2)
 
 
+      if (statsc.ne.statsc) statsc=9999.d0
+
+!	write(*,*)'statsc',statsc
       return
 
       end subroutine scoretest

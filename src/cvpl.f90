@@ -90,9 +90,9 @@
 	double precision::eps
 	integer::nef,npm
 !-------------------> variables locales joint
-	double precision::trace3,thi,rl_condt
+	double precision::trace3,rl_condt
 	double precision,dimension(ns0)::rlindiv
-	integer::t,nbevt,nmescur,nmescur_s,id,jtemp
+	integer::t,nbevt,nmescur,nmescur_s,jtemp
 	double precision,dimension(npm0,npm0)::J_cond,mat3
 	double precision,dimension(npm0,npm0)::H_1
 	double precision, dimension(npm0) :: mvc
@@ -101,6 +101,7 @@
 
         ! verification des donnees en entree
 
+	eps=1.d-20
 	maxmes=0
 	do i=1,ns0
            if (nmes0(i).gt.maxmes) then
@@ -116,10 +117,8 @@
              ,Tsurvint(ns0),ind_survint(ns0),idxevt(nv0)             &
              ,devt(ns0),prior(ns0),time_cvpl(nobs0))
 
-	typrisq=typrisq0
-	risqcom=risqcom0
-	idtrunc=idtrunc0
-	Tsurv0=Tentr0
+
+        Tsurv0=Tentr0
 	Tsurv=Tevt0
 	Tsurvint=Tsurvint0
 	devt=devt0
@@ -127,8 +126,25 @@
 	logspecif=logspecif0
 
 
+	typrisq=typrisq0
+	risqcom=risqcom0
+	idtrunc=idtrunc0
+
+
+        Y=0.d0
+        X=0.d0
+        idprob=0
+        idea=0
+        idg=0
+        idxevt=0
+        prior=0
+        nmes=0
+        time_cvpl=0.d0
+
+
+
 	nvdepsurv=0
-        if(sum(ind_survint).gt.0) then 
+        if(sum(ind_survint).gt.0) then
            nvdepsurv=1
         end if
 
@@ -147,7 +163,6 @@
            end do
 	end select
 
-	prior=0
 	ns=ns0
 	ng=ng0
 	nv=nv0
@@ -171,12 +186,6 @@
 	end if
         !--------------------
 	nmes=nmes0
-	Y=0.d0
-	X=0.d0
-	idprob=0
-	idea=0
-	idg=0
-	idxevt=0
 	nmestot=0
 	ktemp=0
 	do k=1,nv
@@ -263,7 +272,7 @@
 	nef=nprob+nvarxevt+nrisq+ncssg+ncg*ng !
 	npm=nef+nvc+nwg+1
 
-	if (idiag.eq.1) then
+	if (idiag.eq.1.and.nvc.gt.0) then
            DO j=1,nvc
               B(nef+j)=dsqrt(abs(B(nef+j)))
            END DO
@@ -271,7 +280,7 @@
         ! si idiag=0, on met dans le vecteur des parms, les parms
         ! de la transformee de Cholesky
 
-	if (idiag.eq.0) then
+	if (idiag.eq.0.and.nvc.gt.0) then
 
            DO j=1,nvc
               mvc(j)=B(nef+j)
@@ -357,8 +366,12 @@
            nmescur_s=0
            ktemp=0
 
+
            do i=1,ns
-              if (Tsurv(i).ge.valT(t).and.(time_cvpl(nmescur+1).le.valT(t))) then
+
+!           write(*,*)'i',i,Tsurvint(i),valT(t),time_cvpl(nmescur+1)
+
+              if (Tsurvint(i).ge.valT(t).and.(time_cvpl(nmescur+1).le.valT(t))) then
 
                  indT(i)=1
                  ns_s=ns_s+1
@@ -367,7 +380,6 @@
                     if (time_cvpl(nmescur+j).le.valT(t)) then
                        nmes_s(ns_s)=nmes_s(ns_s)+1
                        nmescur_s=nmescur_s+1
-
                        Y_s(nmescur_s)=Y(nmescur+j)
                        do k=1,nv
                           X_s(nmescur_s,k) = X(nmescur+j,k)
@@ -407,11 +419,14 @@
 
 !           write(*,*)'apres derivc'
 
-           thi=0.d0
-           id=0
            rl_condt=0.d0
            do i=1,ns
                  contribt(ns*(t-1)+i)=rlindiv(i)
+                 if (rlindiv(i).eq.-1.d9) then
+                    rl_cond(t)=-1.d9
+                    epoir(t)=1.d9
+                    goto 5289
+                 end if
                  rl_condt=rl_condt+rlindiv(i)
            end do
 
@@ -423,6 +438,14 @@
 
            epoir(t)=-rl_condt/dble(ns_s)+(trace3*dble(ns)/(dble(ns_s)*dble(ns-1)))
            rl_cond(t)=rl_condt/dble(ns_s)
+
+	    if (epoir(t).ne.epoir(t)) then 
+                    epoir(t)=1.d9
+	    end if
+
+5289       continue
+
+
 	end do
 
 !        write(*,*)'avant deallocate 1'
@@ -449,9 +472,11 @@
 	endif
 
 
+	
+
 !       write(*,*)"dans CVPL : valeur de la vraisemblance"
 !       do t=1,nT
-!          write(*,*)valt(t),rl_cond(t)*ns_vect(t)
+!          write(*,*)valt(t),epoir(t),rl_cond(t),ns_vect(t),nevt_vect(t)
 !       end do
 !        write(*,*)"fin du programme"
 
@@ -794,13 +819,13 @@
                l=l+1
             end if
          end do
-         
+
          if (l-1.ne.nvarxevt-nvdepsurv) then
             !              write(*,*)'probleme nvarxevt'
             funcpi_condt=-1.d9
             goto 654
          end if
-         
+
          if (nvdepsurv.ne.0) then
             bevtint(1)=b1(nprob+nrisq+nvarxevt)
          end if
@@ -954,9 +979,9 @@
             m=0
             l=1
             do k=1,nv
-               
+
                if (idxevt(k).eq.1) then
-                  
+
                   bevt(l)=b1(nprob+nrisq+m+1)
                   l=l+1
                   m=m+1
@@ -966,7 +991,7 @@
                   l=l+1
                   m=m+ng
                end if
-               
+
             end do
             if (nvdepsurv.ne.0) then
                bevtint(1)=b1(nprob+nrisq+nvarxevt)
@@ -1077,7 +1102,6 @@
          	    expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
                       (survint(g)+exp(bevtint(g))*(survT(g)-survint(g))))
 	       else
-
                   expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
                       (survT(g)))
 	       end if
@@ -1089,7 +1113,7 @@
 
 
 
-            if (expo.le.0.or.isnan(expo).or.expo.gt.1.d30) then
+            if (expo.le.0.or.isnan(expo)) then
                funcpi_condt=-1.d9
                goto 654
             end if
@@ -1109,11 +1133,11 @@
          vrais_survie=vrais_survie/2.d0-entretard
       end if
 
-      if (vrais.lt.-1.d9) then
+!      if (vrais.lt.-1.d9) then
 !         write(*,*)'vrais inf -10^9',vrais
-         funcpi_condt=-1.d9
-         goto 654
-       end if
+!         funcpi_condt=-1.d9
+!         goto 654
+!       end if
 
 
 ! FIN BOUCLE SUJET
@@ -1126,7 +1150,8 @@
  654  continue
 
 
-      if (isnan(funcpi_condt).or.abs(funcpi_condt).gt.1.d30) then
+!      if (isnan(funcpi_condt).or.abs(funcpi_condt).gt.1.d30) then
+      if (isnan(funcpi_condt)) then
           funcpi_condt=-1.d9
        end if
 
@@ -1181,15 +1206,15 @@
         Timt2=0.d0
         Timt3=0.d0
 
-	    Tmm_valt=0.d0
-	    Tmm1_valt=0.d0
-	    Tmm2_valt=0.d0
-	    Tmm3_valt=0.d0
+        Tmm_valt=0.d0
+        Tmm1_valt=0.d0
+        Tmm2_valt=0.d0
+        Tmm3_valt=0.d0
 
-	    Tim_valt=0.d0
-	    Tim1_valt=0.d0
-	    Tim2_valt=0.d0
-	    Tim3_valt=0.d0
+        Tim_valt=0.d0
+        Tim1_valt=0.d0
+        Tim2_valt=0.d0
+        Tim3_valt=0.d0
 
 
 
@@ -1203,242 +1228,245 @@
 
 !------------------- Tsurv ---------------------------
 	Do i=1,ns
+           l=0
+           do k=2,n-2
+              if ((Tsurv(i).ge.zi(k-1)).and.  &
+                   Tsurv(i).lt.zi(k)) then
+                 l=k-1
+              end if
+           end do
 
-		do k=2,n-2
-			if ((Tsurv(i).ge.zi(k-1)).and.  &
-				Tsurv(i).lt.zi(k)) then
-				l=k-1
-			end if
-		end do
+           if (Tsurv(i).eq.zi(n-2)) then
+              l=n-3
+           end if
 
-		if (Tsurv(i).eq.zi(n-2)) then
-			l=n-3
-		end if
+           ht = Tsurv(i)-zi(l)
+           htm = Tsurv(i)-zi(l-1)
+           h2t = Tsurv(i)-zi(l+2)
+           ht2 = zi(l+1)-Tsurv(i)
+           ht3 = zi(l+3)-Tsurv(i)
+           hht = Tsurv(i)-zi(l-2)
+           h = zi(l+1)-zi(l)
+           hh = zi(l+1)-zi(l-1)
+           h2 = zi(l+2)-zi(l)
+           h3 = zi(l+3)-zi(l)
+           h4 = zi(l+4)-zi(l)
+           h3m = zi(l+3)-zi(l-1)
+           h2n = zi(l+2)-zi(l-1)
+           hn = zi(l+1)-zi(l-2)
+           hh3 = zi(l+1)-zi(l-3)
+           hh2 = zi(l+2)-zi(l-2)
 
-		ht = Tsurv(i)-zi(l)
-		htm = Tsurv(i)-zi(l-1)
-		h2t = Tsurv(i)-zi(l+2)
-		ht2 = zi(l+1)-Tsurv(i)
-		ht3 = zi(l+3)-Tsurv(i)
-		hht = Tsurv(i)-zi(l-2)
-		h = zi(l+1)-zi(l)
-		hh = zi(l+1)-zi(l-1)
-		h2 = zi(l+2)-zi(l)
-		h3 = zi(l+3)-zi(l)
-		h4 = zi(l+4)-zi(l)
-		h3m = zi(l+3)-zi(l-1)
-		h2n = zi(l+2)-zi(l-1)
-		hn = zi(l+1)-zi(l-2)
-		hh3 = zi(l+1)-zi(l-3)
-		hh2 = zi(l+2)-zi(l-2)
+           if (Tsurv(i).ne.zi(n-2)) then
+              Tmm3(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
+              Tmm2(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
+                   +((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))  &
+                   +((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
+              Tmm1(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
+                   +((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))   &
+                   +((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
+              Tmm(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
+           end if
 
-		if (Tsurv(i).ne.zi(n-2)) then
-			Tmm3(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
-			Tmm2(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
-				+((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))  &
-				+((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
-			Tmm1(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
-				+((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))   &
-				+((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
-			Tmm(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
-		end if
+           if (Tsurv(i).eq.zi(n-2)) then
+              Tmm3(i) = 0.d0
+              Tmm2(i) = 0.d0
+              Tmm1(i) = 0.d0
+              Tmm(i) = 4.d0/h
+           end if
 
-		if (Tsurv(i).eq.zi(n-2)) then
-			Tmm3(i) = 0.d0
-			Tmm2(i) = 0.d0
-			Tmm1(i) = 0.d0
-			Tmm(i) = 4.d0/h
-		end if
-
-		Tim3(i) = (0.25d0*(Tsurv(i)-zi(l-3))*Tmm3(i)) &
-			+(0.25d0*hh2*Tmm2(i))        &
-			+(0.25d0*h3m*Tmm1(i))+(0.25d0*h4*Tmm(i))
-		Tim2(i) = (0.25d0*hht*Tmm2(i))  &
-			+(h3m*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
-		Tim1(i) = (htm*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
-		Tim(i) = ht*Tmm(i)*0.25d0
+           Tim3(i) = (0.25d0*(Tsurv(i)-zi(l-3))*Tmm3(i)) &
+                +(0.25d0*hh2*Tmm2(i))        &
+                +(0.25d0*h3m*Tmm1(i))+(0.25d0*h4*Tmm(i))
+           Tim2(i) = (0.25d0*hht*Tmm2(i))  &
+                +(h3m*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
+           Tim1(i) = (htm*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
+           Tim(i) = ht*Tmm(i)*0.25d0
 
 !------------------- Tsurv0 --------------------------
 
-		if (idtrunc.eq.1) then
-			do k=2,n-2
-				if ((Tsurv0(i).ge.zi(k-1)).and.   &
-					Tsurv0(i).lt.zi(k)) then
-					l=k-1
-				end if
-			end do
+           if (idtrunc.eq.1) then
+              l=0
+              do k=2,n-2
+                 if ((Tsurv0(i).ge.zi(k-1)).and.   &
+                      Tsurv0(i).lt.zi(k)) then
+                    l=k-1
+                 end if
+              end do
 
-			if (Tsurv0(i).eq.zi(n-2)) then
-				l=n-3
-			end if
+              if (Tsurv0(i).eq.zi(n-2)) then
+                 l=n-3
+              end if
 
-			ht = Tsurv0(i)-zi(l)
-			htm = Tsurv0(i)-zi(l-1)
-			h2t = Tsurv0(i)-zi(l+2)
-			ht2 = zi(l+1)-Tsurv0(i)
-			ht3 = zi(l+3)-Tsurv0(i)
-			hht = Tsurv0(i)-zi(l-2)
-			h = zi(l+1)-zi(l)
-			hh = zi(l+1)-zi(l-1)
-			h2 = zi(l+2)-zi(l)
-			h3 = zi(l+3)-zi(l)
-			h4 = zi(l+4)-zi(l)
-			h3m = zi(l+3)-zi(l-1)
-			h2n = zi(l+2)-zi(l-1)
-			hn = zi(l+1)-zi(l-2)
-			hh3 = zi(l+1)-zi(l-3)
-			hh2 = zi(l+2)-zi(l-2)
+              ht = Tsurv0(i)-zi(l)
+              htm = Tsurv0(i)-zi(l-1)
+              h2t = Tsurv0(i)-zi(l+2)
+              ht2 = zi(l+1)-Tsurv0(i)
+              ht3 = zi(l+3)-Tsurv0(i)
+              hht = Tsurv0(i)-zi(l-2)
+              h = zi(l+1)-zi(l)
+              hh = zi(l+1)-zi(l-1)
+              h2 = zi(l+2)-zi(l)
+              h3 = zi(l+3)-zi(l)
+              h4 = zi(l+4)-zi(l)
+              h3m = zi(l+3)-zi(l-1)
+              h2n = zi(l+2)-zi(l-1)
+              hn = zi(l+1)-zi(l-2)
+              hh3 = zi(l+1)-zi(l-3)
+              hh2 = zi(l+2)-zi(l-2)
 
-			if (Tsurv0(i).ne.zi(nz-2)) then
+              if (Tsurv0(i).ne.zi(nz-2)) then
 
-				Tmm03(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
+                 Tmm03(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
 
-				Tmm02(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
-					+((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))   &
-					+((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
-				Tmm01(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
-					+((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))    &
-					+((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
-				Tmm0(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
+                 Tmm02(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
+                      +((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))   &
+                      +((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
+                 Tmm01(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
+                      +((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))    &
+                      +((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
+                 Tmm0(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
 
-			end if
+              end if
 
-			if (Tsurv0(i).eq.zi(n-2)) then
+              if (Tsurv0(i).eq.zi(n-2)) then
 
-				Tmm03(i) = 0.d0
-				Tmm02(i) = 0.d0
-				Tmm01(i) = 0.d0
-				Tmm0(i) = 4.d0/h
+                 Tmm03(i) = 0.d0
+                 Tmm02(i) = 0.d0
+                 Tmm01(i) = 0.d0
+                 Tmm0(i) = 4.d0/h
 
-			end if
+              end if
 
-			Tim03(i) = (0.25d0*(Tsurv0(i)-zi(l-3))*Tmm03(i))  &
-			+(0.25d0*hh2*Tmm02(i))           &
-			+(0.25d0*h3m*Tmm01(i))+(0.25d0*h4*Tmm0(i))
-			Tim02(i) = (0.25d0*hht*Tmm02(i))                  &
-			+(h3m*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
-			Tim01(i) = (htm*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
-			Tim0(i) = ht*Tmm0(i)*0.25d0
+              Tim03(i) = (0.25d0*(Tsurv0(i)-zi(l-3))*Tmm03(i))  &
+                   +(0.25d0*hh2*Tmm02(i))           &
+                   +(0.25d0*h3m*Tmm01(i))+(0.25d0*h4*Tmm0(i))
+              Tim02(i) = (0.25d0*hht*Tmm02(i))                  &
+                   +(h3m*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
+              Tim01(i) = (htm*Tmm01(i)*0.25d0)+(h4*Tmm0(i)*0.25d0)
+              Tim0(i) = ht*Tmm0(i)*0.25d0
 
-		end if
+           end if
 
 
 !------------------- Tsurvint --------------------------
-		if (ind_survint(i).eq.1) then
-			do k=2,n-2
-				if ((Tsurvint(i).ge.zi(k-1)).and. &
-					Tsurvint(i).lt.zi(k)) then
-					l=k-1
-				end if
-			end do
+           if (ind_survint(i).eq.1) then
+              l=0
+              do k=2,n-2
+                 if ((Tsurvint(i).ge.zi(k-1)).and. &
+                      Tsurvint(i).lt.zi(k)) then
+                    l=k-1
+                 end if
+              end do
 
-			if (Tsurvint(i).eq.zi(nz-2)) then
-				l=n-3
-			end if
+              if (Tsurvint(i).eq.zi(nz-2)) then
+                 l=n-3
+              end if
 
-			ht = Tsurvint(i)-zi(l)
-			htm = Tsurvint(i)-zi(l-1)
-			h2t = Tsurvint(i)-zi(l+2)
-			ht2 = zi(l+1)-Tsurvint(i)
-			ht3 = zi(l+3)-Tsurvint(i)
-			hht = Tsurvint(i)-zi(l-2)
-			h = zi(l+1)-zi(l)
-			hh = zi(l+1)-zi(l-1)
-			h2 = zi(l+2)-zi(l)
-			h3 = zi(l+3)-zi(l)
-			h4 = zi(l+4)-zi(l)
-			h3m = zi(l+3)-zi(l-1)
-			h2n = zi(l+2)-zi(l-1)
-			hn = zi(l+1)-zi(l-2)
-			hh3 = zi(l+1)-zi(l-3)
-			hh2 = zi(l+2)-zi(l-2)
+              ht = Tsurvint(i)-zi(l)
+              htm = Tsurvint(i)-zi(l-1)
+              h2t = Tsurvint(i)-zi(l+2)
+              ht2 = zi(l+1)-Tsurvint(i)
+              ht3 = zi(l+3)-Tsurvint(i)
+              hht = Tsurvint(i)-zi(l-2)
+              h = zi(l+1)-zi(l)
+              hh = zi(l+1)-zi(l-1)
+              h2 = zi(l+2)-zi(l)
+              h3 = zi(l+3)-zi(l)
+              h4 = zi(l+4)-zi(l)
+              h3m = zi(l+3)-zi(l-1)
+              h2n = zi(l+2)-zi(l-1)
+              hn = zi(l+1)-zi(l-2)
+              hh3 = zi(l+1)-zi(l-3)
+              hh2 = zi(l+2)-zi(l-2)
 
-			if (Tsurvint(i).ne.zi(nz-2)) then
-				Tmmt3(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
-				Tmmt2(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn)) &
-					+((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))     &
-					+((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
-				Tmmt1(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
-					+((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))       &
-					+((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
-				Tmmt(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
-			end if
+              if (Tsurvint(i).ne.zi(nz-2)) then
+                 Tmmt3(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
+                 Tmmt2(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn)) &
+                      +((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))     &
+                      +((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
+                 Tmmt1(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
+                      +((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))       &
+                      +((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
+                 Tmmt(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
+              end if
 
-			if (Tsurvint(i).eq.zi(nz-2)) then
-				Tmmt3(i) = 0.d0
-				Tmmt2(i) = 0.d0
-				Tmmt1(i) = 0.d0
-				Tmmt(i) = 4.d0/h
-			end if
+              if (Tsurvint(i).eq.zi(nz-2)) then
+                 Tmmt3(i) = 0.d0
+                 Tmmt2(i) = 0.d0
+                 Tmmt1(i) = 0.d0
+                 Tmmt(i) = 4.d0/h
+              end if
 
-			Timt3(i) = (0.25d0*(Tsurvint(i)-zi(l-3))*Tmmt3(i)) &
-			+(0.25d0*hh2*Tmmt2(i))               &
-			+(0.25d0*h3m*Tmmt1(i))+(0.25d0*h4*Tmmt(i))
-			Timt2(i) = (0.25d0*hht*Tmmt2(i))                   &
-			+(h3m*Tmmt1(i)*0.25d0)+(h4*Tmmt(i)*0.25d0)
-			Timt1(i) = (htm*Tmmt1(i)*0.25d0)+(h4*Tmmt(i)*0.25d0)
-			Timt(i) = ht*Tmmt(i)*0.25d0
-		else
-			Timt3(i) =Tim3(i)
-			Timt2(i) =Tim2(i)
-			Timt1(i) =Tim1(i)
-			Timt(i) =Tim(i)
-		end if
+              Timt3(i) = (0.25d0*(Tsurvint(i)-zi(l-3))*Tmmt3(i)) &
+                   +(0.25d0*hh2*Tmmt2(i))               &
+                   +(0.25d0*h3m*Tmmt1(i))+(0.25d0*h4*Tmmt(i))
+              Timt2(i) = (0.25d0*hht*Tmmt2(i))                   &
+                   +(h3m*Tmmt1(i)*0.25d0)+(h4*Tmmt(i)*0.25d0)
+              Timt1(i) = (htm*Tmmt1(i)*0.25d0)+(h4*Tmmt(i)*0.25d0)
+              Timt(i) = ht*Tmmt(i)*0.25d0
+           else
+              Timt3(i) =Tim3(i)
+              Timt2(i) =Tim2(i)
+              Timt1(i) =Tim1(i)
+              Timt(i) =Tim(i)
+           end if
 	End Do
 
 
 	Do i=1,nt
-		do k=2,n-2
-			if ((ValT(i).ge.zi(k-1)).and.  &
-				ValT(i).lt.zi(k)) then
-				l=k-1
-			end if
-		end do
+           l=0
+           do k=2,n-2
+              if ((ValT(i).ge.zi(k-1)).and.  &
+                   ValT(i).lt.zi(k)) then
+                 l=k-1
+              end if
+           end do
 
-		if (ValT(i).eq.zi(n-2)) then
-			l=n-3
-		end if
+           if (ValT(i).eq.zi(n-2)) then
+              l=n-3
+           end if
 
-		ht = ValT(i)-zi(l)
-		htm = ValT(i)-zi(l-1)
-		h2t = ValT(i)-zi(l+2)
-		ht2 = zi(l+1)-ValT(i)
-		ht3 = zi(l+3)-ValT(i)
-		hht = ValT(i)-zi(l-2)
-		h = zi(l+1)-zi(l)
-		hh = zi(l+1)-zi(l-1)
-		h2 = zi(l+2)-zi(l)
-		h3 = zi(l+3)-zi(l)
-		h4 = zi(l+4)-zi(l)
-		h3m = zi(l+3)-zi(l-1)
-		h2n = zi(l+2)-zi(l-1)
-		hn = zi(l+1)-zi(l-2)
-		hh3 = zi(l+1)-zi(l-3)
-		hh2 = zi(l+2)-zi(l-2)
+           ht = ValT(i)-zi(l)
+           htm = ValT(i)-zi(l-1)
+           h2t = ValT(i)-zi(l+2)
+           ht2 = zi(l+1)-ValT(i)
+           ht3 = zi(l+3)-ValT(i)
+           hht = ValT(i)-zi(l-2)
+           h = zi(l+1)-zi(l)
+           hh = zi(l+1)-zi(l-1)
+           h2 = zi(l+2)-zi(l)
+           h3 = zi(l+3)-zi(l)
+           h4 = zi(l+4)-zi(l)
+           h3m = zi(l+3)-zi(l-1)
+           h2n = zi(l+2)-zi(l-1)
+           hn = zi(l+1)-zi(l-2)
+           hh3 = zi(l+1)-zi(l-3)
+           hh2 = zi(l+2)-zi(l-2)
 
-		if (ValT(i).ne.zi(n-2)) then
-			Tmm3_valt(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
-			Tmm2_valt(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
-				+((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))  &
-				+((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
-			Tmm1_valt(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
-				+((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))   &
-				+((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
-			Tmm_valt(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
-		end if
+           if (ValT(i).ne.zi(n-2)) then
+              Tmm3_valt(i) = ((4.d0*ht2*ht2*ht2)/(h*hh*hn*hh3))
+              Tmm2_valt(i) = ((4.d0*hht*ht2*ht2)/(hh2*hh*h*hn))  &
+                   +((-4.d0*h2t*htm*ht2)/(hh2*h2n*hh*h))  &
+                   +((4.d0*h2t*h2t*ht)/(hh2*h2*h*h2n))
+              Tmm1_valt(i) = (4.d0*(htm*htm*ht2)/(h3m*h2n*hh*h)) &
+                   +((-4.d0*htm*ht*h2t)/(h3m*h2*h*h2n))   &
+                   +((4.d0*ht3*ht*ht)/(h3m*h3*h2*h))
+              Tmm_valt(i) = 4.d0*(ht*ht*ht)/(h4*h3*h2*h)
+           end if
 
-		if (ValT(i).eq.zi(n-2)) then
-			Tmm3_valt(i) = 0.d0
-			Tmm2_valt(i) = 0.d0
-			Tmm1_valt(i) = 0.d0
-			Tmm_valt(i) = 4.d0/h
-		end if
+           if (ValT(i).eq.zi(n-2)) then
+              Tmm3_valt(i) = 0.d0
+              Tmm2_valt(i) = 0.d0
+              Tmm1_valt(i) = 0.d0
+              Tmm_valt(i) = 4.d0/h
+           end if
 
-		Tim3_valt(i)=(0.25d0*(ValT(i)-zi(l-3))*Tmm3(i)) &
-		+(0.25d0*hh2*Tmm2(i))+(0.25d0*h3m*Tmm1(i))+(0.25d0*h4*Tmm(i))
-		Tim2_valt(i)=(0.25d0*hht*Tmm2(i))+(h3m*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
-		Tim1_valt(i)=(htm*Tmm1(i)*0.25d0)+(h4*Tmm(i)*0.25d0)
-		Tim_valt(i)=ht*Tmm(i)*0.25d0
+           Tim3_valt(i)=(0.25d0*(ValT(i)-zi(l-3))*Tmm3_valt(i)) &
+		+(0.25d0*hh2*Tmm2_valt(i))+(0.25d0*h3m*Tmm1_valt(i))+(0.25d0*h4*Tmm_valt(i))
+           Tim2_valt(i)=(0.25d0*hht*Tmm2_valt(i))+(h3m*Tmm1_valt(i)*0.25d0)+(h4*Tmm_valt(i)*0.25d0)
+           Tim1_valt(i)=(htm*Tmm1_valt(i)*0.25d0)+(h4*Tmm_valt(i)*0.25d0)
+           Tim_valt(i)=ht*Tmm_valt(i)*0.25d0
 	end do
 
       end subroutine splines_cvpl

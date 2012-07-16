@@ -18,9 +18,10 @@ cat(" \n")
 cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$dataset),"\n")
 cat(paste("     Number of subjects:", x$specif[[2]]),"\n")
+if(length(x$na.action))cat(paste("     Number of observations deleted:",length(x$na.action)),"\n")
 cat(paste("     Number of repeated measures:", length(x$pred[,1])),"\n")
 cat(paste("     Number of events: ", x$specif[[1]][7]," (",x$specif[[1]][7]*100/x$specif[[2]],"%)"),"\n")
-cat(paste("     Number of latents classes:", x$specif[[3]]), "\n")
+cat(paste("     Number of latent classes:", x$specif[[3]]), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
 
 

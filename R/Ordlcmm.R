@@ -1,6 +1,6 @@
 ###################### derniere mise a jour : 2012/03/16 ############"
 .Ordlcmm <-
-function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete)
+function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete,na.action)
 
 {
 
@@ -8,14 +8,6 @@ ptm<-proc.time()
 cat("Be patient, lcmm is running ... \n")
 
 cl <- match.call()
-
-##### ad
-mCall <- match.call(expand.dots = FALSE)
-mCall$fixed <- mCall$mixture <- mCall$random<- mCall$subject<- mCall$classmb<- mCall$ng<- mCall$idiag<-
-mCall$nwg<- mCall$B<- mCall$convB<- mCall$convL<- mCall$convG<- mCall$prior<- mCall$maxiter<-
-mCall$zitr<-mCall$ide<-mCall$call<-mCall$Ydiscrete<- NULL
-##### ad
-
 
 args <- as.list(match.call(.Ordlcmm))[-1]
 
@@ -50,97 +42,73 @@ int.mixture <- 0
 int.random <- 0
 int.classmb <- 0
 
-########## For fixed
-m <- mCall
-m$formula <- terms(fixed)
-# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/2012
-mtemp <- get_all_vars(formula(terms(fixed)),data=data)
-X0.names2 <- unique(c(X0.names2,colnames(mtemp)[-1]))
-# ad  2/04/2012
-m[[1]] <- as.name("model.frame")	
-m <- eval(m, sys.parent()) 
-mt <- attr(m, "terms")
-X_fixed <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
-if(colnames(X_fixed)[1]=="(Intercept)"){
-	colnames(X_fixed)[1] <- "intercept"
-	int.fixed <- 1
+### Traitement des donnees manquantes
+if(!is.null(na.action)){
+	newdata <- data[-na.action,]
 }else{
-	stop ("Only models with an intercept can be estimated using lcmm. This is required for identifiability purposes")
+	newdata <- data
 }
-nom.fixed <- colnames(X_fixed)
-if(int.fixed>0)inddepvar.fixed <- inddepvar.fixed.nom <- nom.fixed[-1]
 
-########## For mixture
+### names of covariate in intial fit
+X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(fixed)),data=newdata))[-1]))
+if(mixture[[2]] != "-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(mixture)),data=newdata))))
+if(random[[2]] != "-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(random)),data=newdata))))
+if(classmb[[2]] != "-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(classmb)),data=newdata))))
 
-if(mixture[[2]] != "-1"){
-	m <- mCall
-	m$formula <- terms(mixture)	
-	# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/12
-	mtemp <- get_all_vars(formula(terms(mixture)),data=data)
-	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-	# ad 
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_mixture <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_mixture)[1]=="(Intercept)"){
-		colnames(X_mixture)[1] <- "intercept"
-		int.mixture <- 1
+
+## Construction de nouvelles var eplicatives sur la nouvelle table
+## fixed
+	X_fixed <- model.matrix(fixed,data=newdata)
+	if(colnames(X_fixed)[1]=="(Intercept)"){
+		colnames(X_fixed)[1] <- "intercept"
+		int.fixed <- 1
+	}else{
+		stop ("Only models with an intercept can be estimated using lcmm. This is required for identifiability purposes")
 	}
-	nom.mixture <- inddepvar.mixture <- inddepvar.mixture.nom <- colnames(X_mixture)
-	if(int.mixture>0)inddepvar.mixture <- inddepvar.mixture[-1]
-	id.X_mixture <- 1
-}else{
-	inddepvar.mixture <- nom.mixture <- inddepvar.mixture.nom <- NULL
-	id.X_mixture <- 0
-}
+	nom.fixed <- colnames(X_fixed)
+	if(int.fixed>0)inddepvar.fixed <- inddepvar.fixed.nom <- nom.fixed[-1]
 
-########## For random
-
-if(random[[2]] != "-1"){
-	m <- mCall
-	m$formula <- terms(random)
-	# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/12
-	mtemp <- get_all_vars(formula(terms(random)),data=data)
-	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-	# ad
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_random <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_random)[1]=="(Intercept)"){
-		colnames(X_random)[1] <- "intercept"
-		int.random <- 1
+## mixture
+	if(mixture[[2]] != "-1"){
+		X_mixture <- model.matrix(mixture,data=newdata)	
+		if(colnames(X_mixture)[1]=="(Intercept)"){
+			colnames(X_mixture)[1] <- "intercept"
+			int.mixture <- 1
+		}
+		nom.mixture <- inddepvar.mixture <- inddepvar.mixture.nom <- colnames(X_mixture)
+		if(int.mixture>0)inddepvar.mixture <- inddepvar.mixture[-1]
+		id.X_mixture <- 1
+	}else{
+		inddepvar.mixture <- nom.mixture <- inddepvar.mixture.nom <- NULL
+		id.X_mixture <- 0
 	}
-	
-	inddepvar.random <- inddepvar.random.nom <- colnames(X_random)
-	if(int.random>0)inddepvar.random <- inddepvar.random[-1]
-	id.X_random <- 1
-}else{
-	id.X_random <- 0
-	inddepvar.random <- inddepvar.random.nom <- NULL
-}
-########## For classmb
-if(classmb[[2]] != "-1"){ 
-	m <- mCall
-	m$formula <- terms(classmb)
-	# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/12
-	mtemp <- get_all_vars(formula(terms(classmb)),data=data)
-	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-	# ad
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_classmb <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	colnames(X_classmb)[1] <- "intercept"
+## random
+	if(random[[2]] != "-1"){
+		X_random <- model.matrix(random,data=newdata)	
+		if(colnames(X_random)[1]=="(Intercept)"){
+			colnames(X_random)[1] <- "intercept"
+			int.random <- 1
+		}
+		inddepvar.random <- inddepvar.random.nom <- colnames(X_random)
+		if(int.random>0) inddepvar.random <- inddepvar.random[-1]
+		id.X_random <- 1
+	}else{
+	## ad: add inddepvar.random.nom2 <- NULL 10/04/2012
+		inddepvar.random <- inddepvar.random.nom <- NULL
+		id.X_random <- 0
+	}
 
-	id.X_classmb <- 1
-	inddepvar.classmb <- colnames(X_classmb)[-1]
-	inddepvar.classmb.nom <- colnames(X_classmb)
-}else{
-	id.X_classmb <- 0
-	inddepvar.classmb <- inddepvar.classmb.nom <-  "intercept"
-}
+## classmb
+	if(classmb[[2]] != "-1"){ 
+		X_classmb <- model.matrix(classmb,data=newdata)
+		colnames(X_classmb)[1] <- "intercept"
+		id.X_classmb <- 1
+		inddepvar.classmb <- colnames(X_classmb)[-1]
+		inddepvar.classmb.nom <- colnames(X_classmb)
+	}else{
+		inddepvar.classmb <- inddepvar.classmb.nom <- "intercept"
+		id.X_classmb <- 0
+	}	
 
 # intercept is always in inddepvar.classmb
 var.exp <- NULL
@@ -156,7 +124,7 @@ if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be
 #ad 
 ## var dependante
 Y.name <- as.character(attributes(terms(fixed))$variables[2])
-Y0 <- data[,Y.name]
+Y0 <- newdata[,Y.name]
 #ad 
 ## var expli
 X0 <- X_fixed
@@ -193,14 +161,14 @@ if (!((int.fixed+int.random)>0)) X0 <- as.data.frame(X0[,-which(colnames(X0)=="i
 nom.X0 <- colnames(X0)
 nvar.exp <- length(nom.X0)
 
-IND <- data[,nom.subject]
+IND <- newdata[,nom.subject]
 IDnum <- as.numeric(IND)
 
 
 #### INCLUSION PRIOR 
 if(missing(prior)){ PRIOR <- seq(0,length=length(IND))} 
 if(!missing(prior)){ 
-PRIOR <- data[,nom.prior]
+PRIOR <- newdata[,nom.prior]
 PRIOR[(is.na(PRIOR))] <- 0
 }
 ####
@@ -401,15 +369,16 @@ se <- rep(0,length(b))
 #------nom au vecteur best
 #--------------------------------------------
 
-#if(ng0==2)names(b)[1:NPROB]<-inddepvar.classmb.nom
+#if(ng0==2)names(b)[1:NPROB]<-nom.X0[idprob0!=0]
 
 if(ng0>=2){
-nom <-rep(inddepvar.classmb.nom,each=ng0-1)
+nom <-rep(c("intercept",nom.X0[idprob0!=0]),each=ng0-1)
 nom1 <- paste(nom,c(1:(ng0-1)))
 names(b)[1:NPROB]<-nom1
 }
 
-if(ng0==1) names(b)[1:(NEF)] <- inddepvar.fixed.nom
+if(ng0==1) names(b)[1:(NEF)] <-  nom.X0[-1][idg0[-1]!=0]
+
 if(ng0>1){
 	nom1<- NULL
 	for (i in 1:nvar.exp) {
@@ -428,13 +397,7 @@ if(ng0>1){
 names(b)[(NPROB+1):(NPROB+NEF)]<- nom1
 }
 
-
-
-
 names(b)[(NPM-ntrtot0+1):NPM]<- paste("thresh. parm",c(1:ntrtot0),sep="")
-
-
-
 
 
 
@@ -488,7 +451,7 @@ out$best[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- out$best[(NPROB+NEF+1):(NPROB+NEF+NVC
 
 #predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
 #predRE <- cbind(INDuniq,predRE)
-#colnames(predRE) <- c(nom.subject,inddepvar.random.nom)
+#colnames(predRE) <- c(nom.subject,nom.X0[idea0!=0])
 
 
 if(ng0>1) {
@@ -516,8 +479,8 @@ rownames(ppi) <- 1:ns0
 #colnames(pred)<-c(nom.subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1) 
 
 names(out$best)<-names(b)
-btest <- out$best[1:length(inddepvar.fixed.nom)]
-names(btest) <-inddepvar.fixed.nom
+#btest <- out$best[1:length(inddepvar.fixed.nom)]
+#names(btest) <-inddepvar.fixed.nom
 
 
 estimlink <- cbind(out$marker,out$transfY)
@@ -527,7 +490,7 @@ colnames(estimlink) <- c("Y","transfY")
 if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
 
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,dataset=args$data,N=N,name.mat.cov=inddepvar.random.nom,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv)
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action)
 class(res) <-c("lcmm")  
 
 cost<-proc.time()-ptm

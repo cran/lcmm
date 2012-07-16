@@ -3,14 +3,9 @@
 ############################### Fonction Jointlcmm ###################################
 
 Jointlcmm <-
-function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,survival,hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=150,nsim=100,prior,logscale=FALSE){
+function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,survival,hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=150,nsim=100,prior,logscale=FALSE,subset=NULL,na.action=1){
 
 cl <- match.call()
-mCall <- match.call(expand.dots = FALSE)
-mCall$fixed<-mCall$mixture<-mCall$random<-mCall$subject<-mCall$classmb<-mCall$ng<-mCall$idiag<-mCall$nwg<-
-mCall$survival<-mCall$hazard<-mCall$hazardtype<-mCall$hazardnodes<-mCall$TimeDepVar<-mCall$B<-mCall$convB<-
-mCall$convL<-mCall$convG<-mCall$maxiter<-mCall$nsim<-mCall$prior<-mCall$logscale <- NULL
-
 m <- match.call(expand.dots = FALSE)
     m$fixed <- m$mixture <- m$random <- m$subject <- m$classmb <-m$ng<-m$idiag<-m$nwg<-m$B<-m$convB <- m$convL <-m$convG<-m$prior<-m$logscale<-m$maxiter<-m$hazardnodes<-m$hazard<-m$hazardtype<-m$TimeDepVar<-m$nsim<-m$... <-NULL
 args <- as.list(match.call(Jointlcmm))[-1]
@@ -36,6 +31,14 @@ if(class(survival)!="formula") stop("The argument survival must be a formula")
 if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")} 
 if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")} 
 
+if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
+
+if(na.action==1){
+	na.action=na.omit
+}else{
+	na.action=na.fail
+}
+
 ### ad
 X0.names2 <- c("intercept")
 ### ad
@@ -44,171 +47,189 @@ int.mixture <- 0
 int.random <- 0
 int.classmb <- 0
 
-########## For fixed
-m <- mCall
+#7/05/2012
+### Traitement des donnees manquantes
+# fixed
+m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 m$formula <- terms(fixed)
-# ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/2012
-mtemp <- get_all_vars(formula(terms(fixed)),data=data)
-X0.names2 <- unique(c(X0.names2,colnames(mtemp)[-1]))
-# ad 
+m$na.action <- na.action
 m[[1]] <- as.name("model.frame")	
 m <- eval(m, sys.parent()) 
-mt <- attr(m, "terms")
-X_fixed <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
-if(colnames(X_fixed)[1]=="(Intercept)"){
-	colnames(X_fixed)[1] <- "intercept"
-	int.fixed <- 1
-}
-nom.fixed <- inddepvar.fixed <- inddepvar.fixed.nom <- colnames(X_fixed)
-if(int.fixed>0)inddepvar.fixed <- inddepvar.fixed[-1]
+na.fixed <- attr(m,"na.action")
 
-
-
+# mixture
 if(mixture[[2]] != "-1"){
-	m <- mCall
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 	m$formula <- terms(mixture)
-	mtemp <- get_all_vars(formula(terms(mixture)),data=data)
- 	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))	
+m$na.action <- na.action
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_mixture <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_mixture)[1]=="(Intercept)"){
-		colnames(X_mixture)[1] <- "intercept"
-		int.mixture <- 1
-	}
-	nom.mixture <- inddepvar.mixture <- inddepvar.mixture.nom <- colnames(X_mixture)
-	if(int.mixture>0)inddepvar.mixture <- inddepvar.mixture[-1]
-	id.X_mixture <- 1
-
+	na.mixture <- attr(m,"na.action")	
 }else{
-	inddepvar.mixture <- nom.mixture <- inddepvar.mixture.nom <- NULL
-	id.X_mixture <- 0
+	na.mixture <- NULL
 }
-
-########## For random
-
+# random
 if(random[[2]] != "-1"){
-	m <- mCall
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 	m$formula <- terms(random)
-	mtemp <- get_all_vars(formula(terms(random)),data=data)
-	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-	inddepvar.random.nom2 <- colnames(mtemp)
+m$na.action <- na.action
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_random <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	if(colnames(X_random)[1]=="(Intercept)"){
-		colnames(X_random)[1] <- "intercept"
-		int.random <- 1
-	}
-	inddepvar.random <- inddepvar.random.nom <- colnames(X_random)
-	if(int.random>0) inddepvar.random <- inddepvar.random[-1]
-	id.X_random <- 1
+ 	na.random <- attr(m,"na.action")
 }else{
-## ad: add inddepvar.random.nom2 <- NULL 10/04/2012
-	inddepvar.random <- inddepvar.random.nom <- inddepvar.random.nom2 <- NULL
-
-	id.X_random <- 0
+	na.random <- NULL
 }
 
-########## For classmb
-
+# classmb
 if(classmb[[2]] != "-1"){ 
-	m <- mCall
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]	
 	m$formula <- terms(classmb)
-	mtemp <- get_all_vars(formula(terms(classmb)),data=data)
-	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-
+m$na.action <- na.action
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
-	mt <- attr(m, "terms") 
-	X_classmb <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)	
-	colnames(X_classmb)[1] <- "intercept"
-
-	id.X_classmb <- 1
-	inddepvar.classmb <- colnames(X_classmb)[-1]
-	inddepvar.classmb.nom <- colnames(X_classmb)
+ 	na.classmb <- attr(m,"na.action")
 }else{
-	inddepvar.classmb <- inddepvar.classmb.nom <- "intercept"
-	id.X_classmb <- 0
+	na.classmb <- NULL
 }
 
-var.exp <- NULL
-var.exp <- c(var.exp,colnames(X_fixed))
-if(id.X_mixture == 1) var.exp <- c(var.exp,colnames(X_mixture))
-if(id.X_random == 1)var.exp <- c(var.exp,colnames(X_random))
-if(id.X_classmb == 1)var.exp <- c(var.exp,colnames(X_classmb))
-var.exp <- unique(var.exp)
-
+### names of covariate in intial fit
+## fixed
+X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(fixed)),data=data))[-1]))
+## mixture
+if(mixture[[2]]!="-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(mixture)),data=data))))	
+## random
+if(random[[2]] != "-1"){
+	X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(random)),data=data))))
+	inddepvar.random.nom2 <- colnames(get_all_vars(formula(terms(random)),data=data))
+}
+## classmb
+if(classmb[[2]] != "-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(classmb)),data=data))))
+#7/05/2012 
 
 ########################################################
 #####              SURVIVAL  
 ########################################################
 special <- c("mixture")
-    
+
 res.evt <- if (missing(data)){ 
-      terms(survival, special)
-   }else{
-        terms(survival, special, data = data)  
-    }  
-    ord <- attr(m$terms, "order")
-    if (length(ord) & any(ord != 1)){ 
-        stop("Interaction terms are not valid for this function")
-    }
-
-     depvar1 <- model.response(model.frame(formula=update(survival,"~1"),data=data))
-
-    if (!inherits(depvar1, "Surv")){ 
-        stop("Response must be a survival object")
-    }
+		terms(survival, special)
+	}else{
+		terms(survival, special, data = data)  
+	}  
+	ord <- attr(res.evt, "order")
+	if (length(ord) & any(ord != 1)){ 
+		stop("Interaction terms are not valid for this function")
+	}
 
 ### for covariates in survival
 ### nom des variables a droite dans survie (avec et sans mixture)
-    inddep.surv <- attr(res.evt, "term.labels")
+	inddep.surv <- attr(res.evt, "term.labels")
 
 ### ind.mixture = toutes les var avec mixture dans survie
-    ind.mixture <- untangle.specials(res.evt, "mixture", 1)
+	ind.mixture <- untangle.specials(res.evt, "mixture", 1)
 
 ### stop if mixture and ng=1 ad 10/04/2012
 
-    if((ng == 1) && length(ind.mixture$terms)) stop("A class-specific effect of covariate can be specified in the survival model with mixture() only when number of groups is greater than 1. ")
+	if((ng == 1) && length(ind.mixture$terms)) stop("A class-specific effect of covariate can be specified in the survival model with mixture() only when number of groups is greater than 1. ")
 
 ### variables avec mixture
-    dcomp <- ind.mixture$vars
-    dcomp <- gsub("mixture\\(","",dcomp)
-    dcomp <- gsub("\\)","",dcomp)
-    inddepvar.Mixt  <- dcomp
+	dcomp <- ind.mixture$vars
+	dcomp <- gsub("mixture\\(","",dcomp)
+	dcomp <- gsub("\\)","",dcomp)
+	inddepvar.Mixt  <- dcomp
 ## ad
-    if(length(grep("factor",inddepvar.Mixt))!= 0)inddepvar.Mixt <- paste(inddepvar.Mixt,")",sep="")
+	if(length(grep("factor",inddepvar.Mixt))!= 0)inddepvar.Mixt <- paste(inddepvar.Mixt,")",sep="")
 ## ad
 ### inddepvar.survival = toutes les variables avec pas de mixture dans survie
-    inddepvar.noMixt <- inddep.surv[!(inddep.surv %in% ind.mixture$vars)]
+	inddepvar.noMixt <- inddep.surv[!(inddep.surv %in% ind.mixture$vars)]
 
-     tmp.su <- c(inddepvar.noMixt,inddepvar.Mixt)
-     names.survival <- "~" 
-     for(i in 1:length(tmp.su)){
-	   if(i==1){
-		  names.survival <- paste(names.survival,tmp.su[i],sep="")
-	   }else{
-		  names.survival <- paste(names.survival,tmp.su[i],sep="+")
-	   }
-     }
-    int.survival <- 0
-     m <- mCall
-     m$formula <- formula(update(survival,names.survival))
-     # ad Prise en compte des vrais nom de variable dans l'appel effectif 2/04/2012
-     mtemp <- get_all_vars(formula(names.survival),data=data)
-     X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
-     # ad 
-     m[[1]] <- as.name("model.frame")
-     m <- eval(m)
-    mt <- attr(m, "terms")  
-    X_survival <- if (!is.empty.model(mt))model.matrix(mt, m, contrasts)
-    if(colnames(X_survival)[1]=="(Intercept)"){
-	 colnames(X_survival)[1] <- "intercept"
-	 int.survival <- 1
-    }
+	tmp.su <- c(inddepvar.noMixt,inddepvar.Mixt)
+	names.survival <- "~" 
+	for(i in 1:length(tmp.su)){
+		if(i==1){
+			names.survival <- paste(names.survival,tmp.su[i],sep="")
+		}else{
+			names.survival <- paste(names.survival,tmp.su[i],sep="+")
+		}
+	}
+	int.survival <- 0
+#7/05/2012
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+	m$formula <- formula(update(survival,names.survival))
+m$na.action <- na.action
+	m[[1]] <- as.name("model.frame")
+	m <- eval(m, sys.parent())
+	na.survival <- attr(m,"na.action")
+#7/05/2012
+	mtemp <- get_all_vars(formula(names.survival),data=data)
+	X0.names2 <- unique(c(X0.names2,colnames(mtemp)))
+
+#7/05/2012
+## Table sans donnees manquante: newdata
+	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival))
+	if(!is.null(na.action)){
+		newdata <- data[-na.action,]
+	}else{
+		newdata <- data
+	}
+#7/05/2012
+## Construction de nouvelles var eplicatives sur la nouvelle table
+## fixed
+	X_fixed <- model.matrix(fixed,data=newdata)
+	if(colnames(X_fixed)[1]=="(Intercept)"){
+		colnames(X_fixed)[1] <- "intercept"
+		int.fixed <- 1
+	}
+	nom.fixed <- inddepvar.fixed <- inddepvar.fixed.nom <- colnames(X_fixed)
+	if(int.fixed>0)inddepvar.fixed <- inddepvar.fixed[-1]
+
+## mixture
+	if(mixture[[2]] != "-1"){
+		X_mixture <- model.matrix(mixture,data=newdata)	
+		if(colnames(X_mixture)[1]=="(Intercept)"){
+			colnames(X_mixture)[1] <- "intercept"
+			int.mixture <- 1
+		}
+		nom.mixture <- inddepvar.mixture <- inddepvar.mixture.nom <- colnames(X_mixture)
+		if(int.mixture>0)inddepvar.mixture <- inddepvar.mixture[-1]
+		id.X_mixture <- 1
+	}else{
+		inddepvar.mixture <- nom.mixture <- inddepvar.mixture.nom <- NULL
+		id.X_mixture <- 0
+	}
+## random
+	if(random[[2]] != "-1"){
+		X_random <- model.matrix(random,data=newdata)	
+		if(colnames(X_random)[1]=="(Intercept)"){
+			colnames(X_random)[1] <- "intercept"
+			int.random <- 1
+		}
+		inddepvar.random <- inddepvar.random.nom <- colnames(X_random)
+		if(int.random>0) inddepvar.random <- inddepvar.random[-1]
+		id.X_random <- 1
+	}else{
+	## ad: add inddepvar.random.nom2 <- NULL 10/04/2012
+		inddepvar.random <- inddepvar.random.nom <- inddepvar.random.nom2 <- NULL
+		id.X_random <- 0
+	}
+## classmb
+	if(classmb[[2]] != "-1"){ 
+		X_classmb <- model.matrix(classmb,data=newdata)
+		colnames(X_classmb)[1] <- "intercept"
+		id.X_classmb <- 1
+		inddepvar.classmb <- colnames(X_classmb)[-1]
+		inddepvar.classmb.nom <- colnames(X_classmb)
+	}else{
+		inddepvar.classmb <- inddepvar.classmb.nom <- "intercept"
+		id.X_classmb <- 0
+	}	
+
+
+	X_survival <- model.matrix(formula(update(survival,names.survival)),data=newdata)
+	if(colnames(X_survival)[1]=="(Intercept)"){
+		colnames(X_survival)[1] <- "intercept"
+		int.survival <- 1
+	}
 
 	if(length(inddepvar.Mixt) > 0){
 		inddepvar.Mixt <- colnames(X_survival)[grep(inddepvar.Mixt,colnames(X_survival))]
@@ -219,16 +240,24 @@ res.evt <- if (missing(data)){
 
 ### ind.mixture$vars et ajouter a inddepvar.survival
     if(int.survival>0) inddepvar.survival <- colnames(X_survival)[-1] 
+
+
 ################# type du modele de survie
-    attr.surv.type <- attr(depvar1,"type")
+	depvar1 <- model.response(model.frame(formula=update(survival,"~1"),data=newdata))
+
+	if (!inherits(depvar1, "Surv")){ 
+		stop("Response must be a survival object")
+	}
+
+	attr.surv.type <- attr(depvar1,"type")
  
-    if (attr.surv.type=="right"){
-        idtrunc0 <-0
-        Tevent <- depvar1[,1]
-        Devent <- depvar1[,2]
-        Tentry <- rep(0,length(Tevent))
-	X0.names2 <- unique(c(X0.names2,(colnames(mtemp)[-c(1,2)]))) ### ad
-    }
+	if (attr.surv.type=="right"){
+		idtrunc0 <-0
+		Tevent <- depvar1[,1]
+		Devent <- depvar1[,2]
+		Tentry <- rep(0,length(Tevent))
+		X0.names2 <- unique(c(X0.names2,(colnames(mtemp)[-c(1,2)]))) ### ad
+	}
 
     if (attr.surv.type=="counting"){
         idtrunc0 <- 1
@@ -249,6 +278,14 @@ if (!(attr.surv.type %in% c("right","counting"))){
 ##############   COVARIATES       ##########################
 
 ##### debut ajout AMADOU
+
+var.exp <- NULL
+var.exp <- c(var.exp,colnames(X_fixed))
+if(id.X_mixture == 1) var.exp <- c(var.exp,colnames(X_mixture))
+if(id.X_random == 1)var.exp <- c(var.exp,colnames(X_random))
+if(id.X_classmb == 1)var.exp <- c(var.exp,colnames(X_classmb))
+var.exp <- unique(var.exp)
+
 # intercept is always in inddepvar.classmb
 var.exp <- unique(c(var.exp,colnames(X_survival)))
 
@@ -258,7 +295,7 @@ if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates included in mixture 
 
 ##############   DATA      ##########################
 Y.name <- as.character(attributes(terms(fixed))$variables[2])
-Y0 <- data[,Y.name]
+Y0 <- newdata[,Y.name]
 
 
 ##### debut ajout AMADOU
@@ -296,8 +333,7 @@ for(i in 1:length(colnames(X_survival))){
 colnames(X0) <- var.exp
 #X0 <- X0[,-which(colnames(X0)=="intercept")]
 
-
-if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("Jointlcmm does not handle missing data. Observations with missing data should be removed before Jointlcmm call.")
+if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("Jointlcmm has not correctly handled missing data. Please revise 'na.action' option or remove manually missing data in the dataset")
  
 n <- dim(data)[1]
 #if ((int.fixed+int.random)>0) X0<- cbind(intercept=rep(1,n),X0)
@@ -307,7 +343,7 @@ if (!((int.fixed+int.random)>0)) X0 <- as.data.frame(X0[,-which(colnames(X0)=="i
 X0.names <- colnames(X0)
 nvar.exp <- length(X0.names)
 
-IND <- data[,subject.name]
+IND <- newdata[,subject.name]
 IDnum <- as.numeric(IND)
 
 
@@ -318,7 +354,7 @@ prior.name <- NULL
 } 
 if(!missing(prior)){ 
 prior.name <- as.character(args$prior)
-PRIOR <- data[,prior.name]
+PRIOR <- newdata[,prior.name]
 PRIOR[(is.na(PRIOR))] <- 0
 }
 
@@ -331,7 +367,7 @@ nvdepsurv  <- 0
 Tint <- Tevent
 if(!missing(TimeDepVar)) {
 ### test : si pas une variable de data : probleme
-Tint <- data[,TimeDepVar.name]
+Tint <- newdata[,TimeDepVar.name]
 Tint[(is.na(Tint))] <- Tevent[(is.na(Tint))]
 Tint[Tint>Tevent] <- Tevent[Tint>Tevent]
 Tint[Tint<Tentry] <- Tentry[Tint<Tentry]
@@ -374,7 +410,7 @@ for (i in 1:nvar.exp){
 if((int.fixed+int.random)>0) idprob0[1] <- 0
 
 
-###### DATA SORTING on IND variable
+###### DATA SORTING on IND variables
 matYX <- cbind(IDnum,IND,PRIOR,Tentry,Tevent,Devent,Tint,Y0,X0)
 matYXord <- matYX[sort.list(matYX[,1]),]
 
@@ -781,9 +817,6 @@ b[(NPROB+nprisq0+1):(NPROB+nprisq0+ng-1)] <- 1+ (1:(ng-1))/(ng-1)
 #--------------------------------------------
 
 
-#if(ng0==2){
-#   names(b)[1:NPROB]<-inddepvar.classmb.nom
-#}
 
 typR <- as.character(typrisq0)
 typR[typR=="2"] <- "log(Weibull"
@@ -798,7 +831,7 @@ typR[typR=="3"] <- "log(splines"
 
 
 if(ng0>=2){
-   nom <-rep(inddepvar.classmb.nom,each=ng0-1)
+nom <-rep(c("intercept",X0.names[idprob0==1]),each=ng0-1)
    nom1 <-paste(nom," class",c(1:(ng0-1)),sep="")  
    names(b)[1:NPROB]<-nom1
 }
@@ -808,9 +841,9 @@ if(ng0==1) {
 #    names(b)[(1):(nrisqtot)] <- paste("Survparm",c(1:(nprisq0)),sep="")
 
      names(b)[(1):(nrisqtot)] <- paste(typR,c(1:(nprisq0)),")",sep="")
-    names(b)[(nrisqtot+1):(nprisq0+nvarxevt-nvdepsurv)] <- inddepvar.survival#evt
+    names(b)[(nrisqtot+1):(nprisq0+nvarxevt-nvdepsurv)] <- X0.names[idxevt!=0]
 	if (nvdepsurv==1)names(b)[(nprisq0+nvarxevt)] <- paste("I(t>",TimeDepVar.name,")",sep="")
-    names(b)[(nrisqtot+NVARXEVTinit+1):(NEF)] <- inddepvar.fixed.nom 
+    names(b)[(nrisqtot+NVARXEVTinit+1):(NEF)] <- X0.names[idg0!=0]
 }
 
 
@@ -907,7 +940,7 @@ if (!(out$conv %in% c(1,2))){
 	out$gconv <- rep(NA,3)	
 
 }
-
+if (out$statsc==9999) out$statsc <- NA 
 
 ### Creation du vecteur cholesky
 
@@ -935,7 +968,7 @@ if(idiag0==1&NVC>0){
 if (nea0>0) {
 predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
 predRE <- data.frame(INDuniq,predRE)
-colnames(predRE) <- c(subject.name,inddepvar.random.nom)
+colnames(predRE) <- c(subject.name,X0.names[idea0!=0])
 }
 
 
@@ -1014,12 +1047,12 @@ specif <- list(N,ns0,ng0,idea0,idprob0,idg0,idxevt,idiag0,logspecif)
 survtemp <- update(survival,"~1")
 T0.names <- all.names(survtemp)[-c(1,2)]
 
-Names <- list(Y.name,X0.names,T0.names,prior.name,subject.name,inddepvar.random.nom,TimeDepVar.name)
+Names <- list(Y.name,X0.names,T0.names,prior.name,subject.name,X0.names[idea0!=0],TimeDepVar.name)
 ### ad
 Names2 <- list(X0.names2,inddepvar.random.nom2)
 ### end ad
 ## ad
-res <-list(loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,pred=pred,pprob=ppi,pprobY=ppitest,predRE=predRE,cholesky=Cholesky,CIstat=out$statsc,predSurv=predSurv,hazard=list(typrisq0,hazardtype,zi0),specif=specif,Names=Names,Names2=Names2)
+res <-list(loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,pred=pred,pprob=ppi,pprobY=ppitest,predRE=predRE,cholesky=Cholesky,CIstat=out$statsc,predSurv=predSurv,hazard=list(typrisq0,hazardtype,zi0),specif=specif,Names=Names,Names2=Names2,na.action=na.action)
 
 ###########################
 class(res) <-c("Jointlcmm")

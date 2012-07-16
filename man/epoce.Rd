@@ -7,7 +7,7 @@ Computation of estimators of the Expected Prognostic Observed Cross-Entropy for 
 This functions computes estimators of the Expected Prognostic Observed Cross-Entropy for evaluating the predictive accuracy of joint latent class models estimated using \code{Jointlcmm}. On the same data as used for estimation of the \code{Jointlcmm} object, this function computes both the Mean Prognostic Observed Log-Likelihood (MPOL) and the Cross-Validated Observed Log-Likelihood (CVPOL). The latter corrects for over-optimism of the MPOL by approximated cross-validation. On external data, this function only computes the Mean Prognostic Observed Log-Likelihood (MPOL).
 }
 \usage{
-epoce(model, pred.times, var.time, newdata = NULL)
+epoce(model, pred.times, var.time, newdata = NULL, subset=NULL, na.action=1)
 }
 \arguments{
   \item{model}{an object inheriting from class \code{Jointlcmm}
@@ -21,6 +21,10 @@ Name of the variable indicating time in the dataset
   \item{newdata}{
 optional. When missing, the data used for estimating the \code{Jointlcmm} object are used, and CVPOL and MPOL are computed (internal validation). When newdata is specified, only MPOL is computed on this newdataset (external validation).
 }
+  \item{subset}{
+a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
+  \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
 \details{
 MPOL computed at time s equals minus the mean individual contribution to the conditional log-likelihood of the time to event given the longitudinal data up to time of prediction s and that the subject is still at risk of event in s. 

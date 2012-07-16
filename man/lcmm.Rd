@@ -13,8 +13,8 @@ Parameters of the nonlinear link function and of the latent process mixed model 
 \usage{
 lcmm(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
 nwg = FALSE, link = "linear", intnodes = NULL, epsY = 0.5, data, B, 
-convB = 1e-04, convL = 1e-04, convG = 1e-04, maxiter=500, nsim=100, 
-prior,range=NULL)
+convB = 1e-04, convL = 1e-04, convG = 1e-04, maxiter=100, nsim=100, 
+prior,range=NULL, na.action=1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -72,7 +72,7 @@ Due to possible local maxima in latent class mixed models, the \code{B} vector s
 }
 \item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001.
 }
-\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=500.
+\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=100.
 }
   \item{nsim}{
 number of points used to plot the estimated link function. By default, nsim=100.
@@ -81,6 +81,8 @@ number of points used to plot the estimated link function. By default, nsim=100.
 }
   \item{range}{optional vector indicating the range of the outcome (that is the minimum and maximum). By default, the range is defined according to the minimum and maximum observed values of the outcome. The option should be used only for Beta and Splines transformations.
 }
+  \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
 
 \details{
@@ -167,7 +169,6 @@ The list returned is:
 \item{niter}{number of Marquardt iterations}
 \item{dataset}{dataset}
 \item{N}{internal information used in related functions}
-\item{name.mat.cov}{internal information used in related functions}
 \item{idiag}{internal information used in related functions}
 \item{pred}{table of individual predictions and residuals in the underlying latent process scale; it includes marginal predictions (pred_m), marginal residuals (resid_m), subject-specific predictions (pred_ss) and subject-specific residuals 
 (resid_ss) averaged over classes, the transformed observations in the latent process scale (obs) and finally the class-specific marginal and subject-specific predictions 
@@ -178,6 +179,7 @@ The list returned is:
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject. This output is not available yet when specifying a thresholds transformation.}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
 \item{estimlink}{table containing the simulated values of the marker and corresponding estimated link function}
+\item{epsY}{definite positive real used to rescale the marker in (0,1) when the beta link function is used. By default, epsY=0.5.}
 \item{linktype}{indicator of link function type: 0 for linear, 1 for beta, 2 for splines and 3 for thresholds}
 \item{linknodes}{vector of nodes useful only for the 'splines' link function}
 
@@ -246,6 +248,8 @@ m14<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
 data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
 summary(m14)
 plot.linkfunction(m14,bty="l")
+
+
 # Thresholds
 # Especially for the threshold link function, we recommend to estimate models 
 # with increasing complexity and use estimates of previous ones to specify 
@@ -260,8 +264,6 @@ B=c(-0.8379, -0.1103,  0.3832,  0.3788 , 0.4524, -7.3180,  0.5917,  0.7364,  0.6
  0.7153,  0.7702,  0.6421))
 summary(m15)
 plot.linkfunction(m15,bty="l")
-
-
 
 #### Plot of estimated different link functions:
 #### (applicable for models that only differ in the "link function" used. 
