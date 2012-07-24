@@ -1,12 +1,15 @@
 \name{predictY}
 \alias{predictY}
 \alias{predictY.lcmm}
+\alias{predictY.hlme}
+\alias{predictY.Jointlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Predicted values of a \code{lcmm} object in the natural scale of the outcome for a specified profile of covariates.
+Predicted values of a \code{hlme}, \code{lcmm} or \code{Jointlcmm} object in the natural scale of the longitudinal outcome for a specified profile of covariates.
 }
 \description{
-Provides predicted values of a \code{lcmm} object in the natural scale of the outcome for a specified profile of covariates. For linear and threshold links, the predicted values are computed analytically. For splines and Beta links, a Gauss-Hermite or Monte-Carlo integration are used to numerically compute the predictions. In addition, for any type of link function, confidence bands (and median) can be computed by a Monte Carlo approximation of the posterior distribution of the predicted values.
+For \code{hlme} and \code{Jointlcmm} objects, the function computes the predicted values of the longitudinal marker in each latent class for a specified profile of covariates. 
+For a \code{lcmm} object, the function computes predicted values in the natural scale of the outcome for a specified profile of covariates. For linear and threshold links, the predicted values are computed analytically. For splines and Beta links, a Gauss-Hermite or Monte-Carlo integration are used to numerically compute the predictions. In addition, for any type of link function, confidence bands (and median) can be computed by a Monte Carlo approximation of the posterior distribution of the predicted values.
 }
 \usage{
 \method{predictY}{lcmm}(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...)
@@ -22,14 +25,11 @@ data frame containing the data from which predictions are computed. Data frame s
   \item{methInteg}{
 optional integer specifying the type of numerical integration required only for predictions with splines or Beta link functions. Value 0 (by default) specifies a Gauss-Hermite integration which is very rapid but neglects the correlation between the predicted values (in presence of random-effects). Value 1 refers to a Monte-Carlo integration which is slower but correctly account for the correlation between the predicted values.
 }
-  \item{nsim}{
-  optional number of points used in the integration method for predictions with splines or Beta link functions. For methInteg=1, nsim should be chosen among the following values: 5, 7, 9, 15, 20, 30, 40 or 50 (nsim=20 by default). If methInteg=0, nsim should be relatively important (more than 200).
+  \item{nsim}{For a \code{lcmm} object only; optional number of points used in the numerical integration with splines or Beta link functions. For methInteg=1, nsim should be chosen among the following values: 5, 7, 9, 15, 20, 30, 40 or 50 (nsim=20 by default). If methInteg=0, nsim should be relatively important (more than 200).
 }
-  \item{draws}{
-  optional boolean specifying whether median and confidence bands of the predicted values should be computed (TRUE) - whatever the type of link function. In this case, a Monte Carlo approximation of the posterior distribution of the predicted values is computed and the median, 2.5% and 97.5% percentiles are given. Otherwise, the predicted values are computed at the point estimate. By default, draws=FALSE.  
+  \item{draws}{For a \code{lcmm} object only; optional boolean specifying whether median and confidence bands of the predicted values should be computed (TRUE) - whatever the type of link function. In this case, a Monte Carlo approximation of the posterior distribution of the predicted values is computed and the median, 2.5% and 97.5% percentiles are given. Otherwise, the predicted values are computed at the point estimate. By default, draws=FALSE.  
 }
-  \item{ndraws}{
-  If draws=TRUE, ndraws specifies the number of draws that should be generated to approximate the posterior distribution of the predicted values. By default, ndraws=2000.
+  \item{ndraws}{For a \code{lcmm} object only; if draws=TRUE, ndraws specifies the number of draws that should be generated to approximate the posterior distribution of the predicted values. By default, ndraws=2000.
 }
  \item{na.action}{
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
@@ -39,13 +39,13 @@ further arguments to be passed to or from other methods.
 }
 }
 \value{
-Returns a matrix with ng columns when draws=FALSE corresponding to the ng class-specific vectors of predicted values computed at the point estimate or a matrix with ng*3 columns representing the ng class-specific 2.5\%, 50\% and 97.5\% (median) percentiles of the approximated posterior distribution of the class-specific predicted values.
+Returns either a matrix with ng columns when draws=FALSE or \code{hlme} and \code{Jointlcmm} objects corresponding to the ng class-specific vectors of predicted values computed at the point estimate or a matrix with ng*3 columns representing the ng class-specific 2.5\%, 50\% and 97.5\% (median) percentiles of the approximated posterior distribution of the class-specific predicted values when draws=TRUE and the object is of class \code{lcmm}.
 }
 \author{
 Cecile Proust-Lima
 }
 \seealso{
-\code{\link{lcmm}}, \code{\link{plot.lcmm}}
+\code{\link{lcmm}}, \code{\link{plot.lcmm}},  \code{\link{hlme}}, \code{\link{Jointlcmm}}
 }
 \examples{
 

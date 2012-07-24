@@ -373,9 +373,11 @@ se <- rep(0,length(b))
 
 if(ng0>=2){
 nom <-rep(c("intercept",nom.X0[idprob0!=0]),each=ng0-1)
-nom1 <- paste(nom,c(1:(ng0-1)))
+nom1 <- paste(nom," class",c(1:(ng0-1)),sep="")
 names(b)[1:NPROB]<-nom1
 }
+
+
 
 if(ng0==1) names(b)[1:(NEF)] <-  nom.X0[-1][idg0[-1]!=0]
 
@@ -384,11 +386,11 @@ if(ng0>1){
 	for (i in 1:nvar.exp) {
 		if(idg0[i]==2){ 
 		   if (i==1){
-			 nom <- paste(nom.X0[i],c(2:ng0))
+			 nom <- paste(nom.X0[i]," class",c(2:ng0),sep="")
 		       nom1 <- cbind(nom1,t(nom))
 		    }
 		   if (i>1){
-			 nom <- paste(nom.X0[i],c(1:ng0))
+			 nom <- paste(nom.X0[i]," class",c(1:ng0),sep="")
 			 nom1 <- cbind(nom1,t(nom))
 		    }
 		}
@@ -402,7 +404,7 @@ names(b)[(NPM-ntrtot0+1):NPM]<- paste("thresh. parm",c(1:ntrtot0),sep="")
 
 
 if(NVC!=0)names(b)[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- paste("varcov",c(1:(NVC)))
-if(NW!=0)names(b)[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- paste("varprop",c(1:(ng0-1)))
+if(NW!=0)names(b)[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- paste("varprop class",c(1:(ng0-1)))
 
 N <- NULL
 N[1] <- NPROB

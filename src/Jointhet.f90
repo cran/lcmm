@@ -150,14 +150,13 @@
 
 ! *********************************
 ! initialisation des sorties
-
       resid_m0 = 0.d0
       pred_m_g0 = 0.d0
       resid_ss0 = 0.d0
       pred_ss_g0 = 0.d0
       ppi0 =  0.d0
       ppitest0 =  0.d0
-      statsc0 =  0.d0
+      statsc0 =  9999.d0
       risq_est =  0.d0
       risqcum_est =  0.d0
       pred_RE=0.d0

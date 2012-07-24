@@ -1,21 +1,25 @@
 News about R package lcmm :
 ---------------------------
 
-Changes in Version 1.5.4 (2012-06-06):
+Changes in Version 1.5.7 (2012-07-24):
 
-* bug in epoce computation under solaris system solved
+* The function 'predictY' now computes the predicted values (possibly class-specific) of the longitudinal outcome not only from a lcmm object but also from a hlme or a Jointlcmm object for a specified profile of covariates.
+
+* bug identified and solved in predictY.lcmm when used with a 'threshold' link function and a Monte Carlo method
 
 
-Changes in Version 1.5.3 (2012-06-05):
-
-* The new function 'predict.lcmm' computes predicted values of a lcmm object in the natural outcome scale for a specified profile of covariates, and also provides confidence bands using a Monte Carlo method.
+Changes in Version 1.5.6 (2012-07-16):
 
 * missing data handled in hlme, lcmm and Jointlcmm using 'na.action' with attributes 1 for 'na.omit' or 2 for 'na.fail'
 
-* bug in epoce computation with splines baseline risk function solved
+* The new function 'predictY.lcmm' computes predicted values of a lcmm object in the natural outcome scale for a specified profile of covariates, and also provides confidence bands using a Monte Carlo method.
+
+* bugs in epoce computation solved (with splines baseline risk function, and/or NaN values under solaris system)
+
+* bug identified and solved in summary functions regarding the labels of covariate effects in peculiar cases
 
 
-Changes in Version 1.5 (2012-04-06):
+Changes in Version 1.5.2 (2012-04-06):
 
 * improved variable specification in the estimating functions Jointlcmm, lcmm and hlme with 
 	- categorical variables using factor() 

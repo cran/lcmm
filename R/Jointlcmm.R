@@ -923,7 +923,7 @@ cat("Be patient, Jointlcmm is running ... \n")
 out <- .Fortran("Jointhet",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(idxevt),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),ppitest2=as.double(ppitest0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),statsc=as.double(statsc),risq_est=as.double(risq_est),surv_est=as.double(surv_est),nsim=as.integer(nsim),time_est=as.double(time_est),as.integer(logspecif),PACKAGE="lcmm")
 
 
-if (!(out$conv %in% c(1,2))){
+if (!(out$conv %in% c(1,2,4))){
 	cat("Problem in the loglikelihood computation. The program stopped abnormally. Please check that the model specification is correct, or try other more plausible initial values.\n")
 
 	out$ppi2 <- rep(NA,ng0*ns0)

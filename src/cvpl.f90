@@ -442,6 +442,9 @@
 	    if (epoir(t).ne.epoir(t)) then 
                     epoir(t)=1.d9
 	    end if
+	    if (rl_cond(t).ne.rl_cond(t)) then 
+                    rl_cond(t)=-1.d9
+	    end if
 
 5289       continue
 

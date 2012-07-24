@@ -320,9 +320,9 @@ f <- function(x) {
 quantile(x[!is.na(x)],probs=c(0.025,0.5,0.975))
 }
 ydistr <- apply(ydraws,1,FUN=f)
-Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=T)
-Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=T)
-Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=T)
+Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
+Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
+Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
 
 Ypred <- cbind(Ypred_2.5,Ypred_50,Ypred_97.5)
 
@@ -502,9 +502,9 @@ f <- function(x) {
 quantile(x[!is.na(x)],probs=c(0.025,0.5,0.975))
 }
 ydistr <- apply(ydraws,1,FUN=f)
-Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=T)
-Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=T)
-Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=T)
+Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
+Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
+Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
 
 Ypred <- cbind(Ypred_2.5,Ypred_50,Ypred_97.5)
 
@@ -596,7 +596,7 @@ res <- Ypred
 }
 
 
-predictY <- function(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...) UseMethod("predictY")
+predictY <- function(x,newdata,...) UseMethod("predictY")
 
 
 
