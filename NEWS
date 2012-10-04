@@ -1,6 +1,11 @@
 News about R package lcmm :
 ---------------------------
 
+
+Changes in Version 1.5.8 (2012-10-01):
+
+* bug identified and solved in predictY.lcmm when used with a 'splines' link function and an outcome with minimum value not at 0
+
 Changes in Version 1.5.7 (2012-07-24):
 
 * The function 'predictY' now computes the predicted values (possibly class-specific) of the longitudinal outcome not only from a lcmm object but also from a hlme or a Jointlcmm object for a specified profile of covariates.

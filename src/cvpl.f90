@@ -14,15 +14,15 @@
 
 
 
-	module commun_cvpl
-		integer,save::ns_s
-		double precision,dimension(:),allocatable,save::Y_s
-		double precision,dimension(:,:),allocatable,save::X_s
-		integer,dimension(:),allocatable,save::nmes_s
-		double precision,dimension(:),allocatable,save::Tsurv0_s,Tsurv_s,Tsurvint_s
-		integer,dimension(:),allocatable,save::Devt_s
-		integer,dimension(:),allocatable,save::ind_survint_s
-	end module commun_cvpl
+        module commun_cvpl
+                integer,save::ns_s
+                double precision,dimension(:),allocatable,save::Y_s
+                double precision,dimension(:,:),allocatable,save::X_s
+                integer,dimension(:),allocatable,save::nmes_s
+                double precision,dimension(:),allocatable,save::Tsurv0_s,Tsurv_s,Tsurvint_s
+                integer,dimension(:),allocatable,save::Devt_s
+                integer,dimension(:),allocatable,save::ind_survint_s
+        end module commun_cvpl
 
 
 
@@ -59,76 +59,76 @@
 
 
 
-	!Declaration des variables en entree
-	integer,intent(in)::nv0,logspecif0
-	integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0
-	integer,dimension(nv0),intent(in)::idea0,idg0,idprob0
-	integer,dimension(nv0),intent(in)::idxevt0
-	integer,dimension(ns0),intent(in)::nmes0,prior0
-	double precision,dimension(ns0)::Tentr0,Tevt0,Tsurvint0
-	double precision,dimension(nobs0),intent(in)::Y0,time0
-	double precision,dimension(nobs0*nv0),intent(in)::X0
-	integer,intent(in)::risqcom0,typrisq0,nz0,idtrunc0
-	integer,dimension(ns0)::Devt0,ind_survint0
+        !Declaration des variables en entree
+        integer,intent(in)::nv0,logspecif0
+        integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0
+        integer,dimension(nv0),intent(in)::idea0,idg0,idprob0
+        integer,dimension(nv0),intent(in)::idxevt0
+        integer,dimension(ns0),intent(in)::nmes0,prior0
+        double precision,dimension(ns0)::Tentr0,Tevt0,Tsurvint0
+        double precision,dimension(nobs0),intent(in)::Y0,time0
+        double precision,dimension(nobs0*nv0),intent(in)::X0
+        integer,intent(in)::risqcom0,typrisq0,nz0,idtrunc0
+        integer,dimension(ns0)::Devt0,ind_survint0
 
-	double precision,dimension(nz0),intent(in)::zi0
+        double precision,dimension(nz0),intent(in)::zi0
 
 
-	!Declaration des variable en entree et sortie
-	double precision, dimension(npm0), intent(inout) :: b
+        !Declaration des variable en entree et sortie
+        double precision, dimension(npm0), intent(inout) :: b
 
 
 !-------------------> argument propres a epoir
-	integer,intent(in)::nt
-	double precision,dimension(nt),intent(out)::rl_cond,epoir
-	double precision,dimension(nt),intent(in)::valT
-	integer,dimension(nt)::ns_vect,nevt_vect
-	double precision,dimension(ns0*nt)::contribt
-	double precision, dimension(npm0*(npm0+1)/2),intent(in)::vopt
+        integer,intent(in)::nt
+        double precision,dimension(nt),intent(out)::rl_cond,epoir
+        double precision,dimension(nt),intent(in)::valT
+        integer,dimension(nt)::ns_vect,nevt_vect
+        double precision,dimension(ns0*nt)::contribt
+        double precision, dimension(npm0*(npm0+1)/2),intent(in)::vopt
 !-------------------> variables locales joint
-	integer :: i,j,k,ktemp,nmestot
-	double precision::eps
-	integer::nef,npm
+        integer :: i,j,k,ktemp,nmestot
+        double precision::eps
+        integer::nef,npm
 !-------------------> variables locales joint
-	double precision::trace3,rl_condt
-	double precision,dimension(ns0)::rlindiv
-	integer::t,nbevt,nmescur,nmescur_s,jtemp
-	double precision,dimension(npm0,npm0)::J_cond,mat3
-	double precision,dimension(npm0,npm0)::H_1
-	double precision, dimension(npm0) :: mvc
-	integer::ier
+        double precision::trace3,rl_condt
+        double precision,dimension(ns0)::rlindiv
+        integer::t,nbevt,nmescur,nmescur_s,jtemp
+        double precision,dimension(npm0,npm0)::J_cond,mat3
+        double precision,dimension(npm0,npm0)::H_1
+        double precision, dimension(npm0) :: mvc
+        integer::ier
 !-------------> initialisation des sorties
 
         ! verification des donnees en entree
 
-	eps=1.d-20
-	maxmes=0
-	do i=1,ns0
+        eps=1.d-20
+        maxmes=0
+        do i=1,ns0
            if (nmes0(i).gt.maxmes) then
               maxmes=nmes0(i)
            end if
-	end do
+        end do
 
 !-------------> allocation generale
 
 !----------------- allocation generale ---------------------------
-	allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0)   &
+        allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0)   &
              ,idea(nv0),idg(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
              ,Tsurvint(ns0),ind_survint(ns0),idxevt(nv0)             &
              ,devt(ns0),prior(ns0),time_cvpl(nobs0))
 
 
         Tsurv0=Tentr0
-	Tsurv=Tevt0
-	Tsurvint=Tsurvint0
-	devt=devt0
-	ind_survint=ind_survint0
-	logspecif=logspecif0
+        Tsurv=Tevt0
+        Tsurvint=Tsurvint0
+        devt=devt0
+        ind_survint=ind_survint0
+        logspecif=logspecif0
 
 
-	typrisq=typrisq0
-	risqcom=risqcom0
-	idtrunc=idtrunc0
+        typrisq=typrisq0
+        risqcom=risqcom0
+        idtrunc=idtrunc0
 
 
         Y=0.d0
@@ -143,52 +143,52 @@
 
 
 
-	nvdepsurv=0
+        nvdepsurv=0
         if(sum(ind_survint).gt.0) then
            nvdepsurv=1
         end if
 
-	nz=nz0
-	select case (typrisq)
-	case (1)
+        nz=nz0
+        select case (typrisq)
+        case (1)
            allocate(zi(nz0))
            zi(1:nz0)=zi0(1:nz0)
-	case (2)
+        case (2)
            allocate(zi(nz0))
            zi(1:nz0)=zi0(1:nz0)
-	case (3)
+        case (3)
            allocate(zi(-2:nz0+3))
            do i=1,nz
               zi(i)=zi0(i)
            end do
-	end select
+        end select
 
-	ns=ns0
-	ng=ng0
-	nv=nv0
-	nobs=nobs0
+        ns=ns0
+        ng=ng0
+        nv=nv0
+        nobs=nobs0
 
-	if (nwg0.eq.0) then
+        if (nwg0.eq.0) then
            nwg=0
-	else
+        else
            nwg=ng-1
-	end if
-	idiag=idiag0
+        end if
+        idiag=idiag0
         !------------------------
-	if (typrisq.eq.1) then
+        if (typrisq.eq.1) then
            nprisq=nz-1
-	end if
-	if (typrisq.eq.2) then
+        end if
+        if (typrisq.eq.2) then
            nprisq=2
-	end if
-	if (typrisq.eq.3) then
+        end if
+        if (typrisq.eq.3) then
            nprisq=nz+2
-	end if
+        end if
         !--------------------
-	nmes=nmes0
-	nmestot=0
-	ktemp=0
-	do k=1,nv
+        nmes=nmes0
+        nmestot=0
+        ktemp=0
+        do k=1,nv
            idprob(k)=idprob0(k)
            idea(k)=idea0(k)
            idg(k)=idg0(k)
@@ -210,9 +210,9 @@
                  X(jtemp,k)=X0(ktemp)
               end do
            end do
-	end do
+        end do
 
-	nrisq=0
+        nrisq=0
         if (risqcom.eq.1) then
            nrisq=nprisq
         end if
@@ -221,28 +221,28 @@
         end if
         if (risqcom.eq.0) then
            nrisq=nprisq*ng
-	end if
+        end if
         ! parms fixes pour les vexp dans la modelisation de l'evenement
 
-	nvarxevt=nvdepsurv
-	Do k=1,nv
+        nvarxevt=nvdepsurv
+        Do k=1,nv
            If (idxevt(k).eq.1) then
               nvarxevt=nvarxevt+1
            end if
            If (idxevt(k).eq.2) then
               nvarxevt=nvarxevt+ng
            end if
-	end do
+        end do
 
         !-----------------------------------------------------------
         ! creation des parametres
 
-	nea=0
-	ncg=0
-	ncssg=0
-	nprob=ng-1
-	nvarprob=min(ng-1,1)
-	do k=1,nv
+        nea=0
+        ncg=0
+        ncssg=0
+        nprob=ng-1
+        nvarprob=min(ng-1,1)
+        do k=1,nv
            if (idg(k).eq.1) then
               ncssg=ncssg+1      ! nb var. sans melange
            else if (idg(k).eq.2) then
@@ -251,36 +251,36 @@
            nea=nea+idea(k)
            nprob=nprob+(idprob(k))*(ng-1)
            nvarprob=nvarprob+idprob(k)
-	end do
+        end do
 
 
-!	if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
-           !	istop=12
-           !	go to 1588
-!	end if
+!        if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
+           !        istop=12
+           !        go to 1588
+!        end if
 
 
         !  nb effets fixes = nb effets fixes sans melange
         !                  + ng fois le nb de var dans melange
 
-	if (idiag.eq.1) then
+        if (idiag.eq.1) then
            nvc=nea
         else if(idiag.eq.0) then
            nvc=nea*(nea+1)/2
-	end if
+        end if
 
-	nef=nprob+nvarxevt+nrisq+ncssg+ncg*ng !
-	npm=nef+nvc+nwg+1
+        nef=nprob+nvarxevt+nrisq+ncssg+ncg*ng !
+        npm=nef+nvc+nwg+1
 
-	if (idiag.eq.1.and.nvc.gt.0) then
+        if (idiag.eq.1.and.nvc.gt.0) then
            DO j=1,nvc
               B(nef+j)=dsqrt(abs(B(nef+j)))
            END DO
-	end if
+        end if
         ! si idiag=0, on met dans le vecteur des parms, les parms
         ! de la transformee de Cholesky
 
-	if (idiag.eq.0.and.nvc.gt.0) then
+        if (idiag.eq.0.and.nvc.gt.0) then
 
            DO j=1,nvc
               mvc(j)=B(nef+j)
@@ -289,26 +289,26 @@
            DO j=1,nvc
               B(nef+j)=mvc(j)
            END DO
-	end if
+        end if
 
-	if (nwg.gt.0) then
+        if (nwg.gt.0) then
            do i=1,nwg
               B(nef+nvc+i)=abs(B(nef+nvc+i))
            end do
-	end if
+        end if
 
-	if (typrisq.eq.3) then
+        if (typrisq.eq.3) then
 
            allocate(Tmm(ns0),Tmm1(ns0),Tmm2(ns0),Tmm3(ns0),Tim(ns0)         &
-		,Tim1(ns0),Tim2(ns0),Tim3(ns0),Tmm0(ns0),Tmm01(ns0),Tmm02(ns0)  &
-		,Tmm03(ns0),Tim0(ns0),Tim01(ns0),Tim02(ns0),Tim03(ns0),          &
-		Tmmt(ns0),Tmmt1(ns0),Tmmt2(ns0),Tmmt3(ns0),Timt(ns0),Timt1(ns0) &
-		,Timt2(ns0),Timt3(ns0))
+                ,Tim1(ns0),Tim2(ns0),Tim3(ns0),Tmm0(ns0),Tmm01(ns0),Tmm02(ns0)  &
+                ,Tmm03(ns0),Tim0(ns0),Tim01(ns0),Tim02(ns0),Tim03(ns0),          &
+                Tmmt(ns0),Tmmt1(ns0),Tmmt2(ns0),Tmmt3(ns0),Timt(ns0),Timt1(ns0) &
+                ,Timt2(ns0),Timt3(ns0))
 
            allocate(Tmm_valt(nt),Tmm1_valt(nt),Tmm2_valt(nt),Tmm3_valt(nt), &
-		Tim_valt(nt),Tim1_valt(nt),Tim2_valt(nt),Tim3_valt(nt))
+                Tim_valt(nt),Tim1_valt(nt),Tim2_valt(nt),Tim3_valt(nt))
            call splines_cvpl(nt,valt)
-	end if
+        end if
 
 !######################################################################################
 !------------------------------------- Debut cvpl -------------------------------------
@@ -321,28 +321,28 @@
 
 
 
-	H_1 = 0.d0
-	do j = 1,npm
+        H_1 = 0.d0
+        do j = 1,npm
            do k =j,npm
               H_1(j,k) = vopt(j+k*(k-1)/2)
               H_1(k,j) = vopt(j+k*(k-1)/2)
            end do
-	end do
+        end do
 
-	eps=1.d-20
+        eps=1.d-20
 
-	contribt=0.d0
-	ns_vect=0
-	nevt_vect=0
+        contribt=0.d0
+        ns_vect=0
+        nevt_vect=0
 
 !        write(*,*)'debut CVPL 2'
 !-------> allocation tableau cvpl
-	allocate(ind_survint_s(ns),nmes_s(ns),Y_s(ns0*maxmes),X_s(ns0*maxmes,nv0))
-	allocate(Tsurv0_s(ns),Tsurv_s(ns),Tsurvint_s(ns),Devt_s(ns),indT(ns))
+        allocate(ind_survint_s(ns),nmes_s(ns),Y_s(ns0*maxmes),X_s(ns0*maxmes,nv0))
+        allocate(Tsurv0_s(ns),Tsurv_s(ns),Tsurvint_s(ns),Devt_s(ns),indT(ns))
         !-------> fin allocation
 
 
-	do t=1,nT
+        do t=1,nT
 
            !--------> initialisation
 
@@ -439,43 +439,43 @@
            epoir(t)=-rl_condt/dble(ns_s)+(trace3*dble(ns)/(dble(ns_s)*dble(ns-1)))
            rl_cond(t)=rl_condt/dble(ns_s)
 
-	    if (epoir(t).ne.epoir(t)) then 
+            if (epoir(t).ne.epoir(t)) then 
                     epoir(t)=1.d9
-	    end if
-	    if (rl_cond(t).ne.rl_cond(t)) then 
+            end if
+            if (rl_cond(t).ne.rl_cond(t)) then 
                     rl_cond(t)=-1.d9
-	    end if
+            end if
 
 5289       continue
 
 
-	end do
+        end do
 
 !        write(*,*)'avant deallocate 1'
 
-	deallocate(Y,idprob,X,idea,idg,nmes,Tsurv0,Tsurv,Tsurvint, &
+        deallocate(Y,idprob,X,idea,idg,nmes,Tsurv0,Tsurv,Tsurvint, &
              ind_survint,idxevt,devt,prior,zi,time_cvpl)
 
 
 !        write(*,*)'avant deallocate 2'
 
-	deallocate(ind_survint_s,nmes_s,Y_s,X_s,Tsurv0_s,Tsurv_s,Tsurvint_s,Devt_s,indT)
+        deallocate(ind_survint_s,nmes_s,Y_s,X_s,Tsurv0_s,Tsurv_s,Tsurvint_s,Devt_s,indT)
 
 
 
 !        write(*,*)'avant deallocate 3'
 
-	if (typrisq.eq.3) then
+        if (typrisq.eq.3) then
            deallocate(Tmm,Tmm1,Tmm2,Tmm3,Tim,Tim1,Tim2,Tim3,Tmm0,    &
-		Tmm01,Tmm02,Tmm03,Tim0,Tim01,Tim02,Tim03,Tmmt,Tmmt1,     &
-		Tmmt2,Tmmt3,Timt,Timt1,Timt2,Timt3)
+                Tmm01,Tmm02,Tmm03,Tim0,Tim01,Tim02,Tim03,Tmmt,Tmmt1,     &
+                Tmmt2,Tmmt3,Timt,Timt1,Timt2,Timt3)
 
            deallocate(Tmm_valt,Tmm1_valt,Tmm2_valt,Tmm3_valt,Tim_valt, &
-		Tim1_valt,Tim2_valt,Tim3_valt)
-	endif
+                Tim1_valt,Tim2_valt,Tim3_valt)
+        endif
 
 
-	
+        
 
 !       write(*,*)"dans CVPL : valeur de la vraisemblance"
 !       do t=1,nT
@@ -484,7 +484,7 @@
 !        write(*,*)"fin du programme"
 
 
-	return
+        return
 
 
 
@@ -516,32 +516,32 @@
 !-----------------------------------------------------------
 !                        derivc_condt
 !------------------------------------------------------------
-	subroutine derivc_condt(b,m,v,rlindiv,t1,valt)
+        subroutine derivc_condt(b,m,v,rlindiv,t1,valt)
 
 ! Calcul du gradient et de la matrice remplacant la hessienne
 ! par Fisher scoring empirique
-	use commun_modele_joint
-	use commun_cvpl
-	use commun_joint
+        use commun_modele_joint
+        use commun_cvpl
+        use commun_joint
 
-	IMPLICIT NONE
+        IMPLICIT NONE
 
-	double precision::funcpi_condt,thn,th,z,valt,funcpij
-	double precision,dimension(m,1)::Uscore, Uscore2
-	double precision,dimension(m)::b
-	double precision,dimension(m,m)::v
+        double precision::funcpi_condt,thn,th,z,valt,funcpij
+        double precision,dimension(m,1)::Uscore, Uscore2
+        double precision,dimension(m)::b
+        double precision,dimension(m,m)::v
         double precision,dimension(ns)::rlindiv
-	integer::m,i,k,ii,id,t1
+        integer::m,i,k,ii,id,t1
 
-	V=0.d0
-	z=0.d0
-	rlindiv=0.d0
+        V=0.d0
+        z=0.d0
+        rlindiv=0.d0
         id=0
 ! Calcul des gradients par sujets et totaux
-	ii=0
-	nmes_curr=0
-     	nmes_curr_s=0
-	DO i=1,ns
+        ii=0
+        nmes_curr=0
+             nmes_curr_s=0
+        DO i=1,ns
            Uscore=0.d0
            Uscore2=0.d0
 !           rlindiv(i)=funcpij(b,m,id,z,id,z,i)
@@ -561,11 +561,11 @@
            end if
            V=V+MATMUL(Uscore,transpose(Uscore2))
            nmes_curr = nmes_curr + nmes(i)
-	end do
+        end do
 
-	return
+        return
 
-	end subroutine derivc_condt
+        end subroutine derivc_condt
 
 
 
@@ -573,27 +573,27 @@
 !                        FUNCPA_CONDT
 !------------------------------------------------------------
 
-	double precision function funcpa_condt(b,m,id,thi,jd,thj,t1,valt)
-	use commun_modele_joint
-	use commun_cvpl
+        double precision function funcpa_condt(b,m,id,thi,jd,thj,t1,valt)
+        use commun_modele_joint
+        use commun_cvpl
 
-	implicit none
+        implicit none
 
-	integer::m,i,id,jd,t1
-	double precision::rl,thi,thj,funcpi_condt
-	double precision,dimension(m)::b
-	double precision::valt
+        integer::m,i,id,jd,t1
+        double precision::rl,thi,thj,funcpi_condt
+        double precision,dimension(m)::b
+        double precision::valt
 
-	rl=0.d0
-	nmes_curr_s=0
-	do i=1,ns_s
-		rl = rl + funcpi_condt(b,m,id,thi,jd,thj,i,t1,valt)
-		nmes_curr_s = nmes_curr_s + nmes_s(i)
-	end do
-	funcpa_condt =rl
-	return
+        rl=0.d0
+        nmes_curr_s=0
+        do i=1,ns_s
+                rl = rl + funcpi_condt(b,m,id,thi,jd,thj,i,t1,valt)
+                nmes_curr_s = nmes_curr_s + nmes_s(i)
+        end do
+        funcpa_condt =rl
+        return
 
-	end function funcpa_condt
+        end function funcpa_condt
 
 !-----------------------------------------------------------
 !                        FUNCPI_CONDT
@@ -628,7 +628,7 @@
       double precision,dimension(1)::bevtint
       double precision,dimension(ng)::risq,surv,surv0,survint,survT
       double precision::valt
-      logical::isnan
+      logical::is_nan
       integer::nef
 
 
@@ -715,7 +715,7 @@
                surv(g)=surv(g)*exp(b1(nprob+nprisq+g))
                survint(g)=survint(g)*exp(b1(nprob+nprisq+g))
                surv0(g)=surv0(g)*exp(b1(nprob+nprisq+g))
-	           survT(g)=survT(g)*exp(b1(nprob+nprisq+g))
+                   survT(g)=survT(g)*exp(b1(nprob+nprisq+g))
             end if
       end do
 
@@ -770,7 +770,7 @@
       IF (nwg.eq.0.OR.NG.EQ.1) then
 
 
-	    P=0.d0
+            P=0.d0
             P=MATMUL(Z,Ut)
             VC=0.d0
             VC=MATMUL(P,transpose(P))+Se
@@ -836,8 +836,8 @@
 
 !--------------------------------------------------------------
 
-	 vrais=vrais-det
-	 vrais_long=vrais_long-det
+         vrais=vrais-det
+         vrais_long=vrais_long-det
 
          b0=0.d0
          l=0
@@ -846,7 +846,7 @@
             if (idg(k).ne.0) then
                l=l+1
                do j=1,nmes_s(i)
-		  X00(j,l)=dble(X_s(nmes_curr_s+j,k))
+                  X00(j,l)=dble(X_s(nmes_curr_s+j,k))
                end do
                b0(l)=b1(nprob+nrisq+nvarxevt+l)
             end if
@@ -867,19 +867,19 @@
 
 
 !------------------------------------------------------------------
-	    if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
-         	 vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+exp(bevtint(1))       &
+            if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
+                  vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+exp(bevtint(1))       &
                    *(survT(1)-survint(1)))
-	    else
-          	vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survt(1))
-     	    end if
+            else
+                  vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survt(1))
+                 end if
 
 
            if (Devt_s(i).eq.1) then
               if (ind_survint_s(i).eq.1) then
                  risq(1)=risq(1)*exp(bevtint(1))
               end if
-              if (risq(1).le.0.or.isnan(risq(1))) then
+              if (risq(1).le.0.or.is_nan(risq(1))) then
                  funcpi_condt=-1.d9
                  goto 654
               end if
@@ -946,7 +946,7 @@
                 do g=1,ng-1
                    pi(g)=pi(g)*pi(ng)
                 end do
-	    end if
+            end if
             retard=0.d0
 ! creation des vecteurs de variables explicatives
             l=0
@@ -957,7 +957,7 @@
                if (idg(k).eq.2) then
                   l=l+1
                   do j=1,nmes_s(i)
-			X2(j,l)=dble(X_s(nmes_curr_s+j,k))
+                        X2(j,l)=dble(X_s(nmes_curr_s+j,k))
                   end do
                else if (idg(k).eq.1) then
                   m=m+1
@@ -969,7 +969,7 @@
 
             b2=0.d0
             b0=0.d0
-	        expo=0.d0
+                expo=0.d0
             expo_long=0.d0
 
           Do g=1,ng
@@ -1019,13 +1019,13 @@
                end do
 
 ! variance covariance si spec aux classes :
-	       Ut1=0.d0
+               Ut1=0.d0
                Ut1=Ut
 
                if (nwg.ne.0) then
 
                    Ut1=0.d0
-               	   if (g.eq.ng) then
+                          if (g.eq.ng) then
                       Ut1=Ut
                    else
                       Ut1=Ut*abs(b1(nef+nvc+g))
@@ -1092,7 +1092,7 @@
                           -survint(g))))
                   end if
                   if (Devt_s(i).eq.0) then
-                     expo=expo+pi(g)*exp((-det-Y4)/2.d0	            &
+                     expo=expo+pi(g)*exp((-det-Y4)/2.d0                    &
                           -exp(DOT_PRODUCT(Xevt,bevt))*                 &
                           (survint(g)+exp(bevtint(1))*(surv(g)      &
                           -survint(g))))
@@ -1101,13 +1101,13 @@
 ! dans expolong, j'ajoute la survie en T
 
 
-	       if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
-         	    expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
+               if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
+                     expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
                       (survint(g)+exp(bevtint(g))*(survT(g)-survint(g))))
-	       else
+               else
                   expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
                       (survT(g)))
-	       end if
+               end if
 
            retard=retard+pi(g)*exp(-surv0(g) &
                     *exp(DOT_PRODUCT(Xevt,bevt)))
@@ -1116,7 +1116,7 @@
 
 
 
-            if (expo.le.0.or.isnan(expo)) then
+            if (expo.le.0.or.is_nan(expo)) then
                funcpi_condt=-1.d9
                goto 654
             end if
@@ -1153,8 +1153,8 @@
  654  continue
 
 
-!      if (isnan(funcpi_condt).or.abs(funcpi_condt).gt.1.d30) then
-      if (isnan(funcpi_condt)) then
+!      if (is_nan(funcpi_condt).or.abs(funcpi_condt).gt.1.d30) then
+      if (is_nan(funcpi_condt)) then
           funcpi_condt=-1.d9
        end if
 
@@ -1172,15 +1172,15 @@
 
       subroutine splines_cvpl(nt,valt)
 
- 	use commun_joint
-	use commun_modele_joint
+         use commun_joint
+        use commun_modele_joint
 
-      	implicit none
+              implicit none
 
-	integer::i,k,n,l,nt
-	double precision::ht,htm,h2t,ht2,ht3,hht,h,hh,h2,h3,h4,h3m,h2n, &
+        integer::i,k,n,l,nt
+        double precision::ht,htm,h2t,ht2,ht3,hht,h,hh,h2,h3,h4,h3m,h2n, &
         hn,hh2,hh3
-	double precision,dimension(nt)::valt
+        double precision,dimension(nt)::valt
 
 
         l=0
@@ -1222,15 +1222,15 @@
 
 
         zi(-2)=zi(1)
-	zi(-1)=zi(1)
-	zi(0)=zi(1)
-	zi(nz+1)=zi(nz)
+        zi(-1)=zi(1)
+        zi(0)=zi(1)
+        zi(nz+1)=zi(nz)
         zi(nz+2)=zi(nz)
-	zi(nz+3)=zi(nz)
+        zi(nz+3)=zi(nz)
         n=nz+2
 
 !------------------- Tsurv ---------------------------
-	Do i=1,ns
+        Do i=1,ns
            l=0
            do k=2,n-2
               if ((Tsurv(i).ge.zi(k-1)).and.  &
@@ -1414,10 +1414,10 @@
               Timt1(i) =Tim1(i)
               Timt(i) =Tim(i)
            end if
-	End Do
+        End Do
 
 
-	Do i=1,nt
+        Do i=1,nt
            l=0
            do k=2,n-2
               if ((ValT(i).ge.zi(k-1)).and.  &
@@ -1466,11 +1466,11 @@
            end if
 
            Tim3_valt(i)=(0.25d0*(ValT(i)-zi(l-3))*Tmm3_valt(i)) &
-		+(0.25d0*hh2*Tmm2_valt(i))+(0.25d0*h3m*Tmm1_valt(i))+(0.25d0*h4*Tmm_valt(i))
+                +(0.25d0*hh2*Tmm2_valt(i))+(0.25d0*h3m*Tmm1_valt(i))+(0.25d0*h4*Tmm_valt(i))
            Tim2_valt(i)=(0.25d0*hht*Tmm2_valt(i))+(h3m*Tmm1_valt(i)*0.25d0)+(h4*Tmm_valt(i)*0.25d0)
            Tim1_valt(i)=(htm*Tmm1_valt(i)*0.25d0)+(h4*Tmm_valt(i)*0.25d0)
            Tim_valt(i)=ht*Tmm_valt(i)*0.25d0
-	end do
+        end do
 
       end subroutine splines_cvpl
 
@@ -1516,7 +1516,7 @@
                survint(g)=surv(g)
             end if
 
-	    survT(g)=brisq(1)*(valt)**brisq(2)
+            survT(g)=brisq(1)*(valt)**brisq(2)
 
          end if
 

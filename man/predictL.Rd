@@ -1,0 +1,60 @@
+\name{predictL}
+\alias{predictL.lcmm}
+\alias{predictL}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+Class-specific marginal predictions in the latent process scale for  \code{lcmm} objects
+}
+\description{
+This function provides a matrix containing the class-specific predicted trajectories computed in the latent process scale, that is the latent variable underlying the curvilinear or ordinal outcome, for a profile of covariates specified by the user. This function applies only to \code{lcmm} objects. The function \code{plot.predict} provides directly the plot of these class-specific predicted trajectories. The function \code{predictY} provides the class-specific predicted trajectories computed in the natural scale of the outcome
+} 
+\usage{
+\method{predictL}{lcmm}(x,newdata,na.action=1,...)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{x}{
+an object inheriting from class \code{lcmm} representing a latent class mixed model involving a latent process and an estimated link function.
+}
+  \item{newdata}{
+data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames2. Names of data frame should be exactly x$Xnames2 that is the names of covariates specified in \code{lcmm} call
+}
+
+ \item{na.action}{
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
+  \item{\dots}{
+further arguments to be passed to or from other methods.
+          They are ignored in this function.
+}
+}
+\value{
+Returns a matrix}
+\author{
+Cecile Proust-Lima
+}
+\seealso{
+\code{\link{plot.predict}}, \code{\link{predictY}}, \code{\link{lcmm}}   
+}
+\examples{
+################# Prediction from a 2-class model with a Splines link function
+
+data(data_Jointlcmm)
+## fitted model
+m<-lcmm(Ydep2~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
+subject='ID',ng=2,data=data_Jointlcmm,link="splines",B=c(
+-0.175,      -0.191,       0.654,      -0.443, 
+-0.345,      -1.780,       0.913,       0.016, 
+ 0.389,       0.028,       0.083,      -7.349, 
+ 0.722,       0.770,       1.376,       1.653, 
+ 1.640,       1.285))
+m
+## predictions for times from 0 to 5 for X1=0
+newdata<-data.frame(Time=seq(0,5,length=100),
+X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
+predictL(m,newdata)
+## predictions for times from 0 to 5 for X1=1
+newdata$X1 <- 1
+predictY(m,newdata)
+}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.

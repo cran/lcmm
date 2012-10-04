@@ -43,7 +43,7 @@
          double precision,dimension(m*(m+3)/2),intent(out)::v
          double precision,intent(out)::rl
          double precision,dimension(m),intent(inout)::b
-	 double precision,intent(inout)::ca,cb,dd
+         double precision,intent(inout)::ca,cb,dd
          double precision,external::namefunc
       end subroutine marq98
 
@@ -72,7 +72,7 @@
 
       subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
         integer,intent(in)::m
-	double precision,intent(in)::vw
+        double precision,intent(in)::vw
         double precision,dimension(m),intent(in)::b,delta
         double precision,dimension(m),intent(out)::bk
         double precision,intent(out)::fi
@@ -219,7 +219,7 @@
                     ij=(i-1)*i/2+j
                  end if
                  GHG = GHG + v(m1+i)*fu(ij)*V(m1+j)
-	      end do
+              end do
            end do
            dd=GHG/dble(m)
         end if
@@ -419,11 +419,11 @@
        call valfpa(vlw2,fi2,b,bh,m,delta,namefunc)
 
        if(fi2.ge.fi1) then
-!	  vlw3=vlw2
-	  vlw2=vlw1
-	  fi3=fi2
-	  fi2=fi1
-	  step=-step
+!      vlw3=vlw2
+      vlw2=vlw1
+      fi3=fi2
+      fi2=fi1
+      step=-step
 
           vlw1=vlw2+step
           call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
@@ -557,7 +557,7 @@
 12             term=term-p
             end do
 13            a(jj)=term/diag
-	   end do
+       end do
       end do
 
 !       calcul des solutions
@@ -636,7 +636,7 @@
 !   START FACTORIZATION-LOOP OVER K-TH ROW
 !
          do i=k,n
-	    dsum=0.d0
+            dsum=0.d0
             if (lend.lt.0) goto 2
             if (lend.eq.0) goto 4
             if (lend.gt.0) goto 2
@@ -646,7 +646,7 @@
 2           do l=1,lend
                lanf=kpiv-l
                lind=ind-l
-	       dsum=dsum+A(lanf)*A(lind)
+               dsum=dsum+A(lanf)*A(lind)
             end do
 
 !
@@ -768,24 +768,24 @@
 !     INITIALIZE ROW-LOOP
 !
          do k=1,kend
-	    work=0.d0
-	    min=min-1
-	    lhor=ipiv
-	    lver=j
-!
+            work=0.d0
+            min=min-1
+            lhor=ipiv
+            lver=j
+            !
 !     START INNER LOOP
 !
             do l=lanf,min
-	        lver=lver+1
-		lhor=lhor+l
-                work=work+A(lver)*A(lhor)
-	    end do
-!
-!     END OF INNER LOOP
-!
+               lver=lver+1
+               lhor=lhor+l
+               work=work+A(lver)*A(lhor)
+            end do
+            !
+            !     END OF INNER LOOP
+            !
             A(j)=-work*din
             j=j-min
-	 end do
+         end do
 
 !
 !     END OF ROW-LOOP
@@ -793,7 +793,7 @@
 5        ipiv=ipiv-min
          ind=ind-1
       end do
-
+      
 !
 !     END OF INVERSION-LOOP
 !
@@ -803,27 +803,27 @@
 !
       do i=1,n
          ipiv=ipiv+i
-	 j=ipiv
+         j=ipiv
 !
 !     INITIALIZE ROW-LOOP
 !
-	 do k=i,n
-	    work=0.d0
-	    lhor=j
-!
-!     START INNER LOOP
-!
+         do k=i,n
+            work=0.d0
+            lhor=j
+            !
+            !     START INNER LOOP
+            !
             do l=k,n
-	        lver=lhor+k-i
-		work=work+A(lhor)*A(lver)
-   		lhor=lhor+l
+               lver=lhor+k-i
+               work=work+A(lhor)*A(lver)
+               lhor=lhor+l
             end do
-!
-!     END OF INNER LOOP
-!
+            !
+            !     END OF INNER LOOP
+            !
             A(j)=work
             j=j+k
-	 end do
+         end do
       end do
 
 !
@@ -836,53 +836,53 @@
 !                          VALFPA
 !------------------------------------------------------------
 
-        subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
-
+      subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
+        
         implicit none
-
+        
         integer,intent(in)::m
         double precision,dimension(m),intent(in)::b,delta
         double precision,dimension(m),intent(out)::bk
         double precision,intent(out)::fi
-	double precision::vw,z
-	integer::i0,i
+        double precision::vw,z
+        integer::i0,i
         double precision,external::namefunc
-
-         z=0.d0
-         i0=1
-         do i=1,m
-            bk(i)=b(i)+dexp(vw)*delta(i)
-	 end do
-         fi=-namefunc(bk,m,i0,z,i0,z)
-
-         return
-
-         end subroutine valfpa
-
-!------------------------------------------------------------
-!                            MAXT
-!------------------------------------------------------------
-
-
+        
+        z=0.d0
+        i0=1
+        do i=1,m
+           bk(i)=b(i)+dexp(vw)*delta(i)
+        end do
+        fi=-namefunc(bk,m,i0,z,i0,z)
+        
+        return
+        
+      end subroutine valfpa
+      
+      !------------------------------------------------------------
+      !                            MAXT
+      !------------------------------------------------------------
+      
+      
       subroutine dmaxt(maxt,delta,m)
-
-      implicit none
-
-       integer,intent(in)::m
-       double precision,dimension(m),intent(in)::delta
-       double precision,intent(out)::maxt
-       integer::i
-
-       maxt=Dabs(delta(1))
-       do i=2,m
-         if(Dabs(delta(i)).gt.maxt)then
-	    maxt=Dabs(delta(i))
-	 end if
-       end do
-
-       return
-       end subroutine dmaxt
-
-      end module optim
+        
+        implicit none
+        
+        integer,intent(in)::m
+        double precision,dimension(m),intent(in)::delta
+        double precision,intent(out)::maxt
+        integer::i
+        
+        maxt=Dabs(delta(1))
+        do i=2,m
+           if(Dabs(delta(i)).gt.maxt)then
+              maxt=Dabs(delta(i))
+           end if
+        end do
+        
+        return
+      end subroutine dmaxt
+      
+    end module optim
 
 

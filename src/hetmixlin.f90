@@ -108,10 +108,10 @@
       double precision, dimension(nobs0), intent(in) :: Y0
       double precision, dimension(nobs0*nv0), intent(in) :: X0
       double precision, intent(in) :: convB, convL, convG
-	!D claration des variable en entr e et sortie
+        !D claration des variable en entr e et sortie
       double precision, dimension(npm0), intent(inout) :: b
 
-	!D claration des variables en sortie
+        !D claration des variables en sortie
       double precision, intent(out) :: vrais
       double precision, dimension(3), intent(out) :: gconv
       double precision, dimension(ns0*ng0), intent(out) :: ppi0
@@ -122,7 +122,7 @@
       double precision, dimension(npm0*(npm0+1)/2),intent(out) :: vopt
       double precision, dimension(npm0*(npm0+3)/2) :: v
       integer, intent(out) :: ni, istop
-	!Variables locales
+        !Variables locales
       integer :: jtemp,nef,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it
       double precision :: eps, ca, cb, dd
       double precision, dimension(ns0,ng0) :: PPI
@@ -188,17 +188,17 @@
          DO i=1,ns
             if (k.eq.1) then
                nmes(i)=nmes0(i)
-	           prior(i)=prior0(i)
+               prior(i)=prior0(i)
                do j=1,nmes(i)
                   nmestot=nmestot+1
                   jtemp=jtemp+1
-		          Y(jtemp)=Y0(jtemp)
+                  Y(jtemp)=Y0(jtemp)
                end do
             end if
 
             do j=1,nmes(i)
                ktemp=ktemp+1
-		       it=it+1
+               it=it+1
                X(it,k)=X0(ktemp)
             end do
          end do
@@ -576,7 +576,7 @@
                if (idg(k).eq.2) then
                   l=l+1
                   do j=1,nmes(i)
-			X2(j,l)=dble(X(it+j,k))
+                     X2(j,l)=dble(X(it+j,k))
                   end do
                else if (idg(k).eq.1) then
                   m=m+1
@@ -764,7 +764,7 @@
 
 ! ----------- boucle sur les individus -------------
       kk=0
-	it=0
+      it=0
       do i=1,ns
 
 ! -------- creation de Vi = ZiGZi'+se*seIni ----------
@@ -788,11 +788,11 @@
 ! creation de s2*I et Y1
 
          Se=0.d0
-		 Y1=0.d0
+         Y1=0.d0
          do j=1,nmes(i)
-	     kk=kk+1
+            kk=kk+1
             Se(j,j)=b1(npm)*b1(npm)
-	     Y1(j)=dble(Y(kk))
+            Y1(j)=dble(Y(kk))
          end do
 
 ! creation de P=Zi*Ut et V=P*P' que si non spec aux classes
@@ -877,7 +877,7 @@
           if (idg(k).eq.2) then
              l=l+1
              do j=1,nmes(i)
-		X2(j,l)=dble(X(it+j,k))
+                X2(j,l)=dble(X(it+j,k))
              end do
           else if (idg(k).eq.1) then
              m=m+1
@@ -886,13 +886,13 @@
              end do
           end if
        end do
-
+       
 
 !     calcul de la vraisemblance par composante
        f=0.d0
        fi=0.d0
-            b2=0.d0
-            b0=0.d0
+       b2=0.d0
+       b0=0.d0
        do g=1,ng
           nmoins=0
           l2=0
@@ -908,9 +908,9 @@
                 nmoins=nmoins+ng
              end if
           end do
-
-!     variance covariance si spec aux classes :
-
+          
+          !     variance covariance si spec aux classes :
+          
           if (nwg.ne.0) then
              Ut1=0.d0
              if (g.eq.ng) then
@@ -918,7 +918,7 @@
              else
                 Ut1=Ut*abs(b1(nef+nvc+g))
              end if
-
+             
              P=0.d0
              P=MATMUL(Z,Ut1)
              VC=0.d0
@@ -1200,7 +1200,7 @@
          else
 
             if (prior(i).ne.0) then
-	           pi=0.d0
+               pi=0.d0
                pi(prior(i))=1.d0
             else
 !     transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))

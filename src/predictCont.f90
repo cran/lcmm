@@ -19,7 +19,6 @@
 
 
 subroutine predict_cont(X0,idprob,idea,idg &
-
      ,ng,nv,maxmes,idiag,nwg,npm,b1,epsY,idlink &
      ,nbzitr,zitr0,nsim,methInteg,Ydiscret,Ymarg)
 
@@ -545,7 +544,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
 
         mu=0.d0
         mu=matmul(X00,b0)+matmul(X2,b2)
-		
+                
 !        write(*,*)'mu'
 
         if (idlink.eq.0) then  ! Linear link
@@ -569,7 +568,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
         bb=aa*(1-aa1)/aa1
         beta=beta_ln(aa,bb)
 
-!		  write(*,*)'b1 beta',b1((nef+nvc+nwg+1):(nef+nvc+nwg+4)),b1(npm)
+!                  write(*,*)'b1 beta',b1((nef+nvc+nwg+1):(nef+nvc+nwg+4)),b1(npm)
 
            if (methInteg.eq.1) then
               ! i.e. methode de MC a faire
@@ -591,7 +590,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     if (ytemp.gt.1) then
                        ytemp=1.d0
                     end if
-					ier=0
+                    ier=0
                     ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+xinbta(aa,bb,beta,ytemp,ier)/dble(nsim)
 !                   ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+ytemp/dble(nsim) 
                     if (ier.ne.0.or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -614,7 +613,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     if (ytemp.gt.1) then
                        ytemp=1.d0
                     end if
-					ier=0
+                    ier=0
                     ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+xinbta(aa,bb,beta,ytemp,ier)*gauss(2,l)
 !                    ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+ytemp*gauss(2,l)
                  if (ier.ne.0.or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -634,8 +633,8 @@ subroutine predict_cont(X0,idprob,idea,idg &
            end do
 
 !write(*,*)'bb',bb,b1((nef+nvc+nwg+2):(nef+nvc+nwg+ntrtot))
-		   
-		   
+                   
+                   
            if (methInteg.eq.1) then
 
               ! i.e. methode de MC a faire
@@ -673,7 +672,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     diff=0.d0
                     ier=0
                     ytemp=mu(j)+sqrt(VC(j,j))*gauss(1,l)
-                    !	write(*,*)'avant',ll,j,mu(ll+j),sqrt(VC(ll+j,ll+j)),gauss(1,l),VC(ll+j,ll+j)
+                    !        write(*,*)'avant',ll,j,mu(ll+j),sqrt(VC(ll+j,ll+j)),gauss(1,l),VC(ll+j,ll+j)
 
                     ytemp=INV_ISPLINES(ytemp,splaa,bb,nbzitr,zitr,ier,niter,diff)
                     if ((ier.eq.3).or.(ier.ne.1.and.diff.gt.1.d-3).or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -705,7 +704,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
   elseif (idlink.eq.2) then
      do j=1,maxmes*ng
         if (ymarg(j).ne.9999.d0) then
-        ymarg(j)=ymarg(j)+minY
+        ymarg(j)=ymarg(j)
         end if
      end do
   end if
@@ -1058,7 +1057,7 @@ end subroutine predict_cont
       double precision,dimension(-1:nztr-1)::splaa
 
 
-!	write(*,*)'X00',X00
+!     write(*,*)'X00',X00
       eps=1.d-5
       iter=1
       X0=1.d10

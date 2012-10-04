@@ -352,6 +352,7 @@ if(!draws) {
 # debut prediction
 X1 <- NULL
 X2 <- NULL
+X3 <- NULL
 b1 <- NULL
 b2 <- NULL
 
@@ -379,7 +380,12 @@ if (k>1){
 place1 <- x$N[1]+kk+1
 place2 <- x$N[1]+kk+x$ng
 b2 <- rbind(b2,x$best[place1:place2])
-kk <- kk+x$ng}
+kk <- kk+x$ng
+}
+}
+
+if(x$idea0[k]==1){
+X3 <- cbind(X3,newdata1[,k])
 }
 }
 
@@ -397,19 +403,42 @@ Ypred[,g]<- Ypred[,g] + X2 %*% b2[,g]
 }
 
 
+varpred <- 0
+nea <- sum(x$idea0)
+if(nea!=0){
+if(nea==x$N[3]){
+varpred <- X3 %*%  best[(x$N[1]+x$N[2]+1):(x$N[1]+x$N[2]+x$N[3])]^2
+}
+if(nea!=x$N[3]){
+U <- matrix(0,nrow=nea,ncol=nea)
+U[upper.tri(U,diag=TRUE)] <- best[(x$N[1]+x$N[2]+1):(x$N[1]+x$N[2]+x$N[3])]
+varpred <-  X3 %*% t(U)
+varpred <- varpred %*% t(varpred)
+}
+if(nea>1) varpred <- diag(varpred)
+}
+
+wg <- rep(1,x$ng)
+if(x$N[4]!=0&x$ng>1){
+wg[1:(x$ng-1)] <- best[(x$N[1]+x$N[2]+x$N[3]+1):(x$N[1]+x$N[2]+x$N[3]+x$N[4])]
+wg <- wg^2
+}
+
 ntrtot0 <- sum(x$ide==1) 
 seuils <- x$ide
 Nseuils <- length(x$ide)
 seuils[x$ide==1] <- as.vector(best[(npm-ntrtot0+1):npm])
 seuils[x$ide==0] <- 0
+if (Nseuils>=2){
 cumseuils <- cumsum(seuils[2:Nseuils]*seuils[2:Nseuils])
 seuils[2:Nseuils] <- rep(seuils[1],(Nseuils-1))+cumseuils
+}
 
 pred <- Ypred
 for(g in 1:x$ng){
-Ypred[,g] <- rep(Nseuils,maxmes)
+Ypred[,g] <- rep(x$linknodes[2],maxmes)
 for(i in 1:Nseuils)
-Ypred[,g] <- Ypred[,g] - pnorm(seuils[i]-pred[,g])
+Ypred[,g] <- Ypred[,g] - pnorm((seuils[i]-pred[,g])/sqrt(wg[g]*varpred+1))
 }
 
 if (x$ng>1) colnames(Ypred) <- paste("Ypred_class",1:x$ng,sep="")
@@ -435,6 +464,7 @@ bdraw <- best + Chol %*% bdraw
 # debut prediction
 X1 <- NULL
 X2 <- NULL
+X3 <- NULL
 b1 <- NULL
 b2 <- NULL
 
@@ -464,6 +494,10 @@ place2 <- x$N[1]+kk+x$ng
 b2 <- rbind(b2,bdraw[place1:place2])
 kk <- kk+x$ng}
 }
+
+if(x$idea0[k]==1){
+X3 <- cbind(X3,newdata1[,k])
+}
 }
 
 Ypred<-matrix(0,length(newdata1[,1]),x$ng)
@@ -480,19 +514,42 @@ Ypred[,g]<- Ypred[,g] + X2 %*% b2[,g]
 }
 
 
+varpred <- 0
+nea <- sum(x$idea0)
+if(nea!=0){
+if(nea==x$N[3]){
+varpred <- X3 %*%  bdraw[(x$N[1]+x$N[2]+1):(x$N[1]+x$N[2]+x$N[3])]^2 
+}
+if(nea!=x$N[3]){
+U <- matrix(0,nrow=nea,ncol=nea)
+U[upper.tri(U,diag=TRUE)] <- bdraw[(x$N[1]+x$N[2]+1):(x$N[1]+x$N[2]+x$N[3])]
+varpred <- X3 %*% t(U) 
+varpred <- varpred %*% t(varpred)
+}
+if(nea>1) varpred <- diag(varpred)
+}
+
+wg <- rep(1,x$ng)
+if(x$N[4]!=0&x$ng>1){
+wg[1:(x$ng-1)] <- bdraw[(x$N[1]+x$N[2]+x$N[3]+1):(x$N[1]+x$N[2]+x$N[3]+x$N[4])]
+wg <- wg^2
+}
+
+
 ntrtot0 <- sum(x$ide==1) 
 seuils <- x$ide
 Nseuils <- length(x$ide)
 seuils[x$ide==1] <- as.vector(bdraw[(npm-ntrtot0+1):npm])
 seuils[x$ide==0] <- 0
+if (Nseuils>=2){
 cumseuils <- cumsum(seuils[2:Nseuils]*seuils[2:Nseuils])
 seuils[2:Nseuils] <- rep(seuils[1],(Nseuils-1))+cumseuils
-
+}
 pred <- Ypred
 for(g in 1:x$ng){
-Ypred[,g] <- rep(Nseuils,maxmes)
+Ypred[,g] <- rep(x$linknodes[2],maxmes)
 for(i in 1:Nseuils)
-Ypred[,g] <- Ypred[,g] - pnorm(seuils[i]-pred[,g])
+Ypred[,g] <- Ypred[,g] - pnorm((seuils[i]-pred[,g])/sqrt(wg[g]*varpred+1))
 }
 pred <- as.vector(Ypred)
 ydraws <- cbind(ydraws,pred)
