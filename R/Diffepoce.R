@@ -17,14 +17,13 @@ if(!(all.equal(epoceM1$IndivContrib[,1],epoceM2$IndivContrib[,1]))) stop("The tw
 epoceM1$IndivContrib[is.na(epoceM1$IndivContrib)] <- 0
 epoceM2$IndivContrib[is.na(epoceM2$IndivContrib)] <- 0
 
-
 DEPOCE <- as.double(epoceM1$EPOCE[,5])-as.double(epoceM2$EPOCE[,5])
 if (epoceM1$new.data==TRUE){
 DEPOCE <- as.double(epoceM1$EPOCE[,4])-as.double(epoceM2$EPOCE[,4])
 }
 
 M1Contrib <- epoceM1$IndivContrib[,-1]
-M2Contrib <- epoceM2$IndivContrib[,-1]
+M2Contrib <- epoceM2$IndivContrib[,-1]	
 
 
 

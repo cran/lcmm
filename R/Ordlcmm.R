@@ -1,6 +1,6 @@
 ###################### derniere mise a jour : 2012/03/16 ############"
 .Ordlcmm <-
-function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete,na.action)
+function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete,subset=subset,na.action)
 
 {
 
@@ -42,12 +42,16 @@ int.mixture <- 0
 int.random <- 0
 int.classmb <- 0
 
-### Traitement des donnees manquantes
-if(!is.null(na.action)){
-	newdata <- data[-na.action,]
-}else{
-	newdata <- data
-}
+## Table sans donnees manquante: newdata
+newdata <- data  
+#prendre le subset :
+if(!(is.null(subset))) 
+newdata <- data[subset,]
+
+#enlever les NA
+	if(!is.null(na.action)){
+		newdata <- newdata[-na.action,]
+	}
 
 ### names of covariate in intial fit
 X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(fixed)),data=newdata))[-1]))
@@ -412,6 +416,7 @@ N[2] <- NEF
 N[3] <- NVC
 N[4] <- NW
 N[5] <- nobs0
+N[6] <- 0 #=ncor
 
 idiag <- as.integer(idiag0)
 idea <- as.integer(idea0)
@@ -492,7 +497,7 @@ colnames(estimlink) <- c("Y","transfY")
 if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
 
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action)
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=rep(0,nvar.exp),loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action)
 class(res) <-c("lcmm")  
 
 cost<-proc.time()-ptm

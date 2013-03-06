@@ -1,13 +1,24 @@
-lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,na.action=1)
+lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1)
 {
 
 mm <- match.call()
 if(missing(fixed)) stop("The argument Fixed must be specified in any model")
 if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
+if(nrow(data)==0) stop("Data should not be empty")
 
-
-
-
+### transformer l'argument cor en character
+cor.type <- mm$cor[1]
+cor.time <- mm$cor[2]
+cor.char <- paste(cor.type,cor.time,sep="-") 
+if (all.equal(cor.char,character(0))!=TRUE)
+{
+ if (link=="threshold") stop("The argument cor is only avaiable with linear, beta or splines link")
+}
+else
+{
+  cor.char <- NULL
+}  
+### fin cor en char 
 
 
 
@@ -74,10 +85,22 @@ if(!missing(classmb)){
 }else{
 	na.classmb <- NULL
 }
-
-na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
+ 
+#cor     
+if(!is.null(cor.char))
+{
+	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+	m$formula <- as.formula(paste(cor.time,1,sep="~"))
+	m$na.action <- na.action
+  m[[1]] <- as.name("model.frame")
+  m <- eval(m,sys.parent())    
+  na.cor <- attr(m,"na.action") 	
+}
+else { na.cor <- NULL }
+ 
+ 
+	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
 #7/05/2012
-
 
 
 attr.fixed <- attributes(terms(fixed))
@@ -92,11 +115,14 @@ Y0 <- data[,depvar]
 
 minY0 <- min(Y0)
 maxY0 <- max(Y0)
-if ((!missing(range)) & length(range)==2){
-if (minY0>range[1]|maxY0<range[2]){
-minY0 <- range[1]
-maxY0 <- range[2]
-} 
+if ((!missing(range)) & length(range)==2)
+{
+ if(minY0<range[1]|maxY0>range[2]) stop("The range specified do not cover the entire range of the data")
+ if (minY0>range[1]|maxY0<range[2])
+ {
+  minY0 <- range[1]
+  maxY0 <- range[2]
+ } 
 }
 
 if(all.equal((maxY0-minY0),0) == T){
@@ -204,6 +230,7 @@ if (all.equal(idlink0,2)==T){
 	if(all.equal("quant",type)==T){
 		pas <-c(1:(nbzitr0-2))/(nbzitr0-1) 
 		zitr[2:(nbzitr0-1)] <- quantile(sort(Y0),probs=pas)
+		if(length(unique(zitr[1:nbzitr0]))!=nbzitr0) stop("The link function can not be estimated since some nodes are equal; Please try to reduce the number of nodes or use manual location.")
 	}        	       
 	if(all.equal("equi",type)==T){
 		pas=as.double(maxY0-minY0)/as.double(nbzitr0-1)
@@ -236,7 +263,7 @@ if (idlink0!=3) {
 
 
 
-
+           
 
 
 
@@ -248,12 +275,12 @@ if (idlink0!=3) {
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
 result <- switch(link
-,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
+,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action)
 
-,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
+,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action)
 
-,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,na.action)
-,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,na.action=na.action))
+,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action)
+,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,subset=subset,na.action=na.action))
 
 }
 

@@ -11,19 +11,19 @@ This package provides functions for the estimation of latent class mixed models 
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.5.7 \cr
-Date: \tab 2012-10-04\cr
+Version: \tab 1.6.2 \cr
+Date: \tab 2013-03-06\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
-The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function, and joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
+The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function. It also estimates (latent class) mixed models for multivariate (possibly curvilinear) longitudinal outcomes using \code{multlcmm} function. Finally, it estimates joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
 
 Please report to the maintainer any bug or comment regarding the package for future updates. 
 }
 \author{
-Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
+Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
 
-Maintainer: <cecile.proust@isped.u-bordeaux2.fr>
+Maintainer: Cecile Proust-Lima  <cecile.proust@isped.u-bordeaux2.fr>
 }
 \references{
 
@@ -50,10 +50,11 @@ Proust-Lima and Taylor (2009). Development and validation of a dynamic prognosti
 tool for prostate cancer recurrence using repeated measures of post-treatment PSA: a joint
 modelling approach. Biostatistics 10, 535-49.
 
-Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research - in press
+Proust-Lima, Sene, Taylor, Jacqmin-Gadda (2012). Joint latent class models for longitudinal and time-to-event data: a review. Statistical Methods in Medical Research Apr 19 [Epub ahead of print]
 
-Verbeke and Lesaffre (1996). A linear mixed-effects model with heterogeneity in
-the random-effects population. Journal of the American Statistical Association 91, 217-21
+Proust-Lima, Amievan Jacqmin-Gadda (2012). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol. 2012 Oct 22 [Epub ahead of print]
+
+Verbeke and Lesaffre (1996). A linear mixed-effects model with heterogeneity in the random-effects population. Journal of the American Statistical Association 91, 217-21
 
 }
 \keyword{package}

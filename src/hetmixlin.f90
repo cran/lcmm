@@ -73,11 +73,11 @@
       module commun
 
       implicit none
-      integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg
+      integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,ncor
       integer,save ::nprob,nvarprob,maxmes,nobs
       double precision,dimension(:),allocatable,save::Y
       double precision,dimension(:,:),allocatable,save ::X
-      integer,dimension(:),allocatable,save ::idea,idg,idprob
+      integer,dimension(:),allocatable,save ::idea,idg,idprob,idcor
       integer,dimension(:),allocatable,save :: nmes,prior
       end module commun
 
@@ -88,8 +88,8 @@
 
 !================ SUBROUTINES ================================
 
-      subroutine hetmixlin(Y0,X0,Prior0, idprob0,idea0,idg0   &
-          ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0   &
+      subroutine hetmixlin(Y0,X0,Prior0, idprob0,idea0,idg0,idcor0  &
+          ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0   &
           ,npm0,b,vopt,vrais,ni,istop,gconv,ppi0,resid_m0,resid_ss0 &
           ,pred_m_g0,pred_ss_g0,pred_RE,convB,convL,convG,maxiter0)
 
@@ -100,14 +100,15 @@
       IMPLICIT NONE
 
 
-	!D claration des variables en entree
+        !D claration des variables en entree
       integer,intent(in):: nv0,maxiter0,nea0
-      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npm0
+      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npm0,ncor0
       integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0
-      integer, dimension(ns0), intent(in) :: nmes0,Prior0
+      integer, dimension(ns0), intent(in) :: nmes0,Prior0,idcor0
       double precision, dimension(nobs0), intent(in) :: Y0
       double precision, dimension(nobs0*nv0), intent(in) :: X0
       double precision, intent(in) :: convB, convL, convG
+
         !D claration des variable en entr e et sortie
       double precision, dimension(npm0), intent(inout) :: b
 
@@ -122,6 +123,7 @@
       double precision, dimension(npm0*(npm0+1)/2),intent(out) :: vopt
       double precision, dimension(npm0*(npm0+3)/2) :: v
       integer, intent(out) :: ni, istop
+
         !Variables locales
       integer :: jtemp,nef,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it
       double precision :: eps, ca, cb, dd
@@ -131,6 +133,10 @@
       double precision, dimension(nobs0) :: resid_m, resid_ss
       double precision, dimension(nobs0,ng0):: pred_m_g, pred_ss_g
       double precision,external::funcpa
+
+
+      !write(*,*)'B',npm0,b
+      !write(*,*)'ncor0',ncor0
 
 
       maxmes=0
@@ -145,8 +151,9 @@
       epsd=convG
       maxiter=maxiter0
 
+         
       allocate(Y(ns0*maxmes),idprob(nv0),X(ns0*maxmes,nv0)    &
-     ,idea(nv0),idg(nv0),nmes(ns0),prior(ns0))
+     ,idea(nv0),idg(nv0),nmes(ns0),prior(ns0),idcor(nv0))
 
 
 
@@ -168,6 +175,7 @@
       else
          nwg=ng-1
       end if
+          ncor=ncor0
 
       idiag=idiag0
       prior=0
@@ -177,28 +185,30 @@
       idprob=0
       idea=0
       idg=0
+          idcor=0
       nmestot=0
       ktemp=0
       do k=1,nv
          idprob(k)=idprob0(k)
          idea(k)=idea0(k)
          idg(k)=idg0(k)
+             idcor(k) = idcor0(k)
          jtemp=0
          it=0
          DO i=1,ns
             if (k.eq.1) then
                nmes(i)=nmes0(i)
-               prior(i)=prior0(i)
+                   prior(i)=prior0(i)
                do j=1,nmes(i)
                   nmestot=nmestot+1
                   jtemp=jtemp+1
-                  Y(jtemp)=Y0(jtemp)
+                          Y(jtemp)=Y0(jtemp)
                end do
             end if
 
             do j=1,nmes(i)
                ktemp=ktemp+1
-               it=it+1
+                       it=it+1
                X(it,k)=X0(ktemp)
             end do
          end do
@@ -215,7 +225,7 @@
          if (idg(k).eq.1) then
             ncssg=ncssg+1      ! nb var. sans melange
          else if (idg(k).eq.2) then
-            ncg=ncg+1      ! nb var. sans melange
+            ncg=ncg+1      ! nb var. dans melange
          end if
          nprob=nprob+(idprob(k))*(ng-1)
          nvarprob=nvarprob+idprob(k)
@@ -238,7 +248,7 @@
       end if
 
       nef=nprob+ncssg+ncg*ng
-      npm=nef+nvc+nwg+1
+      npm=nef+nvc+nwg+ncor+1
 
       if (idiag.eq.1) then
          DO j=1,nvc
@@ -291,21 +301,21 @@
          gconv(2)=cb
          gconv(3)=dd
 
-         do k=1,nwg+1
-            b(nef+nvc+k)=abs(b(nef+nvc+k))
-         end do
 
          vopt=0.d0
          vopt(1:npm0*(npm0+1)/2)=v(1:npm0*(npm0+1)/2)
+                 
+                 ! ecart-type positif
+             b(npm) = abs(b(npm))
+             if (ncor.ne.0) b(npm-1)=abs(b(npm-1))
 
 !probas posteriori
-
 
          if (istop.eq.1) then
             if (ng.gt.1) then
                call postprob(B,npm,PPI)
             end if
-
+                        
             call residuals(b,npm,ppi,resid_m,pred_m_g,resid_ss  &
                 ,pred_ss_g,pred_RE)
 
@@ -354,7 +364,7 @@
 
  1589 continue
 
-      deallocate(Y,X,idprob,idea,idg,nmes,prior)
+      deallocate(Y,X,idprob,idea,idg,nmes,prior,idcor)
 
       return
       end subroutine hetmixlin
@@ -373,20 +383,20 @@
 
       IMPLICIT NONE
 
-      integer ::i,j,k,l,m,g,l2,m2,id,jd,jj,npm,nef,it
+      integer ::i,j,k,l,m,g,l2,m2,id,jd,jj,npm,nef,it,j1,j2
       integer ::ier,nmoins,kk
       double precision,dimension(maxmes,nea) ::Z,P
       double precision,dimension(maxmes,nv) ::X00,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se
+      double precision,dimension(maxmes,maxmes) ::VC,Corr
       double precision,dimension(npm) :: b,b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob
       double precision :: vrais,eps,det
       double precision ::thi,thj,temp
       double precision ::Y4,expo
-      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3
+      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3,tcor
       double precision,dimension(ng) :: pi
 
       b1=0.d0
@@ -397,6 +407,10 @@
 
       if (id.ne.0) b1(id)=b1(id)+thi
       if (jd.ne.0) b1(jd)=b1(jd)+thj
+
+      
+     ! write(*,*)'npm',npm,ncor
+      !write(*,*)'b1',b1
 
 !c----------- rappel des parametres utilises ---------
 
@@ -429,7 +443,9 @@
        it=0
        do i=1,ns
 
-!-------- creation de Vi = ZiGZi'+se*seIni ----------
+!          write(*,*)'i',i,vrais
+
+!-------- creation de Vi = ZiGZi'+Ri+se*seIni ----------
 
 !creation de Zi
 
@@ -441,28 +457,48 @@
                do j=1,nmes(i)
                  Z(j,l)=dble(X(it+j,k))
                end do
-            end if
-          end do
+           end if
+        end do
+        
+        !matrice Ci=Ri+s2*I
+        
+        Corr=0.d0
+        tcor=0.d0
+        if (ncor.gt.0) then
+           do k=1,nv
+              if (idcor(k).eq.1) then
+                 do j=1,nmes(i)
+                    tcor(j) = X(it+j,k)
+                 end do
+              end if
+           end do
+         end if
+         do j1=1,nmes(i)
+            do j2=1,nmes(i)
+               if (j1.eq.j2) Corr(j1,j2) = b1(npm)*b1(npm)
+               if (ncor.eq.1) then 
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+               else if (ncor.eq.2) then
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+               end if
+            end do
+         end do        
 
-
-
-!creation de s2*I et Y1
-
-         Se=0.d0
-         Y1=0.d0
-         do j=1,nmes(i)
-            kk=kk+1
-            Se(j,j)=b1(npm)*b1(npm)
-            Y1(j)=dble(Y(kk))
-         end do
-
+        !creation de  et Y1
+        
+        Y1=0.d0
+        do j=1,nmes(i)
+           kk=kk+1
+           Y1(j)=dble(Y(kk))
+        end do
+        
 !creation de P=Zi*Ut et V=P*P' que si non spec aux classes
 
          if (nwg.eq.0.OR.NG.EQ.1) then
             P=0.d0
             P=MATMUL(Z,Ut)
             VC=0.d0
-            VC=MATMUL(P,transpose(P))+Se
+            VC=MATMUL(P,transpose(P))+Corr
 
 ! Vi en vecteur
 
@@ -576,7 +612,7 @@
                if (idg(k).eq.2) then
                   l=l+1
                   do j=1,nmes(i)
-                     X2(j,l)=dble(X(it+j,k))
+                        X2(j,l)=dble(X(it+j,k))
                   end do
                else if (idg(k).eq.1) then
                   m=m+1
@@ -620,7 +656,7 @@
                   P=0.d0
                   P=MATMUL(Z,Ut1)
                   VC=0.d0
-                  VC=MATMUL(P,transpose(P))+Se
+                  VC=MATMUL(P,transpose(P))+Corr
 
 ! Vi en vecteur
                   Vi=0.d0
@@ -683,7 +719,6 @@
 
       return
 
-
       end function funcpa
 
 
@@ -709,12 +744,12 @@
 
       implicit none
 
-      integer ::i,j,k,l,m,g,l2,m2,jj,it,npm,nef,ier,nmoins,kk
+      integer ::i,j,k,l,m,g,l2,m2,jj,it,npm,nef,ier,nmoins,kk,j1,j2
       double precision,dimension(maxmes,nea) ::Z,P
       double precision,dimension(maxmes,nv) ::X0,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se
+      double precision,dimension(maxmes,maxmes) ::VC,Corr
       double precision,dimension(npm) :: b,b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob
@@ -723,7 +758,7 @@
       double precision ::Y4,f
       double precision,dimension(ng) ::fi,pi
       double precision,dimension(ns,ng) ::PPI
-      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3
+      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3,tcor
 
 
 
@@ -764,10 +799,10 @@
 
 ! ----------- boucle sur les individus -------------
       kk=0
-      it=0
+        it=0
       do i=1,ns
 
-! -------- creation de Vi = ZiGZi'+se*seIni ----------
+! -------- creation de Vi = ZiGZi'+R+se*seIni ----------
 
 ! creation de Zi
 
@@ -785,15 +820,39 @@
 
 
 
-! creation de s2*I et Y1
+! creation de Y1
 
-         Se=0.d0
-         Y1=0.d0
+                 Y1=0.d0
          do j=1,nmes(i)
-            kk=kk+1
-            Se(j,j)=b1(npm)*b1(npm)
-            Y1(j)=dble(Y(kk))
+             kk=kk+1
+             Y1(j)=dble(Y(kk))
          end do
+                 
+
+        !matrice Ci=Ri+s2*I
+        
+        Corr=0.d0
+        tcor=0.d0
+        if (ncor.gt.0) then
+           do k=1,nv
+              if (idcor(k).eq.1) then
+                 do j=1,nmes(i)
+                    tcor(j) = X(it+j,k)
+                 end do
+              end if
+           end do
+         end if
+         do j1=1,nmes(i)
+            do j2=1,nmes(i)
+               if (j1.eq.j2) Corr(j1,j2) = b1(npm)*b1(npm)
+               if (ncor.eq.1) then 
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+               else if (ncor.eq.2) then
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+               end if
+            end do
+         end do  
+                 
 
 ! creation de P=Zi*Ut et V=P*P' que si non spec aux classes
 
@@ -801,7 +860,7 @@
           P=0.d0
           P=MATMUL(Z,Ut)
           VC=0.d0
-          VC=MATMUL(P,transpose(P))+Se
+          VC=MATMUL(P,transpose(P))+Corr
 
 ! Vi en vecteur
          jj=0
@@ -886,13 +945,13 @@
              end do
           end if
        end do
-       
+
 
 !     calcul de la vraisemblance par composante
        f=0.d0
        fi=0.d0
-       b2=0.d0
-       b0=0.d0
+            b2=0.d0
+            b0=0.d0
        do g=1,ng
           nmoins=0
           l2=0
@@ -908,9 +967,9 @@
                 nmoins=nmoins+ng
              end if
           end do
-          
-          !     variance covariance si spec aux classes :
-          
+
+!     variance covariance si spec aux classes :
+
           if (nwg.ne.0) then
              Ut1=0.d0
              if (g.eq.ng) then
@@ -918,11 +977,11 @@
              else
                 Ut1=Ut*abs(b1(nef+nvc+g))
              end if
-             
+
              P=0.d0
              P=MATMUL(Z,Ut1)
              VC=0.d0
-             VC=MATMUL(P,transpose(P))+Se
+             VC=MATMUL(P,transpose(P))+Corr
 
 !     Vi en vecteur
              jj=0
@@ -992,21 +1051,21 @@
       use optim
 
       implicit none
-      integer ::i,j,k,l,m,g,l2,m2,jj,npm,nef
+      integer ::i,j,k,l,m,g,l2,m2,jj,npm,nef,j1,j2
       integer ::ier,nmoins,nmes_cur,n2,nmoins2,kk
       double precision,dimension(maxmes,nea) ::Z,P
       double precision,dimension(maxmes,nv) ::X0,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea) :: err2
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Se,VC1
+      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob,b3
       double precision :: eps,det
       double precision ::temp
       double precision,dimension(nea,maxmes)::Valea
-      double precision,dimension(maxmes) :: mu,Y1,Y2,pred1,err1
+      double precision,dimension(maxmes) :: mu,Y1,Y2,pred1,err1,tcor
       double precision,dimension(ng) :: pi
       double precision,dimension(nobs)::resid_m &
        ,pred_m,resid_ss,pred_ss
@@ -1082,15 +1141,35 @@
 
          end do
 
+        !matrice Ci=Ri+s2*I
+        
+        Corr=0.d0
+        tcor=0.d0
+        if (ncor.gt.0) then
+           do k=1,nv
+              if (idcor(k).eq.1) then
+                 do j=1,nmes(i)
+                    tcor(j) = X(nmes_cur+j,k)
+                 end do
+              end if
+           end do
+         end if
+         do j1=1,nmes(i)
+            do j2=1,nmes(i)
+               if (j1.eq.j2) Corr(j1,j2) = b1(npm)*b1(npm)
+               if (ncor.eq.1) then 
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+               else if (ncor.eq.2) then
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+               end if
+            end do
+         end do  
 
+!     creation de Y1
 
-!     creation de s2*I et Y1
-
-         Se=0.d0
          Y1=0.d0
          do j=1,nmes(i)
             kk=kk+1
-            Se(j,j)=b1(npm)*b1(npm)
             Y1(j)=dble(Y(kk))
          end do
 
@@ -1112,7 +1191,7 @@
             P=MATMUL(Z,Ut)
             Valea=MATMUL(Ut,transpose(P))
             VC=0.d0
-            VC=MATMUL(P,transpose(P))+Se
+            VC=MATMUL(P,transpose(P))+Corr
 
 
 !     Vi en vecteur
@@ -1200,7 +1279,7 @@
          else
 
             if (prior(i).ne.0) then
-               pi=0.d0
+                   pi=0.d0
                pi(prior(i))=1.d0
             else
 !     transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
@@ -1303,7 +1382,7 @@
                VC=0.d0
                P=MATMUL(Z,Ut1)
                Valea=MATMUL(Ut1,transpose(P))
-               VC=MATMUL(P,transpose(P))+Se
+               VC=MATMUL(P,transpose(P))+Corr
 
 
 !     Vi en vecteur

@@ -7,7 +7,7 @@ Computation of estimators of the Expected Prognostic Observed Cross-Entropy for 
 This functions computes estimators of the Expected Prognostic Observed Cross-Entropy for evaluating the predictive accuracy of joint latent class models estimated using \code{Jointlcmm}. On the same data as used for estimation of the \code{Jointlcmm} object, this function computes both the Mean Prognostic Observed Log-Likelihood (MPOL) and the Cross-Validated Observed Log-Likelihood (CVPOL). The latter corrects for over-optimism of the MPOL by approximated cross-validation. On external data, this function only computes the Mean Prognostic Observed Log-Likelihood (MPOL).
 }
 \usage{
-epoce(model, pred.times, var.time, newdata = NULL, subset=NULL, na.action=1)
+epoce(model,pred.times,var.time,newdata = NULL,subset=NULL,na.action=1)
 }
 \arguments{
   \item{model}{an object inheriting from class \code{Jointlcmm}
@@ -54,8 +54,10 @@ Cecile Proust-Lima and Amadou Diakite
 \code{\link{Jointlcmm}},\code{\link{print.epoce}},\code{\link{summary.epoce}},\code{\link{plot.epoce}}
 }
 \examples{
-#### estimation of a joint latent class model with 2 latent classes (ng=2)
-# (see the example section of Jointlcmm for details about the model specification
+%\dontrun{
+## estimation of a joint latent class model with 2 latent classes (ng=2)
+# (see the example section of Jointlcmm for details about
+#  the model specification)
 
 data(data_Jointlcmm)
 m <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,mixture=~Time,subject='ID'
@@ -65,12 +67,12 @@ B=c(0.7608, -9.4974 , 1.0242,  1.4331 , 0.1063 , 0.6714, 10.4679, 11.3178,
  -2.5671, -0.5386,  1.4616, -0.0605,  0.9489,  0.1020 , 0.2079,  1.5045))
 summary(m)
 
-## Computation of the EPOCE on the same dataset as used for estimation of m
-# with times at predictions from 1 to 15 
+## Computation of the EPOCE on the same dataset as used for
+# estimation of m with times at predictions from 1 to 15 
 VecTime <- c(1,3,5,7,9,11,13,15)
 cvpl <- epoce(m,var.time="Time",pred.times=VecTime)
 summary(cvpl)
 plot(cvpl,bty="l",ylim=c(0,2))
-
+%}
 }
 

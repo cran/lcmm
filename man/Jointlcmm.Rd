@@ -9,11 +9,12 @@ This function fits joint latent class mixed models for a longitudinal outcome an
 } 
 
 \usage{
-Jointlcmm(fixed, mixture, random, subject, classmb, ng=1, idiag=FALSE,
- nwg=FALSE, survival,hazard="Weibull",hazardtype="Specific", 
-hazardnodes=NULL,TimeDepVar=NULL,data, B, convB=1e-4, convL=1e-4, 
-convG=1e-4, maxiter=150, nsim=100, prior,logscale=FALSE, 
-subset=NULL, na.action=1)
+Jointlcmm(fixed, mixture, random, subject, classmb, ng=1, 
+ idiag=FALSE, nwg=FALSE, survival,hazard="Weibull",
+ hazardtype="Specific", hazardnodes=NULL,TimeDepVar=NULL,
+ cor=NULL,data, B, convB=1e-4, convL=1e-4, convG=1e-4,
+ maxiter=150, nsim=100, prior,logscale=FALSE, 
+ subset=NULL, na.action=1)
 }
 
 
@@ -66,7 +67,7 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
 }
 
-\item{survival}{a two-sided formula object. The left side of the formula corresponds to a \code{surv()} object of type "counting" for right-censored and left-truncated data (example: \code{Surv(Time,EntryTime,Indicator)}) or of type "right" for right-censored data (example: \code{Surv(Time,Indicator)}). The right side of the formula includes names of covariates to include in the survival model with \code{mixture()} when the effect is class-specific (example: \code{Surv(Time,Indicator) ~ X1 + mixture(X2)} for a class-common effect of X1 and a class-specific effect of X2).}
+\item{survival}{a two-sided formula object. The left side of the formula corresponds to a \code{surv()} object of type "counting" for right-censored and left-truncated data (example: \code{Surv(Time,EntryTime,Indicator)}) or of type "right" for right-censored data (example: \code{Surv(Time,Indicator)}). The right side of the formula includes names of covariates to include in the survival model with \code{mixture()} when the effect is class-specific (example: \code{Surv(Time,Indicator) ~} \code{ X1 + mixture(X2)} for a class-common effect of X1 and a class-specific effect of X2).}
 
 
 \item{hazard}{optional family of hazard function assumed for the survival model. By default, "Weibull" specifies a Weibull baseline risk function. Other possibilities are "piecewise" for a piecewise constant risk function or "splines" for a cubic M-splines baseline risk function. For these two latter families, the number of nodes and the location of the nodes should be specified as well separated by \code{-}. The number of nodes is entered first followed by \code{-}, then the location is specified with "equi", "quant" or "manual" for respectively equidistant nodes, nodes at quantiles of the times of event distribution or interior nodes entered manually in argument \code{intnodes}. It is followed by \code{-} and finally "piecewise" or "splines" indicates the family of baseline risk function considered. Examples include "5-equi-splines" for M-splines with 5 equidistant nodes, "6-quant-piecewise" for piecewise constant risk over 5 intervals and nodes defined at the quantiles of the times of events distribution and "9-manual-splines" for M-splines risk function with 9 nodes, the vector of 7 interior nodes being entered in the argument \code{hazardnodes}.
@@ -81,6 +82,10 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 \item{TimeDepVar}{optional vector containing an intermediate time corresponding to a change in the risk of event. This time-dependent covariate can only take the form of a time variable with the assumption that there is no effect on the risk before this time and a constant effect on the risk of event after this time (example: initiation of a treatment to account for).}
 
 \item{logscale}{optional boolean indicating whether an exponential (logscale=TRUE) or a square (logscale=FALSE -by default) transformation is used to ensure positivity of splines/piecewise parameters in the baseline risk functions. See details section}
+\item{cor}{
+  optional brownian motion or autoregressive process modeling the correlation between the observations.
+  "BM" or "AR" should be specified, followed by the time variable between brackets. By default, no correlation is added. 
+}
  \item{data}{
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
 }
@@ -119,6 +124,9 @@ if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of a
 (6) only if \code{nwg=TRUE}, ng-1 parameters for class-specific proportional coefficients
  for the variance covariance matrix of the random-effects; 
 (7) the variance of the residual error. 
+
+
+
 
 
 C. CAUTION
@@ -188,9 +196,7 @@ modelling approach. Biostatistics 10, 535-49.
 
 Jacqmin-Gadda, H. and Proust-Lima, C. (2010). Score test for conditional independence between longitudinal outcome and time-to-event given the classes in the joint latent class model. Biometrics 66(1), 11-9
 
-
-
-Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research - in press
+Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research Apr 19. [Epub ahead of print]
 
 }
 \seealso{
@@ -198,26 +204,25 @@ Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of
 
 }
 \examples{
-\dontrun{
-##### Example of a joint latent class model estimated for a varying number
+
+
+#### Example of a joint latent class model estimated for a varying number
 # of latent classes: 
-# The linear mixed model includes a subject- (ID) and class-specific linear 
-# trend (intercept and Time in fixed, random and mixture components) and
-# a common effect of X1 and its interaction with time over classes 
+# The linear mixed model includes a subject- (ID) and class-specific 
+# linear trend (intercept and Time in fixed, random and mixture components)
+# and a common effect of X1 and its interaction with time over classes 
 # (in fixed).
 # The variance of the random intercept and slopes are assumed to be equal 
 # over classes (nwg=F).
 # The covariate X3 predicts the class membership (in classmb). 
 # The baseline hazard function is modelled with cubic M-splines -3 
-# nodes at the quantiles- (in hazard) and a proportional hazard over classes is 
-# assumed (in hazardtype). Covariates X1 and X2 predict the risk of event 
-# (in survival) with a common effect over classes for X1 and a class-specific
-# effect of X2.
+# nodes at the quantiles- (in hazard) and a proportional hazard over 
+# classes is assumed (in hazardtype). Covariates X1 and X2 predict the 
+# risk of event (in survival) with a common effect over classes for X1
+# and a class-specific effect of X2.
 # !CAUTION: for illustration, only default initial values where used but 
-# other sets of initial values should be tried to ensure convergence towards
-# the global maximum.
-
-
+# other sets of initial values should be tried to ensure convergence
+# towards the global maximum.
 
 #### data loading
 data(data_Jointlcmm)
@@ -231,18 +236,24 @@ summary(m1)
 #Goodness-of-fit statistics for m1:
 #    maximum log-likelihood: -3944.77 ; AIC: 7919.54  ;  BIC: 7975.09  
 
+\dontrun{
 #### estimation with 2 latent classes (ng=2)
 m2 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_Jointlcmm)
+,hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_Jointlcmm,
+B=c(0.64,-0.62,0,0,0.52,0.81,0.41,0.78,0.1,0.77,-0.05,10.43,11.3,-2.6,
+-0.52,1.41,-0.05,0.91,0.05,0.21,1.5))
 summary(m2)
 #Goodness-of-fit statistics for m2:
 #       maximum log-likelihood: -3921.27; AIC: 7884.54; BIC: 7962.32  
 
+
 #### estimation with 3 latent classes (ng=3)
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm)
+,hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+B=c(0.77,0.4,-0.82,-0.27,0,0,0,0.3,0.62,2.62,5.31,-0.03,1.36,0.82,
+-13.5,10.17,10.24,11.51,-2.62,-0.43,-0.61,1.47,-0.04,0.85,0.04,0.26,1.5))
 summary(m3)
 #Goodness-of-fit statistics for m3:
 #       maximum log-likelihood: -3890.26 ; AIC: 7834.53;  BIC: 7934.53  
@@ -250,7 +261,10 @@ summary(m3)
 #### estimation with 4 latent classes (ng=4)
 m4 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_Jointlcmm)
+,hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_Jointlcmm,
+B=c(0.54,-0.42,0.36,-0.94,-0.64,-0.28,0,0,0,0.34,0.59,2.6,2.56,5.26,
+-0.1,1.27,1.34,0.7,-5.72,10.54,9.02,10.2,11.58,-2.47,-2.78,-0.28,-0.57,
+1.48,-0.06,0.61,-0.07,0.31,1.5))
 summary(m4)
 #Goodness-of-fit statistics for m4:
 #   maximum log-likelihood: -3886.93 ; AIC: 7839.86;  BIC: 7962.09  

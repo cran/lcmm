@@ -48,6 +48,7 @@ NPROB <- x$N[1]
 NEF   <- x$N[2]
 NVC   <- x$N[3]
 NW    <- x$N[4]
+ncor    <- x$N[5]
 NPM   <- length(x$best)
 
 
@@ -123,17 +124,24 @@ print(Mat.cov,na.print="")
 cat("\n")
 }
 }
-
-std <- cbind(coef[NPM],se[NPM])
-colnames(std) <-c("coef","se") 
-rownames(std) <-"Residual standard error:"
+std <- NULL
+nom <- NULL
 if((NW>=1)&(x$ng>1)) {
 nom <- paste("Proportional coefficient class",c(1:(x$ng-1)),sep="")
-std <-cbind(coef[(NPROB+NEF+NVC+1):NPM],se[(NPROB+NEF+NVC+1):NPM]) 
-rownames(std) <- c(nom,"Residual standard error")
-colnames(std) <-c("coef","se") 
+std <-cbind(abs(coef[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]),se[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]) 
 }
-print(std)
+if(ncor==2) {
+nom <- c(nom,"AR correlation parameter:","AR standard error:")
+std <-rbind(std,c(coef[(NPROB+NEF+NVC+NW+1)],se[(NPROB+NEF+NVC+NW+1)]),c(abs(coef[(NPROB+NEF+NVC+NW+2)]),se[(NPROB+NEF+NVC+NW+2)]))
+}
+if(ncor==1) {
+nom <- c(nom,"BM standard error:")
+std <-rbind(std,c(abs(coef[(NPROB+NEF+NVC+NW+1)]),se[(NPROB+NEF+NVC+NW+1)]))
+}
+std <- rbind(std,c(abs(coef[NPM]),se[NPM]))
+rownames(std) <- c(nom,"Residual standard error:")
+colnames(std) <-c("coef","se") 
+print(std, na.print="")
 cat("\n")
 }
 }

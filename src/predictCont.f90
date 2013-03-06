@@ -18,8 +18,8 @@
 !===================================================================
 
 
-subroutine predict_cont(X0,idprob,idea,idg &
-     ,ng,nv,maxmes,idiag,nwg,npm,b1,epsY,idlink &
+subroutine predict_cont(X0,idprob,idea,idg,idcor &
+     ,ng,ncor,nv,maxmes,idiag,nwg,npm,b1,epsY,idlink &
      ,nbzitr,zitr0,nsim,methInteg,Ydiscret,Ymarg)
 
 
@@ -28,22 +28,22 @@ subroutine predict_cont(X0,idprob,idea,idg &
 
   ! in input
   double precision,dimension(maxmes*nv),intent(in) ::X0
-  integer,dimension(nv),intent(in)::idprob,idea,idg
-  integer,intent(in)::ng,nv,maxmes,idiag,nwg,npm,idlink,nbzitr,nsim,Ydiscret,methInteg
+  integer,dimension(nv),intent(in)::idprob,idea,idg,idcor
+  integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,idlink,nbzitr,nsim,Ydiscret,methInteg
   double precision,dimension(npm),intent(in)::b1
   double precision,intent(in) ::epsY
   double precision,dimension(nbzitr),intent(in)::zitr0
 
   ! for computation
-  integer ::j,k,l,m,g,l2,m2,jj,ntrtot,npm2
+  integer ::j,k,l,m,g,l2,m2,jj,ntrtot,npm2,j1,j2
   integer ::ier,nmoins,kk,nrisq,nvarxevt,niter,nvarprob,ncg,ncssg,nea,nef,nvc,nprob
 !  double precision,dimension(nv) ::Xprob,  bprob
 !  double precision::temp
 !  double precision,dimension(ng) :: pi
   double precision,dimension(nv,nv) ::Ut,Ut1
 
-  double precision,dimension(:,:),allocatable::VC,Z,P,X00,X2
-  double precision,dimension(:),allocatable::Vi,ysim,usim,mu
+  double precision,dimension(:,:),allocatable::VC,Z,P,R,X00,X2
+  double precision,dimension(:),allocatable::Vi,ysim,usim,mu,tcor
   double precision,dimension(nv) :: b0,b2
   double precision :: eps,ytemp2,x22
   double precision ::ytemp,diff,SX,beta
@@ -59,8 +59,8 @@ subroutine predict_cont(X0,idprob,idea,idg &
 
   !============= recup des places de parametres
 
-  allocate(ysim(maxmes),usim(maxmes),mu(maxmes),Vi(maxmes*(maxmes+1)/2), &
-       VC(maxmes,maxmes),Z(maxmes,nv),P(maxmes,nv),X00(maxmes,nv),X2(maxmes,nv))
+  allocate(ysim(maxmes),usim(maxmes),mu(maxmes),tcor(maxmes),Vi(maxmes*(maxmes+1)/2), &
+       VC(maxmes,maxmes),Z(maxmes,nv),P(maxmes,nv),R(maxmes,maxmes),X00(maxmes,nv),X2(maxmes,nv))
 
   ! en prevision de l'extension au conjoint
   nrisq=0
@@ -139,7 +139,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
   end if
 
   nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1
-  npm2=nef+nvc+nwg+ntrtot
+  npm2=nef+nvc+nwg+ntrtot+ncor
 
   if (npm.ne.npm2) then
      ymarg=9999.d0
@@ -194,7 +194,28 @@ subroutine predict_cont(X0,idprob,idea,idg &
         end do
      end if
   end do
-  ! creation de s2*I et Y1
+  
+  ! creation de Ri
+        R=0.d0
+        tcor=0.d0
+        if (ncor.gt.0) then
+           do k=1,nv
+              if (idcor(k).eq.1) then
+                 do j=1,maxmes
+                    tcor(j) = X0(maxmes*(k-1)+j)
+                 end do
+              end if
+           end do
+         end if
+         do j1=1,maxmes
+            do j2=1,maxmes
+               if (ncor.eq.1) then 
+                  R(j1,j2) = b1(npm)*b1(npm)*min(tcor(j1),tcor(j2))
+               else if (ncor.eq.2) then
+                  R(j1,j2) = b1(npm)*b1(npm)*exp(-b1(npm-1)*abs(tcor(j1)-tcor(j2)))
+               end if
+            end do
+         end do     
 
 
 
@@ -205,7 +226,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
      P=0.d0
      P=MATMUL(Z,Ut)
      VC=0.d0
-     VC=MATMUL(P,transpose(P))
+     VC=MATMUL(P,transpose(P))+R
      ! j'ajoute l'erreur a 1 apres
 
 
@@ -284,7 +305,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
 
         cc1=abs(b1(nef+nvc+nwg+3))
 
-        dd1=abs(b1(npm))
+        dd1=abs(b1(npm-ncor))
 
         aa=aa1*aa1*(1-aa1)/bb1-aa1
         bb=aa*(1-aa1)/aa1
@@ -513,7 +534,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
            P=0.d0
            P=MATMUL(Z,Ut1)
            VC=0.d0
-           VC=MATMUL(P,transpose(P))
+           VC=MATMUL(P,transpose(P))+R
 
            ! Vi en vecteur
            Vi=0.d0
@@ -562,13 +583,13 @@ subroutine predict_cont(X0,idprob,idea,idg &
 
         cc1=abs(b1(nef+nvc+nwg+3))
 
-        dd1=abs(b1(npm))
+        dd1=abs(b1(npm-ncor))
 
         aa=aa1*aa1*(1-aa1)/bb1-aa1
         bb=aa*(1-aa1)/aa1
         beta=beta_ln(aa,bb)
 
-!                  write(*,*)'b1 beta',b1((nef+nvc+nwg+1):(nef+nvc+nwg+4)),b1(npm)
+!                 write(*,*)'b1 beta',b1((nef+nvc+nwg+1):(nef+nvc+nwg+4)),b1(npm)
 
            if (methInteg.eq.1) then
               ! i.e. methode de MC a faire
@@ -590,7 +611,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     if (ytemp.gt.1) then
                        ytemp=1.d0
                     end if
-                    ier=0
+                                        ier=0
                     ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+xinbta(aa,bb,beta,ytemp,ier)/dble(nsim)
 !                   ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+ytemp/dble(nsim) 
                     if (ier.ne.0.or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -613,7 +634,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     if (ytemp.gt.1) then
                        ytemp=1.d0
                     end if
-                    ier=0
+                                        ier=0
                     ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+xinbta(aa,bb,beta,ytemp,ier)*gauss(2,l)
 !                    ymarg(maxmes*(g-1)+j)=ymarg(maxmes*(g-1)+j)+ytemp*gauss(2,l)
                  if (ier.ne.0.or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -672,7 +693,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
                     diff=0.d0
                     ier=0
                     ytemp=mu(j)+sqrt(VC(j,j))*gauss(1,l)
-                    !        write(*,*)'avant',ll,j,mu(ll+j),sqrt(VC(ll+j,ll+j)),gauss(1,l),VC(ll+j,ll+j)
+                    !   write(*,*)'avant',ll,j,mu(ll+j),sqrt(VC(ll+j,ll+j)),gauss(1,l),VC(ll+j,ll+j)
 
                     ytemp=INV_ISPLINES(ytemp,splaa,bb,nbzitr,zitr,ier,niter,diff)
                     if ((ier.eq.3).or.(ier.ne.1.and.diff.gt.1.d-3).or.ymarg(maxmes*(g-1)+j).eq.9999.d0) then
@@ -714,7 +735,7 @@ subroutine predict_cont(X0,idprob,idea,idg &
 654 continue
 
   deallocate(zitr,splaa)
-  deallocate(Z,P,X00,X2,ysim,usim,mu,VC,Vi)
+  deallocate(Z,P,R,X00,X2,ysim,usim,mu,tcor,VC,Vi)
 
 
 
@@ -1057,7 +1078,7 @@ end subroutine predict_cont
       double precision,dimension(-1:nztr-1)::splaa
 
 
-!     write(*,*)'X00',X00
+!       write(*,*)'X00',X00
       eps=1.d-5
       iter=1
       X0=1.d10
@@ -1158,7 +1179,7 @@ end subroutine predict_cont
       X0=zi_eval(1)+(zi_eval(nztr)-zi_eval(1))*(1.d0-1.d0/(1.d0+exp(X00)))
       l=0
       do k = 2,nztr
-         if ((X0.ge.zi_eval(k-1)).and.(X0.lt.zi_eval(k)))then
+         if ((X0.ge.zi_eval(k-1)).and.(X0.lt.zi_eval(k))) then
             l=k-1
          endif
       end do

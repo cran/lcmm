@@ -1,6 +1,7 @@
 \name{plot.linkfunction}
 \alias{plot.linkfunction.lcmm}
 \alias{plot.linkfunction}
+\alias{plot.linkfunction.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Plot of the estimated transformation between the outcome and the underlying latent process
@@ -26,7 +27,7 @@ other parameters to be passed through to plotting functions
 }
 }
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Viviane Philipps and Benoit Liquet
 }
 \seealso{
 \code{\link{lcmm}}  
@@ -36,9 +37,9 @@ Cecile Proust-Lima and Benoit Liquet
 
 \dontrun{
 
-#### Estimation of homogeneous mixed models with different assumed link functions,
-#### a quadratic mean trajectory for the latent process with independent random 
-#### intercept, slope and quadratic slope
+#### Estimation of homogeneous mixed models with different assumed link
+#### functions, a quadratic mean trajectory for the latent process with 
+#### independent random intercept, slope and quadratic slope
 #### (comparison of linear, Beta and 3 splines link functions)
 data(data_Jointlcmm)
 # linear link function
@@ -77,19 +78,24 @@ plot.linkfunction(m14,bty="l")
 
 #### Plot of estimated different link functions:
 #### (applicable for models that only differ in the "link function" used. 
-#### Otherwise, the latent process scale is different and a rescaling is necessary)
+#### Otherwise, the latent process scale is different and a rescaling
+#### is necessary)
 transfo <- data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],
 beta=m11$estimlink[,2],spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],
 spl_5m=m14$estimlink[,2])
-plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',xlab="latent process",
-ylab="marker",bty="l")
+plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',
+xlab="latent process",ylab="marker",bty="l")
 par(new=TRUE)
-plot(transfo[,1]~transfo[,3],xlim=c(-10,5),col=2,type='l',xlab="",ylab="",bty="l")
+plot(transfo[,1]~transfo[,3],xlim=c(-10,5),col=2,type='l',
+xlab="",ylab="",bty="l")
 par(new=TRUE)
-plot(transfo[,1]~transfo[,4],xlim=c(-10,5),col=3,type='l',xlab="",ylab="",bty="l")
+plot(transfo[,1]~transfo[,4],xlim=c(-10,5),col=3,type='l',
+xlab="",ylab="",bty="l")
 par(new=TRUE)
-plot(transfo[,1]~transfo[,5],xlim=c(-10,5),col=4,type='l',xlab="",ylab="",bty="l")
-legend(x="bottomright",legend=colnames(transfo[,2:5]),col=1:4,lty=1,inset=.02,bty="n")
+plot(transfo[,1]~transfo[,5],xlim=c(-10,5),col=4,type='l',
+xlab="",ylab="",bty="l")
+legend(x="bottomright",legend=colnames(transfo[,2:5]),col=1:4,
+lty=1,inset=.02,bty="n")
 
 }
 }

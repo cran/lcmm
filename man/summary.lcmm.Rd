@@ -2,6 +2,7 @@
 \alias{summary.hlme}
 \alias{summary.lcmm}
 \alias{summary.Jointlcmm}
+\alias{summary.multlcmm}
 \alias{summary.epoce}
 \alias{summary.Diffepoce}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -17,6 +18,7 @@ The function provides a summary of \code{hlme}, \code{lcmm} and \code{Jointlcmm}
 \method{summary}{Jointlcmm}(object,\dots)
 \method{summary}{epoce}(object,\dots)
 \method{summary}{Diffepoce}(object,\dots)
+\method{summary}{multlcmm}(object,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,7 +31,7 @@ further arguments to be passed to or from other methods.
 }
 }
 \author{
-Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
+Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
 }
 \seealso{
 \code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{Jointlcmm}}, \code{epoce}, \code{Diffepoce}

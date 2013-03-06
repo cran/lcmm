@@ -2,6 +2,7 @@
 \alias{plot.hlme}
 \alias{plot.lcmm}
 \alias{plot.Jointlcmm}
+\alias{plot.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Plots of marginal and subject-specific residuals 
@@ -41,7 +42,8 @@ Cecile Proust-Lima and Benoit Liquet
 \examples{
 data(data_hlme)
 m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_hlme)
+subject='ID',ng=2,data=data_hlme,B=c(0.41,0.55,-0.18,-0.41,
+-14.26,-0.34,1.33,13.51,24.65,2.98,1.18,26.26,0.97))
 plot(m)
 }
 

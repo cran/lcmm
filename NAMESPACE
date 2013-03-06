@@ -8,6 +8,7 @@ S3method(plot,hlme)
 S3method(plot.predict,hlme)
 S3method(plot.postprob,hlme)
 S3method(postprob,hlme)
+S3method(predictY,hlme)
 
 S3method(print,lcmm)
 S3method(summary,lcmm)
@@ -15,6 +16,17 @@ S3method(plot,lcmm)
 S3method(plot.predict,lcmm)
 S3method(plot.postprob,lcmm)
 S3method(postprob,lcmm)
+S3method(predictY,lcmm)
+S3method(predictL,lcmm)
+
+
+S3method(print,multlcmm)
+S3method(summary,multlcmm)
+S3method(plot,multlcmm)
+S3method(plot.postprob,multlcmm)
+S3method(postprob,multlcmm)
+S3method(predictY,multlcmm)
+S3method(predictL,multlcmm)
 
 S3method(print,Jointlcmm)
 S3method(summary,Jointlcmm)
@@ -24,10 +36,10 @@ S3method(plot.postprob,Jointlcmm)
 S3method(postprob,Jointlcmm)
 S3method(plot.baselinerisk,Jointlcmm)
 S3method(plot.survival,Jointlcmm)
-S3method(predictY,lcmm)
+S3method(predictY,Jointlcmm)
 
 
 S3method(print,epoce)
 S3method(summary,epoce)
 
-export(plot.predict,plot.postprob,postprob,plot.baselinerisk,plot.survival,predictY)
+export(plot.predict,plot.postprob,postprob,plot.baselinerisk,plot.survival,predictY,predictL)

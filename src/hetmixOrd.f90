@@ -1806,9 +1806,9 @@
          gconv(3)=dd
          vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
 
-         do k=1,nwg
-            b(nef+nvc+k)=abs(b(nef+nvc+k))
-         end do
+         !do k=1,nwg
+            !b(nef+nvc+k)=abs(b(nef+nvc+k))
+         !end do
 
 ! probas posteriori
 
@@ -1816,13 +1816,13 @@
 
          call computUACVo(b,npm,rlindiv,vopt,UACV)
 
-!            id=0
-!            thi=0.d0
-!            nmescur=0
-!            do i=1,ns
-!                       rlindiv(i)=funcpio(b,npm,id,thi,id,thi,i)
-!                 nmescur=nmescur+nmes(i)
-!            end do        
+!           id=0
+!           thi=0.d0
+!           nmescur=0
+!           do i=1,ns
+!                rlindiv(i)=funcpio(b,npm,id,thi,id,thi,i)
+!                nmescur=nmescur+nmes(i)
+!           end do      
          if (istop.eq.1) then
             if (ng.gt.1) then
                call postprobo(B,npm,PPI)
@@ -2021,7 +2021,7 @@
                         
                         
                         if (nea.gt.0) then 
-                           temp=vraisobs()        
+                           temp=vraisobs()      
                         else
               Xea=0.d0
               call vraistot(nea,Xea,nf,temp)
@@ -2161,7 +2161,7 @@
 
                         
                         if (nea.gt.0) then 
-                           temp=vraisobs()        
+                           temp=vraisobs()      
                         else
               Xea=0.d0
               call vraistot(nea,Xea,nf,temp)
@@ -2337,7 +2337,7 @@
                         
                         
                         if (nea.gt.0) then 
-                           temp=vraisobs()        
+                           temp=vraisobs()      
                         else
               Xea=0.d0
               call vraistot(nea,Xea,nf,temp)
@@ -2477,7 +2477,7 @@
 
                         
                         if (nea.gt.0) then 
-                           temp=vraisobs()        
+                           temp=vraisobs()      
                         else
               Xea=0.d0
               call vraistot(nea,Xea,nf,temp)
@@ -2636,8 +2636,8 @@
       if (nea.ge.1) then 
          ui=MATMUL(Ut1,Xea)
          mu1=mu+MATMUL(Z,ui)
-      else                
-         mu1=mu                 
+      else              
+         mu1=mu          
       end if
 
       vraisind=1.d0
@@ -2752,7 +2752,7 @@
       integer ::i,j,k,l,m,g,l2,m2,it,npm,nmoins
       double precision,dimension(maxmes,nv) ::X0,X2
       double precision,dimension(nv) ::Xprob
-      double precision,dimension(nea,nea) ::Ut          
+      double precision,dimension(nea,nea) ::Ut    
       double precision,dimension(nea) ::Xea
       double precision,dimension(npm) :: b
       double precision,dimension(nv) :: b0,b2,bprob
@@ -2944,7 +2944,7 @@
             mu=matmul(X0,b0)+matmul(X2,b2)
 
                         if (nea.gt.0) then 
-                                temp=vraisobs()        
+                                temp=vraisobs() 
                         else
               Xea=0.d0
               call vraistot(nea,Xea,nf,temp)

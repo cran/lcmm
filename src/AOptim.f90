@@ -116,7 +116,7 @@
 
       module parameters
           double precision,save::epsa,epsb,epsd
-          integer,save::maxiter
+          integer,save::maxiter,verbose
       end module parameters
 
 !-------------------------------------------------------------
@@ -174,7 +174,7 @@
       z,rl1,th,ep
       double precision,external::namefunc
 
-
+      !if (verbose==1) write(*,*)'Marquardt begins - npm=',m
       id=0
       jd=0
       z=0.d0
@@ -193,9 +193,10 @@
       ep=1.d-20
 
       Main:Do
-!   	write(*,*)'avant deriva'
+      !if (verbose==1) write(*,*)'iteration',ni
         call deriva(b,m,v,rl,namefunc)
-!	write(*,*)'iteration',ni,'vrais',rl
+      !if (verbose==1) write(*,*)'loglik=',rl
+      !if (verbose==1) write(*,*)'parms',b            
         rl1=rl
         dd = 0.d0
         fu=0.D0
@@ -223,6 +224,8 @@
            end do
            dd=GHG/dble(m)
         end if
+        
+       !     if(verbose==1) print *,"ca=",ca,"cb=",cb,"dd=",dd
 
         if(ca.lt.epsa.and.cb.lt.epsb.and.dd.lt.epsd) exit main
         tr=0.d0
@@ -306,7 +309,9 @@
          ni=ni+1
          if (ni.ge.maxiter) then
             istop=2
-!            write(6,*) 'maximum number of iteration reached'
+            !if (verbose==1) then 
+            !write(*,*) 'maximum number of iteration reached'
+            !end if
             goto 110
          end if
       End do Main
@@ -339,11 +344,13 @@
 !     calcul de la derivee premiere par "central difference"
 !     calcul des derivees secondes par "forward difference"
 !
+
       z=0.d0
       i0=0
-
+      
       rl=namefunc(b,m,i0,z,i0,z)
-!      write(*,*)'dans deriva',rl
+
+     !write(*,*)'dans deriva',rl
 
       if(rl.eq.-1.d9) then
          goto 123
@@ -354,6 +361,7 @@
          fcith(i)=namefunc(b,m,i,th,i0,z)
          if(fcith(i).eq.-1.d9) then
             rl=-1.d9
+            !end if 
             goto 123
          end if
       end do
@@ -419,11 +427,11 @@
        call valfpa(vlw2,fi2,b,bh,m,delta,namefunc)
 
        if(fi2.ge.fi1) then
-!      vlw3=vlw2
-      vlw2=vlw1
-      fi3=fi2
-      fi2=fi1
-      step=-step
+!         vlw3=vlw2
+          vlw2=vlw1
+          fi3=fi2
+          fi2=fi1
+          step=-step
 
           vlw1=vlw2+step
           call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
@@ -557,7 +565,7 @@
 12             term=term-p
             end do
 13            a(jj)=term/diag
-       end do
+           end do
       end do
 
 !       calcul des solutions
@@ -772,17 +780,17 @@
             min=min-1
             lhor=ipiv
             lver=j
-            !
+!
 !     START INNER LOOP
 !
             do l=lanf,min
-               lver=lver+1
-               lhor=lhor+l
-               work=work+A(lver)*A(lhor)
+                lver=lver+1
+                lhor=lhor+l
+                work=work+A(lver)*A(lhor)
             end do
-            !
-            !     END OF INNER LOOP
-            !
+!
+!     END OF INNER LOOP
+!
             A(j)=-work*din
             j=j-min
          end do
@@ -793,7 +801,7 @@
 5        ipiv=ipiv-min
          ind=ind-1
       end do
-      
+
 !
 !     END OF INVERSION-LOOP
 !
@@ -810,17 +818,17 @@
          do k=i,n
             work=0.d0
             lhor=j
-            !
-            !     START INNER LOOP
-            !
+!
+!     START INNER LOOP
+!
             do l=k,n
-               lver=lhor+k-i
-               work=work+A(lhor)*A(lver)
-               lhor=lhor+l
+                lver=lhor+k-i
+                work=work+A(lhor)*A(lver)
+                lhor=lhor+l
             end do
-            !
-            !     END OF INNER LOOP
-            !
+!
+!     END OF INNER LOOP
+!
             A(j)=work
             j=j+k
          end do
@@ -836,10 +844,10 @@
 !                          VALFPA
 !------------------------------------------------------------
 
-      subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
-        
+        subroutine valfpa(vw,fi,b,bk,m,delta,namefunc)
+
         implicit none
-        
+
         integer,intent(in)::m
         double precision,dimension(m),intent(in)::b,delta
         double precision,dimension(m),intent(out)::bk
@@ -847,42 +855,42 @@
         double precision::vw,z
         integer::i0,i
         double precision,external::namefunc
-        
-        z=0.d0
-        i0=1
-        do i=1,m
-           bk(i)=b(i)+dexp(vw)*delta(i)
-        end do
-        fi=-namefunc(bk,m,i0,z,i0,z)
-        
-        return
-        
-      end subroutine valfpa
-      
-      !------------------------------------------------------------
-      !                            MAXT
-      !------------------------------------------------------------
-      
-      
+
+         z=0.d0
+         i0=1
+         do i=1,m
+            bk(i)=b(i)+dexp(vw)*delta(i)
+         end do
+         fi=-namefunc(bk,m,i0,z,i0,z)
+
+         return
+
+         end subroutine valfpa
+
+!------------------------------------------------------------
+!                            MAXT
+!------------------------------------------------------------
+
+
       subroutine dmaxt(maxt,delta,m)
-        
-        implicit none
-        
-        integer,intent(in)::m
-        double precision,dimension(m),intent(in)::delta
-        double precision,intent(out)::maxt
-        integer::i
-        
-        maxt=Dabs(delta(1))
-        do i=2,m
-           if(Dabs(delta(i)).gt.maxt)then
-              maxt=Dabs(delta(i))
-           end if
-        end do
-        
-        return
-      end subroutine dmaxt
-      
-    end module optim
+
+      implicit none
+
+       integer,intent(in)::m
+       double precision,dimension(m),intent(in)::delta
+       double precision,intent(out)::maxt
+       integer::i
+
+       maxt=Dabs(delta(1))
+       do i=2,m
+         if(Dabs(delta(i)).gt.maxt)then
+            maxt=Dabs(delta(i))
+         end if
+       end do
+
+       return
+       end subroutine dmaxt
+
+      end module optim
 
 

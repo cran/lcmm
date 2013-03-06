@@ -3,6 +3,7 @@
 \alias{plot.postprob}
 \alias{plot.postprob.lcmm}
 \alias{plot.postprob.hlme}
+\alias{plot.postprob.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Histograms of the posterior class-membership probabilities
@@ -38,6 +39,7 @@ This function can only be used with latent class mixed models and joint latent c
 \examples{
 data(data_hlme)
 m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_hlme)  
+subject='ID',ng=2,data=data_hlme,B=c(0.41,0.55,-0.18,-0.41,
+-14.26,-0.34,1.33,13.51,24.65,2.98,1.18,26.26,0.97))  
 plot.postprob(m) 
 }

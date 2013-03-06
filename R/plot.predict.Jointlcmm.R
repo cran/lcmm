@@ -44,6 +44,13 @@ b1 <- NULL
 b2 <- NULL
 
 
+call_fixed <- x$call$fixed[3]
+if(is.null(x$call$random)) {call_random <- ~-1} else call_random <- x$call$random
+if(is.null(x$call$classmb)) {call_classmb <- ~-1} else call_classmb <- x$call$classmb
+if(is.null(x$call$mixture)) {call_mixture <- ~-1} else call_mixture <- x$call$mixture
+if(is.null(x$call$survival)) {call_survival <- ~-1} else call_survival <- x$call$survival[3]
+
+
 if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
 
 if(na.action==1){
@@ -52,7 +59,96 @@ if(na.action==1){
 	na.action=na.fail
 }
 
+### pour les facteurs
 
+Xnames2 <- x$Names2[[1]]
+
+ #cas où une variable du dataset est un facteur
+ olddata <- eval(x$call$data)
+  for(v in Xnames2[-1])
+ {
+  if (is.factor(olddata[,v]) & !(is.factor(newdata[,v])))
+  {
+   mod <- levels(olddata[,v])
+   if (!(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ 
+ #cas où on a factor() dans l'appel
+ z <- all.names(call_fixed)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]  
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_fixed <- gsub("factor","",call_fixed)
+
+ z <- all.names(call_random)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_random <- gsub("factor","",call_random)
+       
+ z <- all.names(call_classmb)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_classmb <- gsub("factor","",call_classmb)
+        
+ z <- all.names(call_mixture)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_mixture <- gsub("factor","",call_mixture) 
+
+ z <- all.names(call_survival)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]  
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_survival <- gsub("factor","",call_survival)
+ call_survival <- gsub("mixture","",call_survival)
+ 
+   
+     
 ### Traitement des donnees manquantes
 # fixed
 #mcall <- x$call[c(1,match(c("data"),names(x$call),0))]
@@ -61,8 +157,9 @@ mcall$na.action <- na.action
 mcall$data <- newdata1
 
 
+# fixed
 m <- mcall
-m$formula <- formula(paste("~",x$call$fixed[3],sep=""))
+m$formula <- formula(paste("~",call_fixed,sep=""))
 m[[1]] <- as.name("model.frame")	
 m <- eval(m, sys.parent()) 
 na.fixed <- attr(m,"na.action")
@@ -70,7 +167,7 @@ na.fixed <- attr(m,"na.action")
 # mixture
 if(!is.null(x$call$mixture)){
 	m <- mcall
-	m$formula <- x$call$mixture
+	m$formula <- formula(paste("~",call_mixture,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
 	na.mixture <- attr(m,"na.action")
@@ -81,17 +178,18 @@ if(!is.null(x$call$mixture)){
 # random
 if(!is.null(x$call$random)){
 	m <- mcall
-	m$formula <- x$call$random
+	m$formula <- formula(paste("~",call_random,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
  	na.random <- attr(m,"na.action")
 }else{
 	na.random <- NULL
 }
+
 # classmb
 if(!is.null(x$call$classmb)){ 
 	m <- mcall	
-	m$formula <- x$call$classmb	
+	m$formula <- formula(paste("~",call_classmb,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
  	na.classmb <- attr(m,"na.action")
@@ -99,71 +197,79 @@ if(!is.null(x$call$classmb)){
 	na.classmb <- NULL
 }
 
-########## For survival
-if(!is.null(x$call$survival)){ 
-	res.evt <- x$call$survival
-	class(res.evt) <- "formula"
-	tmp.res <- res.evt
+#survival
+if(!is.null(x$call$survival))
+{
+ m <- mcall
+ m$formula <- formula(paste("~",call_survival,sep=""))
+ m[[1]] <- as.name("model.frame")	
+ m <- eval(m, sys.parent()) 
+ na.survival <- attr(m,"na.action")
+}
+else {na.survival <- NULL}
 
-	res.evt <- terms(res.evt,"mixture") 
-	inddep.surv <- attr(res.evt, "term.labels")
-	ind.mixture <- untangle.specials(res.evt, "mixture", 1)
-	inddepvar.Mixt  <- gsub("\\)","",gsub("mixture\\(","",ind.mixture$vars))
-	inddepvar.noMixt <- inddep.surv[!(inddep.surv %in% ind.mixture$vars)]
-	tmp.su <- c(inddepvar.noMixt,inddepvar.Mixt)
-	names.survival <- "~" 
-	for(i in 1:length(tmp.su)){
-	      if(i==1){
-		      names.survival <- paste(names.survival,tmp.su[i],sep="")
-	      }else{
-		      names.survival <- paste(names.survival,tmp.su[i],sep="+")
-	      }
-	}
+########### For survival
+#if(!is.null(x$call$survival)){ 
+#	res.evt <- x$call$survival
+#	class(res.evt) <- "formula"
+#	tmp.res <- res.evt
+#
+#	res.evt <- terms(res.evt,"mixture") 
+#	inddep.surv <- attr(res.evt, "term.labels")
+#	ind.mixture <- untangle.specials(res.evt, "mixture", 1)
+#	inddepvar.Mixt  <- gsub("\\)","",gsub("mixture\\(","",ind.mixture$vars))
+#	inddepvar.noMixt <- inddep.surv[!(inddep.surv %in% ind.mixture$vars)]
+#	tmp.su <- c(inddepvar.noMixt,inddepvar.Mixt)
+#	names.survival <- "~" 
+#	for(i in 1:length(tmp.su)){
+#	      if(i==1){
+#		      names.survival <- paste(names.survival,tmp.su[i],sep="")
+#	      }else{
+#		      names.survival <- paste(names.survival,tmp.su[i],sep="+")
+#	      }
+#	}
 
-#7/05/2012
-#7/05/2012
-	m <- mcall
-	m$formula <- formula(names.survival)
-	m[[1]] <- as.name("model.frame")
-	m <- eval(m, sys.parent())
-	na.survival <- attr(m,"na.action")
+##7/05/2012
+##7/05/2012
+#	m <- mcall
+#	m$formula <- formula(names.survival)
+#	m[[1]] <- as.name("model.frame")
+#	m <- eval(m, sys.parent())
+#	na.survival <- attr(m,"na.action")
 
 ## Table sans donnees manquante: newdata
 	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival))
 	if(!is.null(na.action)){
 		newdata1 <- newdata1[-na.action,]
 	}
-#7/05/2012
-	X_survival <- model.matrix(formula(names.survival),data=newdata1)
-	if(colnames(X_survival)[1]=="(Intercept)"){
-		colnames(X_survival)[1] <- "intercept"
-	}
-	id.X_survival <- 1
-}else{
-	id.X_survival <- 0
-#7/05/2012
-	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
-	if(!is.null(na.action)){
-		newdata1 <- data[-na.action,]
-	}
-}
-
-X <- newdata1[,var.time]
+##7/05/2012
+#	X_survival <- model.matrix(formula(names.survival),data=newdata1)
+#	if(colnames(X_survival)[1]=="(Intercept)"){
+#		colnames(X_survival)[1] <- "intercept"
+#	}
+#	id.X_survival <- 1
+#}else{
+#	id.X_survival <- 0
+##7/05/2012
+#	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
+#	if(!is.null(na.action)){
+#		newdata1 <- data[-na.action,]
+#	}
+#}
 
 
 
-
-## Construction de nouvelles var eplicatives sur la nouvelle table
+## Construction de nouvelles var explicatives sur la nouvelle table
 ## fixed
 	
-	X_fixed <- model.matrix(formula(paste("~",x$call$fixed[3],sep="")),data=newdata1)
+	X_fixed <- model.matrix(formula(paste("~",call_fixed,sep="")),data=newdata1)
 	if(colnames(X_fixed)[1]=="(Intercept)"){
 		colnames(X_fixed)[1] <- "intercept"
 		int.fixed <- 1
 	}	
 ## mixture
 	if(!is.null(x$call$mixture)){
-		X_mixture <- model.matrix(formula(x$call$mixture),data=newdata1)	
+		X_mixture <- model.matrix(formula(paste("~",call_mixture,sep="")),data=newdata1)	
 		if(colnames(X_mixture)[1]=="(Intercept)"){
 			colnames(X_mixture)[1] <- "intercept"
 			int.mixture <- 1
@@ -174,7 +280,7 @@ X <- newdata1[,var.time]
 	}	
 ## random
 	if(!is.null(x$call$random)){
-		X_random <- model.matrix(formula(x$call$random),data=newdata1)	
+		X_random <- model.matrix(formula(paste("~",call_random,sep="")),data=newdata1)	
 		if(colnames(X_random)[1]=="(Intercept)"){
 			colnames(X_random)[1] <- "intercept"
 			int.random <- 1
@@ -185,13 +291,23 @@ X <- newdata1[,var.time]
 	}	
 ## classmb
 	if(!is.null(x$call$classmb)){ 
-		X_classmb <- model.matrix(formula(x$call$classmb),data=newdata1)
+		X_classmb <- model.matrix(formula(paste("~",call_classmb,sep="")),data=newdata1)
 		colnames(X_classmb)[1] <- "intercept"
 		id.X_classmb <- 1
 	}else{
 		id.X_classmb <- 0
 	}	
 
+## survival
+	if(!is.null(x$call$survival)){ 
+		X_survival <- model.matrix(formula(paste("~",call_survival,sep="")),data=newdata1)
+		colnames(X_survival)[1] <- "intercept"
+		id.X_survival <- 1
+	}else{
+		id.X_survival <- 0
+	}	
+	
+	
 ## Construction des var expli
 newdata1 <- X_fixed
 
@@ -258,6 +374,7 @@ Y[,g]<- Y[,g] + X2 %*% b2[,g]
 }
 }
 
+X <- newdata1[,var.time]
 ylim1 <- ylim
 if (is.null(ylim)){
 ylim1 <- c(min(Y),max(Y))

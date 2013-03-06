@@ -63,7 +63,9 @@ cat(paste("     maximum log-likelihood:", round(x$loglik,2))," \n")
 cat(paste("     AIC:", round(-2*x$loglik+2*length(x$best),2))," \n")
 cat(paste("     BIC:", round(-2*x$loglik+length(x$best)*log(x$ns),2))," \n")
 cat(" \n")
-if (x$Ydiscrete==1){
+
+ncor <- x$N[6]
+if (x$Ydiscrete==1&ncor==0){
 cat(paste("     Discrete posterior log-likelihood:", round(x$discrete_loglik,2))," \n")
 cat(paste("     Discrete AIC:", round(-2*x$discrete_loglik+2*length(x$best),2))," \n")
 cat(" \n")
@@ -157,11 +159,25 @@ cat("\n")
 }
 }
 
+std <- NULL
+nom <- NULL
 if(NW>=1) {
 nom <- paste("Proportional coefficient class",c(1:(x$ng-1)),sep="")
-std <-cbind(coef[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)],se[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]) 
-rownames(std) <- c(nom,"Residual standard error")
+std <-cbind(coef[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)],se[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)])
+}
+if(ncor==2) {
+nom <- c(nom,"AR correlation parameter:","AR standard error:")
+std <-rbind(std,c(coef[(NPROB+NEF+NVC+NW+ntrtot+1)],se[(NPROB+NEF+NVC+NW+ntrtot+1)]),c(abs(coef[(NPROB+NEF+NVC+NW+ntrtot+2)]),se[(NPROB+NEF+NVC+NW+ntrtot+2)]))
+}
+if(ncor==1) {
+nom <- c(nom,"BM standard error:")
+std <-rbind(std,c(abs(coef[(NPROB+NEF+NVC+NW+ntrtot+1)]),se[(NPROB+NEF+NVC+NW+ntrtot+1)]))
+}
+if (!is.null(std)) { 
+rownames(std) <- nom
 colnames(std) <-c("coef","se") 
+print(std, na.print="")
+cat("\n")
 }
 
 cat("Residual standard error (not estimated) = 1\n")
@@ -174,8 +190,8 @@ cat("(the following levels are not observed in the data: ",temp[temp!=0],"\n")
 cat("so that the number of parameters in the threshold transformation is reduced to",ntrtot,") \n")
 }
 
-tmp <- cbind(round(coef[(NPM-ntrtot+1):NPM],5),round(se[(NPM-ntrtot+1):NPM],5),round(wald[(NPM-ntrtot+1):NPM],3),round(pwald[(NPM-ntrtot+1):NPM],5))
-dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1):NPM], c("coef", "Se", "Wald", "p-value"))
+tmp <- cbind(round(coef[(NPM-ntrtot+1-ncor):(NPM-ncor)],5),round(se[(NPM-ntrtot+1-ncor):(NPM-ncor)],5),round(wald[(NPM-ntrtot+1-ncor):(NPM-ncor)],3),round(pwald[(NPM-ntrtot+1-ncor):(NPM-ncor)],5))
+dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1-ncor):(NPM-ncor)], c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 prmatrix(tmp,na.print="")
 cat("\n")

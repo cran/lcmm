@@ -33,8 +33,8 @@
 !--------------------------------------------------------------------
 
 
-      subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idxevt0 &
-            ,ns0,ng0,nv0,nobs0,nmes0,idiag0,nwg0,npm0,time0,typrisq0 &
+      subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idxevt0 &
+            ,ns0,ng0,ncor0,nv0,nobs0,nmes0,idiag0,nwg0,npm0,time0,typrisq0 &
             ,idtrunc0,risqcom0,nz0,zi0,Tentr0,Tevt0 &
             ,Tsurvint0,devt0,ind_survint0,vopt &
             ,nT,valT,b,epoir,rl_cond,ns_vect,nevt_vect &
@@ -61,8 +61,8 @@
 
         !Declaration des variables en entree
         integer,intent(in)::nv0,logspecif0
-        integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0
-        integer,dimension(nv0),intent(in)::idea0,idg0,idprob0
+        integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0,ncor0
+        integer,dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0
         integer,dimension(nv0),intent(in)::idxevt0
         integer,dimension(ns0),intent(in)::nmes0,prior0
         double precision,dimension(ns0)::Tentr0,Tevt0,Tsurvint0
@@ -113,7 +113,7 @@
 
 !----------------- allocation generale ---------------------------
         allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0)   &
-             ,idea(nv0),idg(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
+             ,idea(nv0),idg(nv0),idcor(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
              ,Tsurvint(ns0),ind_survint(ns0),idxevt(nv0)             &
              ,devt(ns0),prior(ns0),time_cvpl(nobs0))
 
@@ -136,6 +136,7 @@
         idprob=0
         idea=0
         idg=0
+        idcor=0
         idxevt=0
         prior=0
         nmes=0
@@ -166,6 +167,7 @@
         ns=ns0
         ng=ng0
         nv=nv0
+        ncor=ncor0
         nobs=nobs0
 
         if (nwg0.eq.0) then
@@ -192,6 +194,7 @@
            idprob(k)=idprob0(k)
            idea(k)=idea0(k)
            idg(k)=idg0(k)
+           idcor(k)=idcor0(k)
            idxevt(k)=idxevt0(k)
            jtemp=0
            DO i=1,ns
@@ -254,10 +257,10 @@
         end do
 
 
-!        if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
-           !        istop=12
-           !        go to 1588
-!        end if
+!       if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
+           !    istop=12
+           !    go to 1588
+!       end if
 
 
         !  nb effets fixes = nb effets fixes sans melange
@@ -270,7 +273,7 @@
         end if
 
         nef=nprob+nvarxevt+nrisq+ncssg+ncg*ng !
-        npm=nef+nvc+nwg+1
+        npm=nef+nvc+nwg+ncor+1
 
         if (idiag.eq.1.and.nvc.gt.0) then
            DO j=1,nvc
@@ -418,7 +421,7 @@
            call derivc_condT(b,npm,J_cond,rlindiv,t,valT(t))
 
 !           write(*,*)'apres derivc'
-
+ 
            rl_condt=0.d0
            do i=1,ns
                  contribt(ns*(t-1)+i)=rlindiv(i)
@@ -439,10 +442,10 @@
            epoir(t)=-rl_condt/dble(ns_s)+(trace3*dble(ns)/(dble(ns_s)*dble(ns-1)))
            rl_cond(t)=rl_condt/dble(ns_s)
 
-            if (epoir(t).ne.epoir(t)) then 
+            if (epoir(t).ne.epoir(t)) then
                     epoir(t)=1.d9
             end if
-            if (rl_cond(t).ne.rl_cond(t)) then 
+            if (rl_cond(t).ne.rl_cond(t)) then
                     rl_cond(t)=-1.d9
             end if
 
@@ -453,7 +456,7 @@
 
 !        write(*,*)'avant deallocate 1'
 
-        deallocate(Y,idprob,X,idea,idg,nmes,Tsurv0,Tsurv,Tsurvint, &
+        deallocate(Y,idprob,X,idea,idg,idcor,nmes,Tsurv0,Tsurv,Tsurvint, &
              ind_survint,idxevt,devt,prior,zi,time_cvpl)
 
 
@@ -475,7 +478,7 @@
         endif
 
 
-        
+
 
 !       write(*,*)"dans CVPL : valeur de la vraisemblance"
 !       do t=1,nT
@@ -526,7 +529,7 @@
 
         IMPLICIT NONE
 
-        double precision::funcpi_condt,thn,th,z,valt,funcpij
+        double precision::funcpi_condt,thn,th,z,valt,funcpij,temp1,temp2
         double precision,dimension(m,1)::Uscore, Uscore2
         double precision,dimension(m)::b
         double precision,dimension(m,m)::v
@@ -540,7 +543,7 @@
 ! Calcul des gradients par sujets et totaux
         ii=0
         nmes_curr=0
-             nmes_curr_s=0
+        nmes_curr_s=0
         DO i=1,ns
            Uscore=0.d0
            Uscore2=0.d0
@@ -549,19 +552,39 @@
               ii=ii+1
 
               rlindiv(i)=funcpi_condt(b,m,id,z,id,z,ii,t1,valt)
+              if (rlindiv(i).eq.-1.d9) then 
+                 V=0.d0
+                 rlindiv=-1.d9
+                 goto 777
+              end if
               do k=1,m
                  th=DMAX1(1.d-6, 1.d-4 * DABS(b(k)))
                  thn=-1.D0*th
-                 Uscore(k,1)=-(funcpi_condt(b,m,k,th,id,z,ii,t1,valt) &
-                      -funcpi_condt(b,m,k,thn,id,z,ii,t1,valt))/(2.d0*th)
-                 Uscore2(k,1)=-(funcpij(b,m,k,th,id,z,i) &
-                      -funcpij(b,m,k,thn,id,z,i))/(2.d0*th)
+                 temp1=funcpi_condt(b,m,k,th,id,z,ii,t1,valt)
+                 temp2=funcpi_condt(b,m,k,thn,id,z,ii,t1,valt)
+                 if (temp1.eq.-1.d9.or.temp2.eq.-1.d9) then 
+                    V=0.d0
+                    rlindiv=-1.d9
+                    goto 777
+                 end if
+                 Uscore(k,1)=-(temp1-temp2)/(2.d0*th)
+                 temp1=funcpij(b,m,k,th,id,z,i)
+                 temp2=funcpij(b,m,k,thn,id,z,i)
+                 if (temp1.eq.-1.d9.or.temp2.eq.-1.d9) then 
+                    V=0.d0
+                    rlindiv=-1.d9
+                    goto 777
+                 end if
+
+                 Uscore2(k,1)=-(temp1-temp2)/(2.d0*th)
               END DO
               nmes_curr_s = nmes_curr_s + nmes_s(ii)
            end if
            V=V+MATMUL(Uscore,transpose(Uscore2))
            nmes_curr = nmes_curr + nmes(i)
         end do
+
+777 continue
 
         return
 
@@ -608,7 +631,7 @@
       IMPLICIT NONE
 
       integer ::i,j,k,l,m,g,l2,m2,id,jd,jj,npm,t1
-      integer ::ier,nmoins
+      integer ::ier,nmoins,j1,j2
       double precision,dimension(maxmes,nv) ::Z,P,X00,X2
       double precision,dimension(nvarprob) ::Xprob,bprob
       double precision,dimension(nv,nv) ::Ut,Ut1
@@ -619,7 +642,7 @@
       double precision :: vrais,eps,det
       double precision ::thi,thj,temp
       double precision ::Y4,expo
-      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3
+      double precision,dimension(maxmes) :: mu,Y1,Y2,Y3,tcor
       double precision,dimension(ng) :: pi
       double precision,dimension(nrisq)::brisq
       double precision::retard,entretard,vrais_survie
@@ -731,7 +754,7 @@
 
 
 
-! -------- creation de Vi = ZiGZi'+se*seIni ----------
+! -------- creation de Vi = ZiGZi'+se*seIni+Corr ----------
 ! creation de Zi
 
          Z=0.d0
@@ -745,12 +768,33 @@
             end if
 
          end do
-! creation de s2*I et Y1
+! creation de Se=s2*I+Corr et Y1
 
-         Se=0.d0
+        Se=0.d0
+        tcor=0.d0
+        if (ncor.gt.0) then
+           do k=1,nv
+              if (idcor(k).eq.1) then
+                 do j=1,nmes_s(i)
+                    tcor(j) = X_s(nmes_curr_s+j,k)
+                 end do
+              end if
+           end do
+         end if
+         do j1=1,nmes_s(i)
+            do j2=1,nmes_s(i)
+               if (j1.eq.j2) Se(j1,j2) = b1(npm)*b1(npm)
+               if (ncor.eq.1) then
+                  Se(j1,j2) = Se(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+               else if (ncor.eq.2) then
+                  Se(j1,j2) = Se(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+               end if
+            end do
+         end do
+
+
          Y1=0.d0
          do j=1,nmes_s(i)
-            Se(j,j)=b1(npm)*b1(npm)
             Y1(j)=dble(Y_s(nmes_curr_s + j))
          end do
 
@@ -868,11 +912,11 @@
 
 !------------------------------------------------------------------
             if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
-                  vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+exp(bevtint(1))       &
+                 vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survint(1)+exp(bevtint(1))       &
                    *(survT(1)-survint(1)))
             else
-                  vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survt(1))
-                 end if
+                vrais_long=vrais_long-2*exp(DOT_PRODUCT(Xevt,bevt))*(survt(1))
+            end if
 
 
            if (Devt_s(i).eq.1) then
@@ -1025,7 +1069,7 @@
                if (nwg.ne.0) then
 
                    Ut1=0.d0
-                          if (g.eq.ng) then
+                   if (g.eq.ng) then
                       Ut1=Ut
                    else
                       Ut1=Ut*abs(b1(nef+nvc+g))
@@ -1092,7 +1136,7 @@
                           -survint(g))))
                   end if
                   if (Devt_s(i).eq.0) then
-                     expo=expo+pi(g)*exp((-det-Y4)/2.d0                    &
+                     expo=expo+pi(g)*exp((-det-Y4)/2.d0             &
                           -exp(DOT_PRODUCT(Xevt,bevt))*                 &
                           (survint(g)+exp(bevtint(1))*(surv(g)      &
                           -survint(g))))
@@ -1102,7 +1146,7 @@
 
 
                if (ind_survint_s(i).eq.1.and.tsurvint_s(i).lt.valt) then
-                     expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
+                    expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
                       (survint(g)+exp(bevtint(g))*(survT(g)-survint(g))))
                else
                   expo_long=expo_long+pi(g)*exp((-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))* &
@@ -1172,10 +1216,10 @@
 
       subroutine splines_cvpl(nt,valt)
 
-         use commun_joint
+        use commun_joint
         use commun_modele_joint
 
-              implicit none
+        implicit none
 
         integer::i,k,n,l,nt
         double precision::ht,htm,h2t,ht2,ht3,hht,h,hh,h2,h3,h4,h3m,h2n, &

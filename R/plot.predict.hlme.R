@@ -41,6 +41,12 @@ X2 <- NULL
 b1 <- NULL
 b2 <- NULL
 
+call_fixed <- x$call$fixed[3]
+if(is.null(x$call$random)) {call_random <- ~-1} else call_random <- x$call$random
+if(is.null(x$call$classmb)) {call_classmb <- ~-1} else call_classmb <- x$call$classmb
+if(is.null(x$call$mixture)) {call_mixture <- ~-1} else call_mixture <- x$call$mixture
+
+
 if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument") 
 
 if(na.action==1){
@@ -49,18 +55,89 @@ if(na.action==1){
 	na.action=na.fail
 }
 
+### pour les facteurs
 
+ #cas où une variable du dataset est un facteur
+ olddata <- eval(x$call$data)
+  for(v in x$Xnames2[-1])
+ {
+  if (is.factor(olddata[,v]) & !(is.factor(newdata[,v])))
+  {
+   mod <- levels(olddata[,v])
+   if (!(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ 
+ #cas où on a factor() dans l'appel
+ z <- all.names(call_fixed)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]  
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_fixed <- gsub("factor","",call_fixed)
 
+ z <- all.names(call_random)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_random <- gsub("factor","",call_random)
+       
+ z <- all.names(call_classmb)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_classmb <- gsub("factor","",call_classmb)
+        
+ z <- all.names(call_mixture)
+ ind_factor <- which(z=="factor")
+ if(length(ind_factor))
+ {
+  nom.factor <- z[ind_factor+1]
+  for (v in nom.factor)
+  {
+   mod <- levels(as.factor(olddata[,v]))
+   if (!all(levels(as.factor(newdata1[,v])) %in% mod)) stop(paste("invalid level in factor", v))
+   newdata1[,v] <- factor(newdata1[,v], levels=mod)
+  }
+ }
+ call_mixture <- gsub("factor","",call_mixture)   
+     
+ 
 ### Traitement des donnees manquantes
 
-mcall <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
+# permet de conserver que data=... dans lcmm ; mcall= objet de type call
 #mcall <- x$call[c(1,match(c("data"),names(x$call),0))]
+mcall <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 mcall$na.action <- na.action
 mcall$data <- newdata1
 
 # fixed
 m <- mcall
-m$formula <- formula(paste("~",x$call$fixed[3],sep=""))
+m$formula <- formula(paste("~",call_fixed,sep=""))
 m[[1]] <- as.name("model.frame")	
 m <- eval(m, sys.parent()) 
 na.fixed <- attr(m,"na.action")
@@ -68,7 +145,7 @@ na.fixed <- attr(m,"na.action")
 # mixture
 if(!is.null(x$call$mixture)){
 	m <- mcall
-	m$formula <- x$call$mixture
+	m$formula <- formula(paste("~",call_mixture,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
 	na.mixture <- attr(m,"na.action")
@@ -79,7 +156,7 @@ if(!is.null(x$call$mixture)){
 # random
 if(!is.null(x$call$random)){
 	m <- mcall
-	m$formula <- x$call$random
+	m$formula <- formula(paste("~",call_random,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
  	na.random <- attr(m,"na.action")
@@ -89,7 +166,7 @@ if(!is.null(x$call$random)){
 # classmb
 if(!is.null(x$call$classmb)){ 
 	m <- mcall	
-	m$formula <- x$call$classmb	
+	m$formula <- formula(paste("~",call_classmb,sep=""))
 	m[[1]] <- as.name("model.frame")	
 	m <- eval(m, sys.parent()) 
  	na.classmb <- attr(m,"na.action")
@@ -102,21 +179,23 @@ if(!is.null(na.action)){
 	newdata1 <- newdata1[-na.action,]
 }
 
+# nouvelle table sans donnees manquantes
+#X <- newdata1[,var.time]
 
-X <- newdata1[,var.time]
+
 
 
 ## Construction de nouvelles var eplicatives sur la nouvelle table
 ## fixed
 	
-	X_fixed <- model.matrix(formula(paste("~",x$call$fixed[3],sep="")),data=newdata1)
+	X_fixed <- model.matrix(formula(paste("~",call_fixed,sep="")),data=newdata1)
 	if(colnames(X_fixed)[1]=="(Intercept)"){
 		colnames(X_fixed)[1] <- "intercept"
 		int.fixed <- 1
-	}	
+	}
 ## mixture
 	if(!is.null(x$call$mixture)){
-		X_mixture <- model.matrix(formula(x$call$mixture),data=newdata1)	
+		X_mixture <- model.matrix(formula(paste("~",call_mixture,sep="")),data=newdata1)	
 		if(colnames(X_mixture)[1]=="(Intercept)"){
 			colnames(X_mixture)[1] <- "intercept"
 			int.mixture <- 1
@@ -127,7 +206,7 @@ X <- newdata1[,var.time]
 	}	
 ## random
 	if(!is.null(x$call$random)){
-		X_random <- model.matrix(formula(x$call$random),data=newdata1)	
+		X_random <- model.matrix(formula(paste("~",call_random,sep="")),data=newdata1)	
 		if(colnames(X_random)[1]=="(Intercept)"){
 			colnames(X_random)[1] <- "intercept"
 			int.random <- 1
@@ -138,21 +217,27 @@ X <- newdata1[,var.time]
 	}	
 ## classmb
 	if(!is.null(x$call$classmb)){ 
-		X_classmb <- model.matrix(formula(x$call$classmb),data=newdata1)
+		X_classmb <- model.matrix(formula(paste("~",call_classmb,sep="")),data=newdata1)
 		colnames(X_classmb)[1] <- "intercept"
 		id.X_classmb <- 1
 	}else{
 		id.X_classmb <- 0
 	}
+##cor	
+if(x$N[5]>0)  #on ajoute la variable de temps de cor
+{
+ z <- which(x$idcor0==1)
+ var.cor <- newdata1[,x$Xnames[z]]
+}
+
+
 ## Construction des var expli
 newdata1 <- X_fixed
-
 
 if(id.X_mixture == 1){
 	for(i in 1:length(colnames(X_mixture))){
 		if((colnames(X_mixture)[i] %in% colnames(newdata1))==F){
-			newdata1 <- cbind(newdata1,X_mixture[,i])
-			
+			newdata1 <- cbind(newdata1,X_mixture[,i])			
 		}
 	}
 }
@@ -170,8 +255,10 @@ if(id.X_classmb == 1){
 		}	
 	}
 }
-
-
+if(x$N[5]>0)
+{ 
+ if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+}
 ##end add 11/04/2012
 
 kk<-0
@@ -201,7 +288,7 @@ Y[,g]<- Y[,g] + X2 %*% b2[,g]
 }
 }
 
-
+X <- newdata1[,var.time]
 ylim1 <- ylim
 if (is.null(ylim)){
 ylim1 <- c(min(Y),max(Y))

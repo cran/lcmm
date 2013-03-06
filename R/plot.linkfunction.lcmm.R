@@ -21,7 +21,7 @@ title1 <- "Estimated link function"
 plot(x$estimlink[,1]~x$estimlink[,2],type="l",xlim=lim,ylim=c(min(x$estimlink[,1]),max(x$estimlink[,1])),xlab="Latent process",pch=2,ylab="Longitudinal outcome",main=title1,...)
 par(new=FALSE)
 }else{
-cat("Output can not be produced since the program stopped abnormally.")
+cat("Output can not be produced since the program stopped abnormally. \n")
 }
 }
 

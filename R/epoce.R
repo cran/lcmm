@@ -50,12 +50,14 @@ nevt_vect <- rep(0,nT)
 idprob0 <- model$specif[[5]]
 idea0 <- model$specif[[4]]
 idg0 <- model$specif[[6]]
+idcor0 <- model$specif[[10]]
 idxevt <- model$specif[[7]]
 idxevt <- model$specif[[7]]
 idiag0 <- model$specif[[8]]
 nv0 <- length(idprob0)
 nwg0 <- model$specif[[1]][6]
 ng0 <- model$specif[[3]]
+ncor0 <- model$specif[[1]][10]
 nz0 <- model$specif[[1]][8]
 zi0 <- model$hazard[[3]]
 typrisq0 <-  model$hazard[[1]]
@@ -434,7 +436,7 @@ cat("Be patient, epoce function is running ... \n")
 #cat(paste("specif",logspecif)," \n")
 
 
-out <- .Fortran("cvpl",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(idxevt),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),as.double(Time),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),as.double(vopt),as.integer(nT),as.double(pred.times),best=as.double(best),epoir=as.double(epoir),rl_cond=as.double(rl_cond),ns_vect=as.integer(ns_vect),nevt_vect=as.integer(nevt_vect),contribt=as.double(contribt),as.integer(logspecif),PACKAGE="lcmm")
+out <- .Fortran("cvpl",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(idcor0),as.integer(idxevt),as.integer(ns0),as.integer(ng0),as.integer(ncor0),as.integer(nv0),as.integer(nobs0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),as.double(Time),as.integer(typrisq0),as.integer(idtrunc0),as.integer(risqcom0),as.integer(nz0),as.double(zi0),as.double(tsurv0),as.double(tsurv),as.double(tsurvint),as.integer(devt),as.integer(indsurvint),as.double(vopt),as.integer(nT),as.double(pred.times),best=as.double(best),epoir=as.double(epoir),rl_cond=as.double(rl_cond),ns_vect=as.integer(ns_vect),nevt_vect=as.integer(nevt_vect),contribt=as.double(contribt),as.integer(logspecif),PACKAGE="lcmm")
 
 # construction de la matrice contribt
 

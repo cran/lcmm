@@ -6,14 +6,15 @@ Estimation of latent class linear mixed models
 \description{
 This function fits a latent class linear mixed model (LCLMM) also known as growth mixture model or heterogeneous linear mixed model. 
 The LCLMM consists in assuming that the population is divided in a finite number of latent classes; 
-each latent class is characterised by a specific mean trajectory which described by a class-specific linear mixed model. 
+each latent class is characterised by a specific mean trajectory which is described by a class-specific linear mixed model. 
 Both the latent class membership and the trajectory can be explained according to covariates. 
 This model is limited to a Gaussian outcome.
 } 
 
 \usage{
-hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, 
- nwg = FALSE, data, B,convB=0.0001,convL=0.0001,convG=0.0001,prior,
+hlme(fixed, mixture, random, subject, classmb, ng = 1,
+ idiag = FALSE, nwg = FALSE, cor=NULL, data, B,
+ convB=0.0001,convL=0.0001,convG=0.0001,prior,
  maxiter=500, subset=NULL, na.action=1)
 }
 
@@ -48,6 +49,10 @@ If \code{TRUE} a diagonal matrix of variance-covariance is considered.
  \item{nwg}{
 optional logical of class-specific variance-covariance of the random-effects. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
 If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class (the proportional parameter in the last latent class equals 1 to ensure identifiability).
+}
+  \item{cor}{
+  optional brownian motion or autoregressive process modeling the correlation between the observations.
+  "BM" or "AR" should be specified, followed by the time variable between brackets. By default, no correlation is added. 
 }
   \item{data}{
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
@@ -148,20 +153,20 @@ Cecile Proust-Lima and Benoit Liquet
 \code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{summary}}, \code{\link{plot.predict}}
 }
 \examples{
-
+%\dontrun{
 ##### Example of a latent class model estimated for a varying number
 # of latent classes: 
 # The model includes a subject- (ID) and class-specific linear 
-# trend (intercept and Time in fixed, random and mixture components) and
-# a common effect of X1 and its interaction with time over classes 
+# trend (intercept and Time in fixed, random and mixture components)
+# and a common effect of X1 and its interaction with time over classes 
 # (in fixed). 
 # The random-effects are assumed independent (idiag=TRUE). The variance
 # of the random intercept and slope are assumed to be equal 
 # over classes (nwg=F).
 # The covariate X3 predicts the class membership (in classmb). 
 # !CAUTION: for illustration, only default initial values where used but 
-# other sets of initial values should be tried to ensure convergence towards
-# the global maximum.
+# other sets of initial values should be tried to ensure convergence
+# towards the global maximum.
 
 data(data_hlme)
 
@@ -172,7 +177,8 @@ data=data_hlme)
 summary(m1)
 ### latent class linear mixed model with 2 classes
 m2<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_hlme)
+subject='ID',ng=2,data=data_hlme,B=c(0.11,-0.74,-0.07,20.71,
+29.39,-1,0.13,2.45,-0.29,4.5,0.36,0.79,0.97))
 m2
 summary(m2)
 postprob(m2)
@@ -187,5 +193,5 @@ newdata<-data.frame(Time=seq(0,5,length=100),
 X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
 plot.predict(m3,newdata,"Time","right",bty="l")
 
-
+%}
 }
