@@ -9,7 +9,7 @@ plot.linkfunction.multlcmm <- function(x,legend.loc="topleft",...)
    limx <- c(min(x$estimlink[,2*1:ny]),max(x$estimlink[,2*1:ny]))
    nsim <- length(x$estimlink[,1])
    
-   if(length(list(...)$title)) {title1 <- as.character(eval(match.call()$title))}
+   if(length(list(...)$main)) {title1 <- as.character(eval(match.call()$title))}
    else title1 <- "Estimated link functions"
    
    if(length(list(...)$col)) {color <- as.vector(eval(match.call()$col))}

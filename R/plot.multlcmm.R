@@ -11,9 +11,9 @@ plot.multlcmm <- function(x,...)
    if(x$conv==1|x$conv==2)
    {
     dev.new()
-    plot(x$pred[,3]~x$pred[,2],xlab="marginal predictions",ylab="marginal residuals",main="marginal residuals versus marginal predictions",...)
+    plot(x$pred[,"resid_m"]~x$pred[,"pred_m"],xlab="marginal predictions",ylab="marginal residuals",main="marginal residuals versus marginal predictions",...)
     dev.new()
-    plot(x$pred[,5]~x$pred[,4],xlab="subject-specific predictions",ylab="subject-specific residuals",main="subject-specific residuals versus subject-specific predictions",...)
+    plot(x$pred[,"resid_ss"]~x$pred[,"pred_ss"],xlab="subject-specific predictions",ylab="subject-specific residuals",main="subject-specific residuals versus subject-specific predictions",...)
    }
    else
    {

@@ -5,7 +5,8 @@
 Estimation of mutlivariate mixed-effect models and multivariate latent class mixed-effect models for longitudinal outcomes of multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear)
 }
 \description{
-This function constitutes a multivariate extension of function \code{lcmm}. It fits multivariate mixed models and multivariate latent class mixed models for longitudinal outcomes of multiple types. It handles continuous longitudinal outcomes (Gaussian or non-Gaussian, curvilinear) as well as bounded quantitative and discrete longitudinal outcomes. Next version will also handle ordinal outcomes. 
+This function constitutes a multivariate extension of function \code{lcmm}. It fits multivariate mixed models and multivariate latent class mixed models for longitudinal outcomes of multiple types. 
+It handles continuous longitudinal outcomes (Gaussian or non-Gaussian, curvilinear) as well as bounded quantitative and discrete longitudinal outcomes. Next version will also handle ordinal outcomes. 
 The model assumes that all the outcomes measure the same underlying latent process defined as their common factor, and each outcome is related to this latent common factor by a specific parameterized link function. 
 At the latent process level, the model estimates a standard linear mixed model or a latent class linear mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}).
 Parameters of the nonlinear link functions and of the latent process mixed model are estimated simultaneously using a maximum likelihood method.
@@ -21,7 +22,9 @@ nsim=100, prior,range=NULL, na.action=1)
 \arguments{
   \item{fixed}{
 a two-sided linear formula object for specifying the fixed-effects in the linear mixed model at the latent process level. The response outcomes are separated by \code{+} on the left of \code{~} and the covariates are separated by \code{+} on the right of the \code{~}.
-For identifiability purposes, the intercept specified by default should not be removed by a \code{-1}. Variables on which a contrast above the different outcomes should also be estimated are included with \code{contrast()}.
+For identifiability purposes, the intercept specified by default should not be removed by a \code{-1}. By default, the covariates have a mean effect on the latent process (common to all the outcomes). 
+Outcome-specific effects can be considered by including \code{contrast()}. 
+In that case, in addition to the common effect on the latent process, contrasts will be estimated that correspond to outcome-specific deviations from the common effect (the sum over the outcomes of the contrasts equals 0).
 }
   \item{mixture}{
 a one-sided formula object for the class-specific fixed effects in the latent process mixed model (to specify only for a number of latent classes greater than 1).

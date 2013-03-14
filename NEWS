@@ -3,6 +3,11 @@ News about R package lcmm :
 
 
 
+
+Changes in Version 1.6.3 (2013-03-14):
+
+* bug identified and solved in multlcmm when only one covariate was included in the fixed part.
+
 Changes in Version 1.6.2 (2013-03-06):
 
 * The new function 'multlcmm' now estimates latent process mixed models for multivariate curvilinear longitudinal outcomes (with link functions: linear, beta or splines). Various post-fit computation and output functions are also available including plot.linkfunction, predictY, predictL, etc

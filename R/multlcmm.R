@@ -64,6 +64,8 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  fixed2 <- gsub("contrast","",fixed)
  fixed2 <- formula(paste(fixed2[2],fixed2[3],sep="~"))
  afixed2 <- terms(fixed2)
+ if (any(!(labels(amixture) %in% labels(afixed2)))) stop("Variables in mixture should also appear in fixed")
+
   #contrast
  contr <- ~-1
  if(!is.null(attr(afixed,"specials")$contrast))
@@ -74,7 +76,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  }
  acontr <- terms(contr)
  
- 
+
  #tjrs intercept dans classmb
  if(attr(aclassmb,"intercept")==0 & ng>1)
  {
@@ -129,7 +131,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   IND <- c(IND, dtemp[,nom.subject])
   outcome <- c(outcome,rep(nomsY[k],nrow(dtemp)))
   if(!is.null(nom.prior)) prior <- c(prior, dtemp[,nom.prior])
-  data0 <- rbind(data0, dtemp[,setdiff(colnames(dtemp),nomsY[k])])   #dataset sans NA avec les covariables utilisees; obs ordonnees par outcome
+  data0 <- rbind(data0, dtemp[,setdiff(colnames(dtemp),nomsY[k]),drop=FALSE])   #dataset sans NA avec les covariables utilisees; obs ordonnees par outcome
  }
 
  ###prior=0 si pas specifie
@@ -143,36 +145,10 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  Xclassmb <- model.matrix(classmb, data=data0)
  Xcontr <- model.matrix(contr,data=data0)
 
- #changer les noms des interactions
- tousLesTermes <- unique(c(labels(afixed2),labels(arandom),labels(amixture),labels(aclassmb),labels(acontr)))
- MatVarTerm <- apply(matrix(tousLesTermes,ncol=1),1,function(x) ttesLesVar %in% unlist(strsplit(x,":",fixed=TRUE)) + 0)
- rownames(MatVarTerm) <- ttesLesVar
- colnames(MatVarTerm) <- tousLesTermes
 
- uMat <- unique(MatVarTerm,MARGIN=2)
- dbleMat <- MatVarTerm[,setdiff(colnames(MatVarTerm),colnames(uMat)),drop=FALSE]
-
- if(ncol(dbleMat))
- {
-  for(i in 1:ncol(dbleMat))
-  {
-   icol <- which(apply(uMat,2,all.equal,current=dbleMat[,i])=="TRUE")
-   aGarder <- colnames(uMat[,icol,drop=FALSE])
-   aRempl <- colnames(dbleMat[,i,drop=FALSE])
-
-   colnames(Xfixed)[which(colnames(Xfixed)==aRempl)] <- aGarder
-   colnames(Xmixture)[which(colnames(Xmixture)==aRempl)] <- aGarder
-   colnames(Xrandom)[which(colnames(Xrandom)==aRempl)] <- aGarder
-   colnames(Xclassmb)[which(colnames(Xclassmb)==aRempl)] <- aGarder
-   colnames(Xcontr)[which(colnames(Xcontr)==aRempl)] <- aGarder
-  }
- }
-
-
-
- X0 <- cbind(Xfixed, Xrandom, Xclassmb, Xmixture, Xcontr)
+ X0 <- cbind(Xfixed, Xrandom, Xclassmb)        
  nom.unique <- unique(colnames(X0))
- X0 <- X0[,nom.unique]
+ X0 <- X0[,nom.unique,drop=FALSE]
 
  if (ncor0>0)
  {
@@ -347,13 +323,13 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   nvalSPL0 <- c(nvalSPL0, length(uniqueTemp))
  }
 
-
+ 
  ###ordonner les mesures par individu
  IDnum <- as.numeric(IND)
  matYX <- cbind(IDnum,IND,prior,Y0,indiceY0,outcome,X0)
  matYXord <- matYX[order(IDnum),]
  Y0 <- matYXord[,4]
- X0 <- matYXord[,-c(1,2,3,4,5,6)]
+ X0 <- matYXord[,-c(1,2,3,4,5,6),drop=FALSE]
  #X0 <- as.matrix(X0)  a remettre si X0 <- as.data.frame(X0) remis l.157
  IDnum <- matYXord[,1]
  IND <- matYXord[,2]
@@ -407,7 +383,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
  idg0 <- (colnames(X0) %in% colnames(Xfixed)) + (colnames(X0) %in% colnames(Xmixture))+0
 
- if (ncor0>0)idcor0 <- colnames(X0) %in% cor.var.time +0
+ if (ncor0>0) idcor0 <- colnames(X0) %in% cor.var.time +0
  else idcor0 <- rep(0,nv0)
 
  idcontr0 <- colnames(X0) %in% colnames(Xcontr) +0
@@ -431,7 +407,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  ntrtot0 <- nbzitr0+2
  ntrtot0[which(idlink0==0)] <- 2
  nprob <- sum(idprob0)*(ng0-1)
-
+   
  #valeurs initiales
  if(!(missing(B)))
  {
@@ -622,7 +598,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   if(verbose==TRUE) cat("initial parameters : \n",b,"\n")
  }
 
-
+   
  #estimation
  out <- .Fortran("hetmixContMult",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),
  as.integer(idg0),as.integer(idcor0),as.integer(idcontr0),as.integer(ny0),as.integer(ns0),as.integer(ng0),

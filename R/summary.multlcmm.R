@@ -162,15 +162,20 @@ summary.multlcmm <- function(object,...)
 
   cat("Fixed effects in the longitudinal model:\n" )
   
-  tmp <- cbind(round(coef[(nprob+1):(nef-ncontr)],5),round(se[(nprob+1):(nef-ncontr)],5),round(wald[(nprob+1):(nef-ncontr)],3),round(pwald[(nprob+1):(nef-ncontr)],5))
-  tmp <- rbind(c(0,NA,NA,NA),tmp)
+  tmp <- matrix(c(0,NA,NA,NA),nrow=1,ncol=4)
+  if (nef>0)
+  {
+   tmp2 <- cbind(round(coef[(nprob+1):(nef-ncontr)],5),round(se[(nprob+1):(nef-ncontr)],5),round(wald[(nprob+1):(nef-ncontr)],3),round(pwald[(nprob+1):(nef-ncontr)],5))
+   tmp <- rbind(tmp,tmp2)
+  } 
   interc <- "intercept"
   if (x$ng>1)
   {
    interc <- paste(interc,"class1")
   }
   interc <- paste(interc,"(not estimated)")
-  dimnames(tmp) <- list(c(interc,names(coef)[(nprob+1):(nef-ncontr)]), c("coef", "Se", "Wald", "p-value"))
+  if(nef>0) dimnames(tmp) <- list(c(interc,names(coef)[(nprob+1):(nef-ncontr)]), c("coef", "Se", "Wald", "p-value"))
+  else dimnames(tmp) <- list(interc, c("coef", "Se", "Wald", "p-value"))
   cat("\n")
   
   if(ncontr>0)

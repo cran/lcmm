@@ -854,6 +854,7 @@
             X00=0.d0
             X2=0.d0
             X01=0.d0
+            b01=0.d0
             do k=1,nv
                if (idg(k).eq.2) then
                   l=l+1
@@ -2333,6 +2334,7 @@ end do
             X0=0.d0
             X2=0.d0
             X01=0.d0
+            b01=0.d0
             do k=1,nv
                if (idg(k).eq.2) then
                   l=l+1
