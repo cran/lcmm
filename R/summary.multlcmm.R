@@ -74,14 +74,14 @@ summary.multlcmm <- function(object,...)
   cat(" \n")
   
   nprob <- x$N[1]
-  ncontr   <- x$N[2]
-  nef   <- x$N[3]
-  nvc    <- x$N[4]
+  ncontr <- x$N[2]
+  nef <- x$N[3]
+  nvc <- x$N[4]
   nw <- x$N[5]
   nalea <- x$N[6]
   ncor <- x$N[7]
   ny <- x$N[8]
-  NPM   <- length(x$best)
+  NPM <- length(x$best)
   
   
   se <- rep(NA,NPM)
@@ -221,7 +221,8 @@ summary.multlcmm <- function(object,...)
    }
   }
   
-  #res <- tmp
+  tTable <- tmp
+  
   prmatrix(round(tmp,5),na.print="")
   cat("\n")
   if(ncontr>0)
@@ -316,6 +317,8 @@ summary.multlcmm <- function(object,...)
   cat("\n")
   prmatrix(tmp,na.print="")
   cat("\n")
+  
+  return(invisible(tTable))
  }
- #invisible(res)
 }
+

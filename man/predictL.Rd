@@ -4,13 +4,14 @@
 \alias{predictL.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Class-specific marginal predictions in the latent process scale for  \code{lcmm} objects
+Class-specific marginal predictions in the latent process scale for \code{lcmm} and \code{multlcmm} objects
 }
 \description{
-This function provides a matrix containing the class-specific predicted trajectories computed in the latent process scale, that is the latent variable underlying the curvilinear outcome(s), for a profile of covariates specified by the user. This function applies only to \code{lcmm} a	nd \code{multlcmm} objects. The function \code{plot.predict} provides directly the plot of these class-specific predicted trajectories. The function \code{predictY} provides the class-specific predicted trajectories computed in the natural scale of the outcome(s).
+This function provides a matrix containing the class-specific predicted trajectories computed in the latent process scale, that is the latent process underlying the curvilinear outcome(s), for a profile of covariates specified by the user. This function applies only to \code{lcmm} and \code{multlcmm} objects. The function \code{plot.predict} provides directly the plot of these class-specific predicted trajectories. The function \code{predictY} provides the class-specific predicted trajectories computed in the natural scale of the outcome(s).
 } 
 \usage{
 \method{predictL}{lcmm}(x,newdata,na.action=1,...)
+\method{predictL}{multlcmm}(x,newdata,na.action=1,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,7 +19,7 @@ This function provides a matrix containing the class-specific predicted trajecto
 an object inheriting from class \code{lcmm} or \code{multlcmm} representing a (latent class) mixed model involving a latent process and estimated link function(s).
 }
   \item{newdata}{
-data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames2. Names of data frame should be exactly x$Xnames2 that is the names of covariates specified in \code{lcmm} call
+data frame containing the data from which predictions are computed. The data frame should include at least all the covariates listed in x$Xnames2. Names in the data frame should be exactly x$Xnames2 that are the names of covariates specified in \code{lcmm} or \code{multlcmm} calls.
 }
 
  \item{na.action}{

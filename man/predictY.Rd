@@ -6,7 +6,7 @@
 \alias{predictY.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Predicted values of a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object in the natural scale of the longitudinal outcome for a specified profile of covariates.
+Predicted values of a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object in the natural scale of the longitudinal outcome(s) for a specified profile of covariates.
 }
 \description{
 For \code{hlme} and \code{Jointlcmm} objects, the function computes the predicted values of the longitudinal marker in each latent class for a specified profile of covariates. 
@@ -15,14 +15,18 @@ For \code{lcmm} and \code{multlcmm} objects, the function computes predicted val
 \usage{
 \method{predictY}{lcmm}(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,
 na.action=1,...)
+\method{predictY}{hlme}(x,newdata,na.action=1,...)
+\method{predictY}{Jointlcmm}(x,newdata,na.action=1,...)
+\method{predictY}{multlcmm}(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,
+na.action=1,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-an object inheriting from class \code{lcmm} representing a general latent class mixed model.
+an object inheriting from class \code{lcmm}, \code{hlme}, \code{Jointlcmm} or \code{multlcmm} representing a general latent class mixed model.
 }
   \item{newdata}{
-data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames2. Names of data frame should be exactly x$Xnames2 that is the names of covariates specified in \code{lcmm} call.
+data frame containing the data from which predictions are computed. The data frame should include at least all the covariates listed in x$Xnames2. Names in the data frame should be exactly x$Xnames2 that are the names of covariates specified in \code{lcmm}, \code{hlme}, \code{Jointlcmm} or \code{multlcmm} calls.
 }
   \item{methInteg}{
 optional integer specifying the type of numerical integration required only for predictions with splines or Beta link functions. Value 0 (by default) specifies a Gauss-Hermite integration which is very rapid but neglects the correlation between the predicted values (in presence of random-effects). Value 1 refers to a Monte-Carlo integration which is slower but correctly account for the correlation between the predicted values.
@@ -41,6 +45,8 @@ further arguments to be passed to or from other methods.
 }
 }
 \value{
+For all objects, a matrix is returned with the same rows (number and order) as in newdata.
+
 For \code{hlme} and \code{Jointlcmm} objects or \code{lcmm} with \code{draws=FALSE}, returns a matrix with ng columns corresponding to the ng class-specific vectors of predicted values computed at the point estimate 
 
 For objects of class \code{lcmm} with \code{draws=TRUE}, returns a matrix with ng*3 columns representing the ng class-specific 50\%, 2.5\% and 97.5\% percentiles of the approximated posterior distribution of the class-specific predicted values.

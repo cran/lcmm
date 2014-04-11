@@ -1809,6 +1809,14 @@
          !do k=1,nwg
             !b(nef+nvc+k)=abs(b(nef+nvc+k))
          !end do
+         
+         
+         if(istop.eq.1.or.istop.eq.2) then 
+         !            write(*,*)'avant transfo'
+
+            call transfo_estimee_ord(b,npm,marker,transfY)
+         
+        end if 
 
 ! probas posteriori
 
@@ -1843,9 +1851,7 @@
             end do
 
 
-!            write(*,*)'avant transfo'
 
-            call transfo_estimee_ord(b,npm,marker,transfY)
 
 
               

@@ -2,21 +2,24 @@
 \alias{plot.predict.hlme}
 \alias{plot.predict.lcmm}
 \alias{plot.predict.Jointlcmm}
+\alias{plot.predict.multlcmm}
 \alias{plot.predict}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Plot of class-specific marginal predictions for the longitudinal outcome 
 }
 \description{
-This function provides the class-specific predicted trajectories stemmed from a \code{hlme}, \code{lcmm} or \code{Jointlcmm} object.
+This function provides the class-specific predicted trajectories stemmed from a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object.
 }
 \usage{
-\method{plot.predict}{hlme}(x,newdata,var.time,legend.loc="topright",ylim=NULL,
-na.action=1,...)
-\method{plot.predict}{lcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,
-na.action=1,...)
-\method{plot.predict}{Jointlcmm}(x,newdata,var.time,legend.loc="topright",ylim=NULL,
-na.action=1,...)
+\method{plot.predict}{hlme}(x,newdata,var.time,legend.loc="topright",
+na.action=1,legend,add=FALSE,confint=FALSE,...)
+\method{plot.predict}{lcmm}(x,newdata,var.time,legend.loc="topright",
+na.action=1,legend,add=FALSE,confint=FALSE,...)
+\method{plot.predict}{Jointlcmm}(x,newdata,var.time,legend.loc="topright",
+na.action=1,legend,add=FALSE,confint=FALSE,...)
+\method{plot.predict}{multlcmm}(x,newdata,var.time,legend.loc="topright",
+na.action=1,legend,add=FALSE,confint=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,7 +27,7 @@ na.action=1,...)
 an object inheriting from classes \code{hlme}, \code{lcmm} or \code{Jointlcmm} representing respectively a fitted latent class linear mixed-effects model, a general latent class mixed model or a joint latent class mixed model.
 }
   \item{newdata}{
-data frame containing the data from which predictions are computed. Data frame should include all the covariates listed in x$Xnames2. Names of data frame should be exactly x$Xnames2 that is the names of covariates specified in \code{lcmm} call
+data frame containing the data from which predictions are computed. The data frame should include at least all the covariates listed in x$Xnames2. Names in the data frame should be exactly x$Xnames2 that are the names of covariates specified in \code{lcmm}, \code{hlme}, \code{Jointlcmm} or \code{multlcmm} calls.
 }
   \item{var.time}{
 A character string containing the name of the variable that corresponds to time in the data frame (x axis in the plot).
@@ -34,23 +37,31 @@ keyword for the position of the legend from the list \code{"bottomright"}, \code
      \code{"left"}, \code{"topleft"},\code{"top"}, \code{"topright"}, \code{"right"} and
      \code{"center"}. By default, the legend is located in the top right of the plot. 
 }
-  \item{ylim}{
-optional numeric vector of length 2, giving the y coordinate range.
-}
  \item{na.action}{
-Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
+Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.
+}
+  \item{legend}{
+character or expression to appear in the legend. If no legend should be added, \code{"legend"} should be NULL.
+}
+  \item{add}{
+logical indicating if the curves should be added to an existing plot. Default to FALSE.
+}
+  \item{confint}{
+logical indicating if confidence intervals for the predictions should be calculated and plotted. Default to FALSE.
+}
   \item{\dots}{
-further arguments to be passed to or from other methods.
-          They are ignored in this function.
+other parameters to be passed through to plotting functions or to legend 
 }
 }
 \value{
-Returns a plot}
+Returns a data frame containing the time values at which the predictions are computated (corresponding to the x-axis in the plot), 
+the predicted values of the latent process, the lower and the upper limits of the confidence intervals (if calculated).
+}
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Benoit Liquet and Viviane Philipps 
 }
 \seealso{
-\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{Jointlcmm}}   
+\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{Jointlcmm}}, \code{\link{multlcmm}}   
 }
 \examples{
 % \dontrun{

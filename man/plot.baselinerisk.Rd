@@ -2,13 +2,13 @@
 \alias{plot.baselinerisk.Jointlcmm}
 \alias{plot.baselinerisk}
 \title{
-Plot of the class-specific baseline risk functions estimated from a joint latent class mixed model
+Plot of the class-specific baseline risk functions estimated from a joint latent class mixed model.
 }
 \description{
 Displays the estimated baseline risk functions for the time-to-event of interest in each latent class
 }
 \usage{
-\method{plot.baselinerisk}{Jointlcmm}(x,legend.loc="topleft",ylim=NULL,...)
+\method{plot.baselinerisk}{Jointlcmm}(x,legend.loc="topleft",legend,add=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,15 +20,18 @@ keyword for the position of the legend from the list \code{"bottomright"}, \code
      \code{"left"}, \code{"topleft"},\code{"top"}, \code{"topright"}, \code{"right"} and
      \code{"center"}. By default, the legend is located in the top left of the plot. 
 }
-  \item{ylim}{
-optional numeric vector of length 2, giving the y coordinate range.
+  \item{legend}{
+character or expression to appear in the legend. If no legend should be added, \code{"legend"} should be NULL.
+}
+  \item{add}{
+logical indicating if the curves should be added to an existing plot. Default to FALSE.
 }
   \item{\dots}{
-other parameters to be passed through to plotting functions
+other parameters to be passed through to plotting functions or to legend
 }
 }
 \author{
-Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
+Cecile Proust-Lima, Amadou Diakite, Viviane Philipps and Benoit Liquet
 }
 \seealso{
 \code{\link{Jointlcmm}}

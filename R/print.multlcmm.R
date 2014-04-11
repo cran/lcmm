@@ -40,7 +40,7 @@ for (yk in 1:x$N[8])
  numSPL <- numSPL+1
  ntrtot[yk] <- x$nbnodes[numSPL]+2
  if (yk>1) cat("                     ")
- cat("Quadratic I-splines with nodes", x$linknodes[1:x$nbnodes[numSPL],numSPL]," for ",x$Ynames[yk], "\n")
+ cat("Quadratic I-splines with nodes", x$linknodes[1:x$nbnodes[numSPL],yk]," for ",x$Ynames[yk], "\n")
  }
 }
 

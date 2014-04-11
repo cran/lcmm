@@ -165,9 +165,22 @@ if(!is.null(x$call$classmb)){
 }else{
 	na.classmb <- NULL
 }
+# cor
+na.cor <- NULL
+if(length(x$N)>4)
+{
+ if(x$N[5]>0)
+ {
+  z <- which(x$idcor0==1)
+  var.cor <- newdata1[,x$Xnames[z]]
+  na.cor <- which(is.na(var.cor))
+ }
+}
+
 ## Table sans donnees manquante: newdata
-na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
-if(!is.null(na.action)){
+na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
+ #mettre un message d'avis pour indiquer numeros des lignes supprimées??
+if(length(na.action)){
 	newdata1 <- newdata1[-na.action,]
 }
 
@@ -215,13 +228,15 @@ if(!is.null(na.action)){
 	}else{
 		id.X_classmb <- 0
 	}
-##cor	
-if(x$N[5]>0)  #on ajoute la variable de temps de cor
-{
- z <- which(x$idcor0==1)
- var.cor <- newdata1[,x$Xnames[z]]
+##cor
+if(length(x$N)>4)
+{	
+ if(x$N[5]>0)  #on reprend la variable de temps de cor (sans NA)
+ {
+  z <- which(x$idcor0==1)
+  var.cor <- newdata1[,x$Xnames[z]]
+ }
 }
-
 
 ## Construction des var expli
 newdata1 <- X_fixed
@@ -247,9 +262,12 @@ if(id.X_classmb == 1){
 		}	
 	}
 }
-if(x$N[5]>0)
-{ 
- if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+if(length(x$N)>4)
+{
+ if(x$N[5]>0)
+ { 
+  if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+ }
 }
 
 kk<-0
@@ -287,8 +305,9 @@ if (x$ng>1){
 colnames(Y) <- c(paste("Ypred_class",1:x$ng,sep=""))
 }
 res <- Y
+return(res)
 }else{
-cat("Predictions can not be computed since the program stopped abnormally.")
+cat("Predictions can not be computed since the program stopped abnormally. \n")
 }
 }       
 

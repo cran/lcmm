@@ -4,7 +4,7 @@
 Estimation of joint latent class models for longitudinal and time-to-event data
 }
 \description{
-This function fits joint latent class mixed models for a longitudinal outcome and a right-censored (possibly left-truncated) time-to-event. In this first version, only the Gaussian longitudinal outcome is handled but other types of longitudinal outcomes should be handled soon (continuous -not Gaussian- as well as bounded quantitative, discrete and ordinal) similarly as in \code{lcmm} funtion. 
+This function fits joint latent class mixed models for a longitudinal outcome and a right-censored (possibly left-truncated) time-to-event. In this first version, only the Gaussian longitudinal outcome is handled. 
  
 } 
 
@@ -20,36 +20,36 @@ Jointlcmm(fixed, mixture, random, subject, classmb, ng=1,
 
 \arguments{
   \item{fixed}{
-a two-sided linear formula object for the fixed-effects in the linear mixed model. The response outcome is on the left of \code{~} and the covariates are separated by \code{+} on the right of the \code{~}. 
+two-sided linear formula object for the fixed-effects in the linear mixed model. The response outcome is on the left of \code{~} and the covariates are separated by \code{+} on the right of the \code{~}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included on the right of \code{~}.
 }
   \item{mixture}{
-a one-sided formula object for the class-specific fixed effects in the linear mixed model (to specify only for a number of latent classes greater than 1). 
+one-sided formula object for the class-specific fixed effects in the linear mixed model (to specify only for a number of latent classes greater than 1). 
 Among the list of covariates included in \code{fixed}, the covariates with class-specific regression parameters are entered in \code{mixture} separated by \code{+}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included.
 }
   \item{random}{
-an optional one-sided formula for the random-effects in the linear mixed model. Covariates with a random-effect are separated by \code{+}. 
+optional one-sided formula for the random-effects in the linear mixed model. Covariates with a random-effect are separated by \code{+}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included.
 }
-  \item{subject}{name of the covariate representing the grouping structure.
+  \item{subject}{name of the covariate representing the grouping structure (called subject identifier) specified with ''.
 }
   \item{classmb}{
-an optional one-sided formula describing the covariates in the class-membership multinomial logistic model. Covariates included are separated by \code{+}. No intercept should be included in this formula.
+optional one-sided formula describing the covariates in the class-membership multinomial logistic model. Covariates included are separated by \code{+}. No intercept should be included in this formula.
 }
   \item{ng}{
-number of latent classes considered. If \code{ng=1} no \code{mixture} nor \code{classmb} should be specified. If \code{ng>1}, \code{mixture} is required.
+optional number of latent classes considered. If \code{ng=1} (by default) no \code{mixture} nor \code{classmb} should be specified. If \code{ng>1}, \code{mixture} is required.
 }
   \item{idiag}{
-optional logical for the variance-covariance structure of the random-effects. If \code{FALSE}, a non structured matrix of variance-covariance is considered (by default). 
+optional logical for the structure of the variance-covariance matrix of the random-effects. If \code{FALSE}, a non structured matrix of variance-covariance is considered (by default). 
 If \code{TRUE} a diagonal matrix of variance-covariance is considered. 
 }
  \item{nwg}{
-optional logical of class-specific variance-covariance of the random-effects. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
+optional logical indicating if the variance-covariance of the random-effects is class-specific. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
 If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class (the proportional parameter in the last latent class equals 1 to ensure identifiability).
 }
   \item{B}{
-an optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
+optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
 If no vector is specified, a preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
 Due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
@@ -64,13 +64,13 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 
 \item{nsim}{optional number of points for the predicted survival curves and predicted baseline risk curves. By default, nsim=100.
 }
-\item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
+\item{prior}{optional name of a covariate containing a prior information about the latent class membership. The covariate should be an integer with values in 0,1,...,ng. Value O indicates no prior for the subject while a value in 1,...,ng indicates that the subject belongs to the corresponding latent class. 
 }
 
-\item{survival}{a two-sided formula object. The left side of the formula corresponds to a \code{surv()} object of type "counting" for right-censored and left-truncated data (example: \code{Surv(Time,EntryTime,Indicator)}) or of type "right" for right-censored data (example: \code{Surv(Time,Indicator)}). The right side of the formula includes names of covariates to include in the survival model with \code{mixture()} when the effect is class-specific (example: \code{Surv(Time,Indicator) ~} \code{ X1 + mixture(X2)} for a class-common effect of X1 and a class-specific effect of X2).}
+\item{survival}{two-sided formula object. The left side of the formula corresponds to a \code{surv()} object of type "counting" for right-censored and left-truncated data (example: \code{Surv(Time,EntryTime,Indicator)}) or of type "right" for right-censored data (example: \code{Surv(Time,Indicator)}). The right side of the formula specifies the names of covariates to include in the survival model with \code{mixture()} when the effect is class-specific (example: \code{Surv(Time,Indicator) ~} \code{ X1 + mixture(X2)} for a class-common effect of X1 and a class-specific effect of X2).}
 
 
-\item{hazard}{optional family of hazard function assumed for the survival model. By default, "Weibull" specifies a Weibull baseline risk function. Other possibilities are "piecewise" for a piecewise constant risk function or "splines" for a cubic M-splines baseline risk function. For these two latter families, the number of nodes and the location of the nodes should be specified as well separated by \code{-}. The number of nodes is entered first followed by \code{-}, then the location is specified with "equi", "quant" or "manual" for respectively equidistant nodes, nodes at quantiles of the times of event distribution or interior nodes entered manually in argument \code{intnodes}. It is followed by \code{-} and finally "piecewise" or "splines" indicates the family of baseline risk function considered. Examples include "5-equi-splines" for M-splines with 5 equidistant nodes, "6-quant-piecewise" for piecewise constant risk over 5 intervals and nodes defined at the quantiles of the times of events distribution and "9-manual-splines" for M-splines risk function with 9 nodes, the vector of 7 interior nodes being entered in the argument \code{hazardnodes}.
+\item{hazard}{optional family of hazard function assumed for the survival model. By default, "Weibull" specifies a Weibull baseline risk function. Other possibilities are "piecewise" for a piecewise constant risk function or "splines" for a cubic M-splines baseline risk function. For these two latter families, the number of nodes and the location of the nodes should be specified as well, separated by \code{-}. The number of nodes is entered first followed by \code{-}, then the location is specified with "equi", "quant" or "manual" for respectively equidistant nodes, nodes at quantiles of the times of event distribution or interior nodes entered manually in argument \code{hazardnodes}. It is followed by \code{-} and finally "piecewise" or "splines" indicates the family of baseline risk function considered. Examples include "5-equi-splines" for M-splines with 5 equidistant nodes, "6-quant-piecewise" for piecewise constant risk over 5 intervals and nodes defined at the quantiles of the times of events distribution and "9-manual-splines" for M-splines risk function with 9 nodes, the vector of 7 interior nodes being entered in the argument \code{hazardnodes}.
  }
 
 
@@ -115,10 +115,10 @@ For "piecewise" and "splines", two parametrizations of the baseline risk functio
 B. THE VECTOR OF PARAMETERS B
 
 The parameters in the vector of initial values \code{B} or in the vector of maximum likelihood estimates \code{best} are included in the following order: 
-(1) ng-1 parameters are required for intercepts in the latent class membership model, and if covariates are included in \code{classmb}, ng-1 paramaters should be entered for each one; 
+(1) ng-1 parameters are required for intercepts in the latent class membership model, and if covariates are included in \code{classmb}, ng-1 parameters should be entered for each one; 
 (2) parameters for the baseline risk function: 2 parameters for each Weibull, nz-1 for each piecewise constant risk and nz+2 for each splines risk; this number should be multiplied by ng if specific hazard is specified; otherwise, ng-1 additional proportional effects are expected if PH hazard is specified; otherwise nothing is added if common hazard is specified; 
 (3) for all covariates in \code{survival}, ng parameters are required if the covariate is inside a \code{mixture()}, otherwise 1 parameter is required. Covariates parameters should be included in the same order as in \code{survival};
-(4) for all covariates in \code{fixed}, one parameter is required if the covariate is not in \code{mixture}, ng paramaters are required if the covariate is also in \code{mixture}. Parameters should be included in the same order as in \code{fixed}; 
+(4) for all covariates in \code{fixed}, one parameter is required if the covariate is not in \code{mixture}, ng parameters are required if the covariate is also in \code{mixture}. Parameters should be included in the same order as in \code{fixed}; 
 (5) the variance of each random-effect specified in \code{random} (including the intercept) 
 if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of all the random-effects if \code{idiag=FALSE}; 
 (6) only if \code{nwg=TRUE}, ng-1 parameters for class-specific proportional coefficients
@@ -178,7 +178,7 @@ The list returned is:
 
 
 \author{
-Cecile Proust Lima and Amadou Diakite 
+Cecile Proust Lima, Amadou Diakite and Viviane Philipps
 
 Maintainer: <cecile.proust@isped.u-bordeaux2.fr>
 }
@@ -196,13 +196,13 @@ modelling approach. Biostatistics 10, 535-49.
 
 Jacqmin-Gadda, H. and Proust-Lima, C. (2010). Score test for conditional independence between longitudinal outcome and time-to-event given the classes in the joint latent class model. Biometrics 66(1), 11-9
 
-Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research Apr 19. [Epub ahead of print]
+Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2014). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research 23, 74-90.
 
 }
 \seealso{
 \code{\link{postprob}}, \code{\link{plot.survival}}, \code{\link{plot.baselinerisk}}, \code{\link{plot.predict}},\code{\link{epoce}}
-
 }
+
 \examples{
 
 
@@ -239,8 +239,8 @@ summary(m1)
 \dontrun{
 #### estimation with 2 latent classes (ng=2)
 m2 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
-classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_Jointlcmm,
+classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2),
+hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_Jointlcmm,
 B=c(0.64,-0.62,0,0,0.52,0.81,0.41,0.78,0.1,0.77,-0.05,10.43,11.3,-2.6,
 -0.52,1.41,-0.05,0.91,0.05,0.21,1.5))
 summary(m2)
@@ -250,8 +250,8 @@ summary(m2)
 
 #### estimation with 3 latent classes (ng=3)
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
-classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
 B=c(0.77,0.4,-0.82,-0.27,0,0,0,0.3,0.62,2.62,5.31,-0.03,1.36,0.82,
 -13.5,10.17,10.24,11.51,-2.62,-0.43,-0.61,1.47,-0.04,0.85,0.04,0.26,1.5))
 summary(m3)
@@ -260,8 +260,8 @@ summary(m3)
 
 #### estimation with 4 latent classes (ng=4)
 m4 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
-classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2)
-,hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_Jointlcmm,
+classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
+hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_Jointlcmm,
 B=c(0.54,-0.42,0.36,-0.94,-0.64,-0.28,0,0,0,0.34,0.59,2.6,2.56,5.26,
 -0.1,1.27,1.34,0.7,-5.72,10.54,9.02,10.2,11.58,-2.47,-2.78,-0.28,-0.57,
 1.48,-0.06,0.61,-0.07,0.31,1.5))
@@ -272,7 +272,7 @@ summary(m4)
 
 ##### The model with 3 latent classes is retained according to the BIC  
 ##### and the conditional independence assumption is not rejected at
-##### the 5% level. 
+##### the 5\% level. 
 # posterior classification
 postprob(m3)
 # Class-specific predicted baseline risk & survival functions in the 

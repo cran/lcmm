@@ -48,7 +48,11 @@ NPROB <- x$N[1]
 NEF   <- x$N[2]
 NVC   <- x$N[3]
 NW    <- x$N[4]
-ncor    <- x$N[5]
+ncor <- 0
+if(length(x$N)>4)
+{
+ ncor    <- x$N[5]
+}
 NPM   <- length(x$best)
 
 
@@ -92,6 +96,7 @@ cat("\n")
 prmatrix(tmp)
 cat("\n")
 
+tTable <- tmp
 
 if(NVC>0){
 cat("\n")
@@ -143,6 +148,8 @@ rownames(std) <- c(nom,"Residual standard error:")
 colnames(std) <-c("coef","se") 
 print(std, na.print="")
 cat("\n")
+
+return(invisible(tTable))
 }
 }
 

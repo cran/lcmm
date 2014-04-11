@@ -31,7 +31,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  if(class(classmb)!="formula") stop("The argument classmb must be a formula")
  if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
  if(nrow(data)==0) stop("Data should not be empty")
- if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")}
+ if(missing(subject)){ stop("The argument subject must be specified")}
  if(any(link=="thresholds"))  stop("The link function thresholds is not available in multivariate case")
  if(all(link %in% c("linear","beta")) & !is.null(intnodes)) stop("Intnodes should only be specified with splines links")
 
@@ -48,7 +48,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   else if (substr(cor,1,2)=="BM") { ncor0 <- 1  }
   else { stop("The argument cor must be of type AR or BM") }
 
-  if(!(strsplit(cor,"-")[[1]][2] %in% colnames(data))) stop("Unaible to find time variable from argument cor in data")
+  if(!(strsplit(cor,"-")[[1]][2] %in% colnames(data))) stop("Unable to find time variable from argument 'cor' in 'data'")
   else { cor.var.time <- strsplit(cor,"-")[[1]][2] }
  }
  ### fin test argument cor
@@ -57,25 +57,35 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  afixed <- terms(fixed, specials=c("factor","contrast"))
  if(attr(afixed,"intercept")==0) stop("An intercept should appear in fixed for identifiability purposes")
  amixture <- terms(mixture, specials=c("factor"))
- if (any(!(all.vars(amixture) %in% all.vars(afixed)))) stop("Variables in mixture should also appear in fixed")
+ #if (any(!(all.vars(amixture) %in% all.vars(afixed)))) stop("Variables in mixture should also appear in fixed")
  arandom <- terms(random, specials=c("factor"))
  aclassmb <- terms(classmb, specials=c("factor"))
   #fixed sans contrast
  fixed2 <- gsub("contrast","",fixed)
- fixed2 <- formula(paste(fixed2[2],fixed2[3],sep="~"))
+ fixed2 <- formula(paste(fixed2[2],fixed2[3],sep="~"))   
  afixed2 <- terms(fixed2)
- if (any(!(labels(amixture) %in% labels(afixed2)))) stop("Variables in mixture should also appear in fixed")
+ #if (any(!(labels(amixture) %in% labels(afixed2)))) stop("Variables in mixture should also appear in fixed")
+ 
+ 
+ #verifier si totes les varialbes sont dans data
+ variables <- c(attr(afixed,"variables"),attr(arandom,"variables"),attr(amixture,"variables"),attr(aclassmb,"variables"))
+ variables <- unlist(lapply(variables,all.vars))  
+ if(!all(variables %in% colnames(data))) stop(paste("Data should contain the variables",paste(unique(variables),collapse=" ")))
+
 
   #contrast
  contr <- ~-1
+ #fixed3 <- fixed2
  if(!is.null(attr(afixed,"specials")$contrast))
  {
   vcontr <- attr(afixed,"term.labels")[setdiff(attr(afixed,"specials")$contrast-1,untangle.specials(afixed,"contrast",2)$terms)]
   vcontr <- gsub("contrast","",vcontr)
   contr <- as.formula(paste("~-1+",paste(vcontr,collapse="+")))
+  #fixed3 <- paste(vcontr,fixed2[3],sep="+")
+  #fixed3 <- formula(paste(fixed2[2],fixed3,sep="~"))
  }
  acontr <- terms(contr)
- 
+ #afixed3 <- terms(fixed3)
 
  #tjrs intercept dans classmb
  if(attr(aclassmb,"intercept")==0 & ng>1)
@@ -112,7 +122,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  }
 
  ###un data frame par outcome et creation Y0
- dataY <- paste("data",nomsY,sep="")
+ dataY <- paste("data",nomsY,sep=".")
  Y0 <- NULL
  IND <- NULL
  outcome <- NULL
@@ -139,17 +149,56 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
  ###creation de X0 (ttes les var + interactions)
 
+ #Xfixed <- model.matrix(fixed3[-2], data=data0)
  Xfixed <- model.matrix(fixed2[-2], data=data0)
  Xmixture <- model.matrix(mixture, data=data0)
  Xrandom <- model.matrix(random, data=data0)
  Xclassmb <- model.matrix(classmb, data=data0)
  Xcontr <- model.matrix(contr,data=data0)
 
+ z.fixed <- strsplit(colnames(Xfixed),split=":",fixed=TRUE)
+ z.fixed <- lapply(z.fixed,sort)
 
+ z.random <- strsplit(colnames(Xrandom),split=":",fixed=TRUE)
+ z.random <- lapply(z.random,sort)
+    
+ if(mixture != ~-1)
+ {
+  z.mixture <- strsplit(colnames(Xmixture),split=":",fixed=TRUE)
+  z.mixture <- lapply(z.mixture,sort)
+ }
+ else
+ {
+  z.mixture <- list()
+ }
+  
+ if(classmb != ~-1)
+ {
+  z.classmb <- strsplit(colnames(Xclassmb),split=":",fixed=TRUE)
+  z.classmb <- lapply(z.classmb,sort)
+ }
+ else
+ {
+  z.classmb <- list()
+ }
+ 
+ if(contr != ~-1)
+ {
+  z.contr <- strsplit(colnames(Xcontr),split=":",fixed=TRUE)
+  z.contr <- lapply(z.contr,sort)
+ }
+ else
+ {
+  z.contr <- list()
+ }
+ 
+ if(!all(z.mixture %in% z.fixed))  stop("The covariates in mixture should also be included in the argument fixed")
+ if(!all(z.contr %in% z.fixed))  stop("The covariates in contrast should also appear in fixed")
+ 
  X0 <- cbind(Xfixed, Xrandom, Xclassmb)        
  nom.unique <- unique(colnames(X0))
  X0 <- X0[,nom.unique,drop=FALSE]
-
+       
  if (ncor0>0)
  {
   if(!(cor.var.time %in% colnames(X0)))
@@ -166,10 +215,14 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
  ###test de link
  if (length(link)!=1 & length(link)!=ny0) stop("One link per outcome should be specified")
+ if(any(link %in% c("splines","Splines")))
+ {
+  link[which(link %in% c("splines","Splines"))] <- "5-quant-splines"
+ }
  if(length(link)==1 & ny0>1)
  {
   link <- rep(link, ny0)
-  intnodes <- rep(intnodes, ny0)
+  #intnodes <- rep(intnodes, ny0)
  }
 
  idlink0 <- rep(2,ny0)
@@ -181,10 +234,10 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   if (epsY<=0)
   {
    epsY <- 0.5
-   cat("Argument 'epsY' should be a definite positive real. It is changed to the default value of 0.5. \n")
+   stop("Argument 'epsY' should be positive.")
   }
- }
-
+ } 
+  
  spl <- strsplit(link[which(idlink0==2)],"-")
  if(any(sapply(spl,length)!=3)) stop("Invalid argument link")
 
@@ -230,6 +283,12 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  #test splines
  if(!(all(spltype %in% c("equi","quant","manual")))) stop("The location of the nodes should be 'equi', 'quant' or 'manual'")
 
+ #tester longueur de intnodes
+ if(!is.null(intnodes))
+ {  
+  if(length(intnodes) != sum(nbnodes[which(spltype=="manual")]-2)) stop(paste("Vector intnodes should be of length",sum(nbnodes[which(spltype=="manual")]-2)))
+ }
+
  #intnodes2 : contient tous les noeuds interieurs (pas seulement ceux de manual)
  intnodes2 <- rep(NA,sum(nbnodes-2))
  nb <- 0
@@ -238,39 +297,40 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  {
   if (idlink0[k]!=2) next
   else
-  {
+  {                                         
    nbspl <- nbspl+1
 
    if(spltype[nbspl]=="manual")
    {
     nodes <- intnodes[(nb+1):(nb+nbnodes[nbspl]-2)]
+    if(!length(nodes)) stop("The length of intnodes is not correct")
     intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <-  nodes
     nb <- nb+nbnodes[nbspl]-2
-
-    if(any(nodes <= range[2*(nbspl-1)+1]) | any(nodes >= range[2*nbspl])) stop("Interior nodes must be in the range of the outcome")
+  
+    idrg <- length(which(idlink0[1:k] != 0))
+    if(any(nodes <= range[2*(idrg-1)+1]) | any(nodes >= range[2*idrg])) stop("Interior nodes must be in the range of the outcome")
    }
 
-    if(spltype[nbspl]=="equi")
-    {
-     nodes <- seq(range[2*(nbspl-1)+1], range[2*nbspl], length.out=nbnodes[nbspl])
-     nodes <- nodes[-nbnodes[nbspl]]
-     nodes <- nodes[-1]
-     intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <- nodes
-    }
+   if(spltype[nbspl]=="equi")
+   {
+    nodes <- seq(range[2*(nbspl-1)+1], range[2*nbspl], length.out=nbnodes[nbspl])
+    nodes <- nodes[-nbnodes[nbspl]]
+    nodes <- nodes[-1]
+    intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <- nodes
+   }
 
-    if(spltype[nbspl]=="quant")
-    {
-     nodes <- quantile(get(dataY[k])[,nomsY[k]], probs=seq(0,1,length.out=nbnodes[nbspl]))
-     if(length(unique(nodes)) != length(nodes)) stop(paste("Some nodes are equal for link number",k,"; Please try to reduce the number of nodes or use manual location."))
-     nodes <- nodes[-nbnodes[nbspl]]
-     nodes <- nodes[-1]
-     intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <- as.vector(nodes)
-    }
-
+   if(spltype[nbspl]=="quant")
+   {
+    nodes <- quantile(get(dataY[k])[,nomsY[k]], probs=seq(0,1,length.out=nbnodes[nbspl]))
+    if(length(unique(nodes)) != length(nodes)) stop(paste("Some nodes are equal for link number",k,"; Please try to reduce the number of nodes or use manual location."))
+    nodes <- nodes[-nbnodes[nbspl]]
+    nodes <- nodes[-1]
+    intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <- as.vector(nodes)
+   }
   }
  }
 
- if(nb != length(intnodes)) stop("The length of intnodes is not correct")
+ if(nb != length(intnodes)) stop(paste("The vector intnodes should be of length",nb))
 
  #remplir zitr
  m <- 0
@@ -295,6 +355,10 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
    zitr[2:(nbzitr0[k]-1),k] <- intnodes2[ifelse(nbspl==1,0,1)*sum(nbnodes[1:(nbspl-1)]-2) + 1:(nbnodes[nbspl]-2)]
    zitr[1,k] <- range[2*(nb12-1)+1]
    zitr[nbnodes[nbspl],k]  <- range[2*nb12]
+   
+    #verifier s'il y a des obs entre les noeuds
+    hcounts <- hist(get(dataY[k])[,nomsY[k]],breaks=zitr[1:nbnodes[nbspl],k],plot=FALSE,include.lowest=TRUE,right=TRUE)$counts
+    if(any(hcounts==0)) stop(paste("Link function number",k,"can not be estimated. Please try other nodes such that there are observations in each interval."))    
   }
  }
 
@@ -330,7 +394,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  matYXord <- matYX[order(IDnum),]
  Y0 <- matYXord[,4]
  X0 <- matYXord[,-c(1,2,3,4,5,6),drop=FALSE]
- #X0 <- as.matrix(X0)  a remettre si X0 <- as.data.frame(X0) remis l.157
+ #X0 <- as.matrix(X0)  a remettre si X0 <- as.data.frame(X0) remis l.211
  IDnum <- matYXord[,1]
  IND <- matYXord[,2]
  outcome <- matYXord[,6]
@@ -377,22 +441,30 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
 
  ###remplir idprob, etc
- idprob0 <- colnames(X0) %in% colnames(Xclassmb) +0
+ z.X0 <- strsplit(nom.unique,split=":",fixed=TRUE)
+ z.X0 <- lapply(z.X0,sort)
+ 
+ idprob0 <- z.X0 %in% z.classmb + 0
+ idea0 <- z.X0 %in% z.random + 0
+ idg0 <- (z.X0 %in% z.fixed) + (z.X0 %in% z.mixture)
+ idcontr0 <- z.X0 %in% z.contr + 0
+     
+ #idprob0 <- colnames(X0) %in% colnames(Xclassmb) +0
 
- idea0 <- colnames(X0) %in% colnames(Xrandom) +0
+ #idea0 <- colnames(X0) %in% colnames(Xrandom) +0
 
- idg0 <- (colnames(X0) %in% colnames(Xfixed)) + (colnames(X0) %in% colnames(Xmixture))+0
+ #idg0 <- (colnames(X0) %in% colnames(Xfixed)) + (colnames(X0) %in% colnames(Xmixture))+0
 
  if (ncor0>0) idcor0 <- colnames(X0) %in% cor.var.time +0
  else idcor0 <- rep(0,nv0)
 
- idcontr0 <- colnames(X0) %in% colnames(Xcontr) +0
-
- if(any(idcontr0==1 & idg0==0)) stop("Variables in contrast should also appear in fixed")
+ #idcontr0 <- colnames(X0) %in% colnames(Xcontr) +0
+  
+ #if(any(idcontr0==1 & idg0==0)) stop("Variables in contrast should also appear in fixed")
 
  nea0 <- sum(idea0)
  predRE <- rep(0,ns0*nea0)
-
+ 
  #nombre total de parametres
  NPM <- (ng0-1)*sum(idprob0) + sum(idg0==1)-1 + ng0*sum(idg0==2) + ncor0 + (ny0-1)*sum(idcontr0) +
         ifelse(idiag0==1,nea0,nea0*(nea0+1)/2)-1 + (ng0-1)*nwg0 + nalea0 + ny0 +
@@ -571,21 +643,21 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
    {
     if (i==1)
     {
-	   for (g in 2:ng0)
+	    for (g in 2:ng0)
      {
       t <- t+1
-	    b[nprob+t] <- - 0.5*(g-1)
+	     b[nprob+t] <- - 0.5*(g-1)
      }
     }
     if (i>1)
     {
-	   l <- l+1
-	   for (g in 1:ng0)
+	    l <- l+1
+	    for (g in 1:ng0)
      {
-	    t <- t+1
-	    if(init$conv==1) b[nprob+t] <- init$best[l]+(g-(ng0+1)/2)*sqrt(init$V[l*(l+1)/2])
-	    else b[nprob+t] <- init$best[l]+(g-(ng0+1)/2)*init$best[l]
-	   }
+	     t <- t+1
+	     if(init$conv==1) b[nprob+t] <- init$best[l]+(g-(ng0+1)/2)*sqrt(init$V[l*(l+1)/2])
+	     else b[nprob+t] <- init$best[l]+(g-(ng0+1)/2)*init$best[l]
+	    }
     }
    }
   }
@@ -598,7 +670,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   if(verbose==TRUE) cat("initial parameters : \n",b,"\n")
  }
 
-   
+ 
  #estimation
  out <- .Fortran("hetmixContMult",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),
  as.integer(idg0),as.integer(idcor0),as.integer(idcontr0),as.integer(ny0),as.integer(ns0),as.integer(ng0),
@@ -610,23 +682,26 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(uniqueY0),as.integer(indiceY0),as.integer(nvalSPL0),
  marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
  vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
-
+  
+ 
 
  ### Creation du vecteur cholesky
  Cholesky <- rep(0,(nea0*(nea0+1)/2))
- if(idiag0==0 & nvc>0){
- Cholesky[1:(nvc+1)] <- c(1,out$best[nef+1:nvc])
- # Construction de la matrice U
- U <- matrix(0,nrow=nea0,ncol=nea0)
- U[upper.tri(U,diag=TRUE)] <- Cholesky[1:(nvc+1)]
- z <- t(U) %*% U
- out$best[nef+1:nvc] <- z[upper.tri(z,diag=TRUE)][-1]
+ if(idiag0==0 & nvc>0)
+ {
+  Cholesky[1:(nvc+1)] <- c(1,out$best[nef+1:nvc])
+  # Construction de la matrice U
+  U <- matrix(0,nrow=nea0,ncol=nea0)
+  U[upper.tri(U,diag=TRUE)] <- Cholesky[1:(nvc+1)]
+  z <- t(U) %*% U
+  out$best[nef+1:nvc] <- z[upper.tri(z,diag=TRUE)][-1]
  }
- if(idiag0==1 & nvc>0){
- id <- 1:nea0
- indice <- rep(id+id*(id-1)/2)
- Cholesky[indice] <- c(1,out$best[nef+1:nvc])
- out$best[nef+1:nvc] <- out$best[nef+1:nvc]**2
+ if(idiag0==1 & nvc>0)
+ {
+  id <- 1:nea0
+  indice <- rep(id+id*(id-1)/2)
+  Cholesky[indice] <- c(1,out$best[nef+1:nvc])
+  out$best[nef+1:nvc] <- out$best[nef+1:nvc]**2
  }
 
  ###predictions
@@ -693,12 +768,17 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
  nom.X0[nom.X0=="(Intercept)"] <- "Intercept"
 
- res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcontr0=idcontr0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,predRE_Y=predRE_Y,Ynames=nomsY,Xnames=nom.X0,Xnames2=ttesLesVar,cholesky=Cholesky,estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,nbnodes=nbnodes)
+ res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcontr0=idcontr0,
+ idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,
+ call=cl,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,
+ predRE_Y=predRE_Y,Ynames=nomsY,Xnames=nom.X0,Xnames2=ttesLesVar,cholesky=Cholesky,
+ estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,nbnodes=nbnodes)
+ 
  names(res$best) <- names(b)
  class(res) <-c("multlcmm")
 
  cost<-proc.time()-ptm
- cat("The program took", round(cost[3]), "seconds \n")
+ cat("The program took", round(cost[3],2), "seconds \n")
 
  res
 }

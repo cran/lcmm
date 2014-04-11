@@ -9,17 +9,18 @@
 Histograms of the posterior class-membership probabilities
 }
 \description{
-This function provides the histograms of the posterior class-membership probabilities stemmed from a \code{Jointlcmm} object.
+This function provides the histograms of the posterior class-membership probabilities stemmed from a \code{Jointlcmm}, \code{lcmm}, \code{hlme} or \code{multlcmm} object.
 }
 \usage{
 \method{plot.postprob}{Jointlcmm}(x,\dots)
 \method{plot.postprob}{lcmm}(x,\dots)
 \method{plot.postprob}{hlme}(x,\dots)
+\method{plot.postprob}{multlcmm}(x,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-an object inheriting from classes \code{lcmm}, \code{hlme} or \code{Jointlcmm}, representing respectively a fitted latent class linear mixed model, a more general latent class mixed model or a joint latent class model
+an object inheriting from classes \code{lcmm}, \code{hlme}, \code{multlcmm} or \code{Jointlcmm}, representing respectively a fitted latent class linear mixed model, a more general latent class mixed model or a joint latent class model
 }
   \item{\dots}{
 other parameters to be passed through to plotting functions
@@ -28,7 +29,7 @@ other parameters to be passed through to plotting functions
 \value{
 Returns as many plots as the number of latent classes}
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Viviane Philipps and Benoit Liquet
 }
 \note{
 This function can only be used with latent class mixed models and joint latent class models that include at least 2 latent classes

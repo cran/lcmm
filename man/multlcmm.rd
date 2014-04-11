@@ -2,11 +2,10 @@
 \alias{multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Estimation of mutlivariate mixed-effect models and multivariate latent class mixed-effect models for longitudinal outcomes of multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear)
+Estimation of mutlivariate mixed-effect models and multivariate latent class mixed-effect models for multivariate longitudinal outcomes of possibly multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear) that measure the same underlying latent process.
 }
 \description{
-This function constitutes a multivariate extension of function \code{lcmm}. It fits multivariate mixed models and multivariate latent class mixed models for longitudinal outcomes of multiple types. 
-It handles continuous longitudinal outcomes (Gaussian or non-Gaussian, curvilinear) as well as bounded quantitative and discrete longitudinal outcomes. Next version will also handle ordinal outcomes. 
+This function constitutes a multivariate extension of function \code{lcmm}. It fits multivariate mixed models and multivariate latent class mixed models for multivariate longitudinal outcomes of different types. It handles continuous longitudinal outcomes (Gaussian or non-Gaussian, curvilinear) as well as bounded quantitative and discrete longitudinal outcomes. Next version will also handle ordinal outcomes. 
 The model assumes that all the outcomes measure the same underlying latent process defined as their common factor, and each outcome is related to this latent common factor by a specific parameterized link function. 
 At the latent process level, the model estimates a standard linear mixed model or a latent class linear mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}).
 Parameters of the nonlinear link functions and of the latent process mixed model are estimated simultaneously using a maximum likelihood method.
@@ -22,9 +21,7 @@ nsim=100, prior,range=NULL, na.action=1)
 \arguments{
   \item{fixed}{
 a two-sided linear formula object for specifying the fixed-effects in the linear mixed model at the latent process level. The response outcomes are separated by \code{+} on the left of \code{~} and the covariates are separated by \code{+} on the right of the \code{~}.
-For identifiability purposes, the intercept specified by default should not be removed by a \code{-1}. By default, the covariates have a mean effect on the latent process (common to all the outcomes). 
-Outcome-specific effects can be considered by including \code{contrast()}. 
-In that case, in addition to the common effect on the latent process, contrasts will be estimated that correspond to outcome-specific deviations from the common effect (the sum over the outcomes of the contrasts equals 0).
+For identifiability purposes, the intercept specified by default should not be removed by a \code{-1}. Variables on which a contrast above the different outcomes should also be estimated are included with \code{contrast()}.
 }
   \item{mixture}{
 a one-sided formula object for the class-specific fixed effects in the latent process mixed model (to specify only for a number of latent classes greater than 1).
@@ -102,7 +99,7 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
 
 A. THE PARAMETERIZED LINK FUNCTIONS
 
-\code{multlcmm} function estimates multivariate latent class mixed models for different types of outcomes by assuming a parameterized link function for linking each outcome Y_k(t) with their underlying latent common factor L(t) they measure. To fix the latent process dimension, we chose to constrain  at the latent process level the (first) intercept of the latent class mixed model at 0 and the standard error of the first random effect  at 1. 
+\code{multlcmm} function estimates multivariate latent class mixed models for different types of outcomes by assuming a parameterized link function for linking each outcome Y_k(t) with the underlying latent common factor L(t) they measure. To fix the latent process dimension, we chose to constrain  at the latent process level the (first) intercept of the latent class mixed model at 0 and the standard error of the first random effect  at 1. 
 
 1. With the "linear" link function, 2 parameters are required for the following transformation (Y(t) - b1)/b2 
 
@@ -190,19 +187,19 @@ Cecile Proust-Lima and Viviane Philipps
 Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over infinite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
 
 
-Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78:165-73
+Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78: 165-73.
 
 Proust, Jacqmin-Gadda, Taylor, Ganiayre, and Commenges (2006). A
 nonlinear model with latent process for cognitive evolution using multivariate longitudinal
 data. Biometrics 62, 1014-24.
 
 Proust-Lima, Dartigues and Jacqmin-Gadda (2011). Misuse of the linear mixed
-model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9), 1077-88
+model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9): 1077-88.
 
-Proust-Lima, Amieva, Jacqmin-Gadda (2012). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol. 2012 Oct 22 [Epub ahead of print]
+Proust-Lima, Amieva, Jacqmin-Gadda (2013). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol 66(3): 470-87.
 
 Commenges, Proust-Lima, Samieri, Liquet (2012). A universal approximate cross-validation criterion and its
-asymptotic distribution, submitted.
+asymptotic distribution, Arxiv.
 }
 
 
@@ -234,6 +231,9 @@ B=c(-1.071, -0.192,  0.106, -0.005, -0.193,  1.012,  0.870,  0.881,
 summary(m1)
 # estimated link functions
 plot.linkfunction(m1)
+# variation percentages explained by linear mixed regression
+VarExpl(m1,data.frame(Time=0))
+
 \dontrun{
 #### Heterogeneous latent process mixed model with linear link functions 
 #### and 2 latent classes of trajectory 
@@ -245,7 +245,7 @@ B=c( 18,-20.77,1.16,-1.41,-1.39,-0.32,0.16,-0.26,1.69,1.12,1.1,10.8,
 summary(m2)
 # posterior classification
 postprob(m2)
-# logitudinal predictions in the outcomes scales for a given profile of covariates 
+# longitudinal predictions in the outcomes scales for a given profile of covariates 
 newdata <- data.frame(Time=seq(0,5,length=100), X1=rep(0,100), X2=rep(0,100),X3=rep(0,100))
 predGH <- predictY(m2,newdata,methInteg=0,nsim=20) 
 head(predGH)

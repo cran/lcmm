@@ -249,7 +249,7 @@
            if (idg(k).eq.1) then
               ncssg=ncssg+1      ! nb var. sans melange
            else if (idg(k).eq.2) then
-              ncg=ncg+1      ! nb var. sans melange
+              ncg=ncg+1      ! nb var. dans melange
            end if
            nea=nea+idea(k)
            nprob=nprob+(idprob(k))*(ng-1)
@@ -701,7 +701,7 @@
       do g=1,ng
 
          brisq=0.d0
-         if (logspecif.eq.1.or.typrisq.eq.2) then
+         if (logspecif.eq.1) then
                if (risqcom.eq.0) then
                   do k=1,nprisq
                   brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))

@@ -1,16 +1,18 @@
 \name{plot.linkfunction}
 \alias{plot.linkfunction.lcmm}
 \alias{plot.linkfunction}
+\alias{plot.link}
 \alias{plot.linkfunction.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Plot of the estimated transformation between the outcome and the underlying latent process
 }
 \description{
-Displays the estimated transformation specified in the option \code{link} of \code{lcmm} function. It corresponds to the (non)linear parameterized link assumed between the oberved longitudinal outcome and the underlying latent process and estimated as long as other regression parameters. 
+Displays the estimated transformation(s) specified in the option \code{link} of \code{lcmm} and \code{multlcmm} function. It corresponds to the (non)linear parameterized link assumed between the oberved longitudinal outcome and the underlying latent process and estimated as long as other regression parameters. 
 }
 \usage{
-\method{plot.linkfunction}{lcmm}(x,legend.loc="topright",...)
+\method{plot.linkfunction}{lcmm}(x,legend.loc="topright",legend,add=FALSE,...)
+\method{plot.linkfunction}{multlcmm}(x,legend.loc="topleft",legend=x$Ynames,add=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -22,8 +24,14 @@ keyword for the position of the legend from the list \code{"bottomright"}, \code
      \code{"left"}, \code{"topleft"},\code{"top"}, \code{"topright"}, \code{"right"} and
      \code{"center"}. By default, the legend is located in the top right of the plot. 
 }
+  \item{legend}{
+character or expression to appear in the legend. If no legend should be added, \code{"legend"} should be NULL.
+}
+  \item{add}{
+logical indicating if the curves should be added to an existing plot. Default to FALSE.
+}
   \item{\dots}{
-other parameters to be passed through to plotting functions
+other parameters to be passed through to plotting functions or to legend 
 }
 }
 \author{

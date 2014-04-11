@@ -174,7 +174,8 @@
       z,rl1,th,ep
       double precision,external::namefunc
 
-      !if (verbose==1) write(*,*)'Marquardt begins - npm=',m
+ !     verbose=1 !** 
+    !  if (verbose==1) write(*,*)'Marquardt begins - npm=',m    !**
       id=0
       jd=0
       z=0.d0
@@ -193,10 +194,10 @@
       ep=1.d-20
 
       Main:Do
-      !if (verbose==1) write(*,*)'iteration',ni
+  !    if (verbose==1) write(*,*)'iteration',ni   !**
         call deriva(b,m,v,rl,namefunc)
-      !if (verbose==1) write(*,*)'loglik=',rl
-      !if (verbose==1) write(*,*)'parms',b            
+ !     if (verbose==1) write(*,*)'loglik=',rl     !**
+  !    if (verbose==1) write(*,*)'parms',b        !**    
         rl1=rl
         dd = 0.d0
         fu=0.D0
@@ -225,7 +226,7 @@
            dd=GHG/dble(m)
         end if
         
-       !     if(verbose==1) print *,"ca=",ca,"cb=",cb,"dd=",dd
+ !           if(verbose==1) print *,"ca=",ca,"cb=",cb,"dd=",dd   !**
 
         if(ca.lt.epsa.and.cb.lt.epsb.and.dd.lt.epsd) exit main
         tr=0.d0
@@ -249,6 +250,7 @@
            endif
         end do
         call dchole(fu,m,nql,idpos)
+        !print*,"apres dchole "," range fu=",minval(fu),maxval(fu),"idpos=",idpos !**
         if (idpos.ne.0) then
            ncount=ncount+1
            if (ncount.le.3.or.ga.ge.1.d0) then
@@ -257,7 +259,7 @@
               ga=ga*dm
               if (ga.gt.1.d0) ga=1.d0
            endif
-           goto 400
+           goto 400   !** peut tourner en boucle !!
         else
             do i=1,m
                delta(i)=fu(nfmax+i)
@@ -282,12 +284,13 @@
             vw=th/maxt
          endif
          step=dlog(1.5d0)
-!      write(*,*) 'searpas'
+  !    write(*,*) 'searpas'         !**
+  !    print*,"vw=",vw,"step=",step,"b=",b,"bh=",bh,"m=",m,"delta=",delta,"fi=",fi    !**
          call searpas(vw,step,b,bh,m,delta,fi,namefunc)
          rl=-fi
          if(rl.eq.-1.D9) then
                istop=4
-!               write(*,*)'searpas problem'
+ !             write(*,*)'searpas problem' ,ni  !**
                goto 110
           end if
 
@@ -301,7 +304,7 @@
          do i=1,m
             ca=ca+delta(i)*delta(i)
          end do
-!         write(6,*) 'ca =',ca,' cb =',cb,' dd =',dd
+    !     write(6,*) 'ca =',ca,' cb =',cb,' dd =',dd     !**
          do i=1,m
             b(i)=b(i)+delta(i)
          end do
@@ -318,7 +321,6 @@
       v=0.D0
       v(1:m*(m+1)/2)=fu(1:m*(m+1)/2)
       istop=1
-
  110   continue
        return
        end subroutine marq98
@@ -420,12 +422,12 @@
 !      double precision::vlw3
       integer::i
       double precision,external::namefunc
-
+  !        print*,"dans searpas" !**
        vlw1=dlog(vw)
        vlw2=vlw1+step
        call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
        call valfpa(vlw2,fi2,b,bh,m,delta,namefunc)
-
+ !             print*,"fi1=",fi1,"fi2=",fi2  !**
        if(fi2.ge.fi1) then
 !         vlw3=vlw2
           vlw2=vlw1
@@ -446,6 +448,7 @@
        end if
 
        do i=1,40
+  !     print*,"i=",i !**
 !          vlw3=vlw2
           vlw2=vlw1
           fi3=fi2
@@ -453,6 +456,9 @@
 
           vlw1=vlw2+step
           call valfpa(vlw1,fi1,b,bh,m,delta,namefunc)
+          
+!            print*,"fi1=",fi1,"fi2=",fi2  !**
+            
           if(fi1.gt.fi2) goto 50
           if(fi1.eq.fi2) then
              fim=fi2
@@ -469,6 +475,7 @@
 !
       vm=vlw2-step*(fi1-fi3)/(2.d0*(fi1-2.d0*fi2+fi3))
       call valfpa(vm,fim,b,bh,m,delta,namefunc)
+  !    print*,"fim=",fim !**
       if(fim.le.fi2) goto 100
       vm=vlw2
       fim=fi2

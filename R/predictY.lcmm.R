@@ -7,7 +7,7 @@ if(missing(newdata)) stop("The argument newdata should be specified")
 if(missing(x)) stop("The argument x should be specified")
 if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 # ad 2/04/2012 Xnames2
-if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) {
+if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) {                               
 cat("newdata should at least include the following covariates: ", "\n")
 cat(x$Xnames2[-1], "\n")}
 if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) stop("see above")
@@ -169,9 +169,21 @@ if(!is.null(x$call$classmb)){
 }else{
 	na.classmb <- NULL
 }
+# cor
+na.cor <- NULL
+if(length(x$N)>5)
+{
+ if(x$N[6]>0)
+ {
+  z <- which(x$idcor0==1)
+  var.cor <- newdata1[,x$Xnames[z]]
+  na.cor <- which(is.na(var.cor))
+ }
+}
+
 ## Table sans donnees manquante: newdata
-na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
-if(!is.null(na.action)){
+na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
+if(length(na.action)){
 	newdata1 <- newdata1[-na.action,]
 }
 
@@ -220,12 +232,14 @@ if(!is.null(na.action)){
 		id.X_classmb <- 0
 	}
 ##cor	
-if(x$N[6]>0)  #on ajoute la variable de temps de cor
+if(length(x$N)>5)
 {
- z <- which(x$idcor0==1)
- var.cor <- newdata1[,x$Xnames[z]]
+ if(x$N[6]>0)  #on reprend la variable de temps de cor
+ {
+  z <- which(x$idcor0==1)
+  var.cor <- newdata1[,x$Xnames[z]]
+ }
 }
-
 
 ## Construction des var expli
 newdata1 <- X_fixed
@@ -251,89 +265,15 @@ if(id.X_classmb == 1){
 		}	
 	}
 }
-if(x$N[6]>0)
-{ 
- if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+if(length(x$N)>5)
+{
+ if(x$N[6]>0)
+ { 
+  if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+ }
 }
 
-####essai comme multlcmm
-#
-#if(x$conv==1|x$conv==2) {
-#
-#if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
-#
-#
-#### Traitement des donnees manquantes
-#newdata <- newdata[,x$Xnames2[-1]]
-#newdata <- as.data.frame(newdata)
-#colnames(newdata) <- x$Xnames2[-1]
-#
-#linesNA <- apply(newdata,2,function(v) which(is.na(v)))
-#linesNA <- unique(unlist(linesNA))
-#
-#if(length(linesNA) & na.action==2) stop("newdata contains missing values")
-#if(length(linesNA) & na.action==1) 
-#{
-# newdata <- as.data.frame(newdata[-linesNA,])
-# colnames(newdata) <- x$Xnames2[-1]
-#}
-#
-###pour les facteurs
-#
-#olddata <- eval(x$call$data) 
-#termes <- x$Xnames[-1]
-#
-# #cas où une variable dans le dataset du modèle est un facteur
-# for(v in x$Xnames2[-1])
-# {
-#  if (is.factor(olddata[,v]))
-#  {
-#   mod <- levels(olddata[,v])
-#   if (!(levels(as.factor(newdata[,v])) %in% mod)) stop(paste("invalid level in factor", v))
-#   newdata[,v] <- factor(newdata[,v], levels=mod)
-#
-#   for(m in mod)
-#   {
-#    termes <- gsub(paste(v,m,sep=""),v,termes)
-#   }
-#   
-#  }
-# }
-#
-# #cas où on a factor() dans l'appel de la fonction
-# dans_appel <- c(all.names(x$call$fixed),all.names(x$call$random),all.names(x$call$mixture),all.names(x$call$classmb))
-# ind_factor <- which(dans_appel=="factor")
-# if(length(ind_factor))
-# {
-#  nom.factor <- dans_appel[ind_factor+1]
-#  for (v in nom.factor)
-#  {
-#   mod <- levels(as.factor(olddata[,v]))
-#   if (!all(levels(as.factor(newdata[,v])) %in% mod)) stop(paste("invalid level in factor", v))
-#   newdata[,v] <- factor(newdata[,v], levels=mod)
-#   
-#   factorv <- paste("factor(",v,")",sep="")
-#   for(m in mod)
-#   {
-#    termes <- gsub(paste(factorv,m,sep=""),v,termes,fixed=TRUE)
-#   }
-#  }
-# }
-#
-#      
-####matrice avec toutes les var et toutes les interactions
-#newdata1 <- model.matrix(as.formula(paste("~",paste(termes,collapse="+"))),data=newdata)
-##remettre les termes dans le bon ordre
-# Xnames <- x$Xnames[-1]
-# z <- grep("factor\\(",Xnames) 
-# if (length(z))
-# {
-#  Xnames <- gsub("factor\\(","",Xnames)
-#  Xnames[z] <- gsub("\\)","",Xnames[z])
-# }
-# newdata1 <- newdata1[,c("(Intercept)",Xnames)]
-#### fin essai  -> ok ça marche
-#
+
 
 
 nv <- length(x$idg0)
@@ -345,7 +285,9 @@ if(x$idiag==1 & x$N[3]>0) best[(x$N[1]+x$N[2]+1):(x$N[1]+x$N[2]+x$N[3])] <- sqrt
 nwg <- x$N[4]
 ncor <- 0
 if (x$linktype!=3)
-{ ncor <- x$N[6] }
+{ 
+ if(length(x$N)>5) {ncor <- x$N[6]}
+}
 
  
 
@@ -758,7 +700,7 @@ out <- .Fortran("predict_cont",as.double(newdata1),as.integer(x$idprob0),as.inte
 out$Ymarg[out$Ymarg==9999] <- NA
 
 #cat(out$Ymarg)
-Ypred <- matrix(out$Ymarg,ncol=x$ng,byrow=F)
+Ypred <- matrix(out$Ymarg,ncol=x$ng,byrow=FALSE)
 
 if (x$ng==1)colnames(Ypred) <- "Ypred"
 if (x$ng>1)colnames(Ypred) <- paste("Ypred_class",1:x$ng,sep="")
@@ -792,9 +734,9 @@ f <- function(x) {
 quantile(x[!is.na(x)],probs=c(0.025,0.5,0.975))
 }
 ydistr <- apply(ydraws,1,FUN=f)
-Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
-Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
-Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
+Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=FALSE)
+Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=FALSE)
+Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=FALSE)
 
 Ypred <- cbind(Ypred_50,Ypred_2.5,Ypred_97.5)
 
@@ -811,11 +753,13 @@ colnames(Ypred) <- c(paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_2.5_clas
 
 #res <-list(Ypred)
 res <- Ypred
-
 }
 
 else  #cas xconv != 1 ou 2
-{ res <- NA }
+{ 
+ cat("Predictions can not be computed since the program stopped abnormally. \n")
+ res <- NA 
+}
 
 res
 }

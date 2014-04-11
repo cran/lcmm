@@ -2,7 +2,7 @@
 
 .Contlcmm <-
 function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,cor,data,B,convB,convL,convG,prior,maxiter,epsY,idlink0,ntrtot0,nbzitr0,zitr,nsim,call,Ydiscrete,subset,na.action){
-  
+   
 cl <- match.call()
 
 args <- as.list(match.call(.Contlcmm))[-1]
@@ -44,7 +44,7 @@ if (!is.null(cor))
  #if (substr(cor,3,3)!="-") stop("Invalid argument cor")
  #if (grep("-",cor)>1) stop("Invalid argument cor")
  
- if(!(strsplit(cor,"-")[[1]][2] %in% colnames(data))) stop("Unaible to find time variable from argument cor in data")
+ if(!(strsplit(cor,"-")[[1]][2] %in% colnames(data))) stop("Unable to find time variable from argument cor in data")
  else { cor.var.time <- strsplit(cor,"-")[[1]][2] }
 }  
 ### fin test argument cor 
@@ -148,7 +148,20 @@ if(ncor0>0)
 ## ad
 
 
-if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
+#if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
+# controler si les variables de mixture sont toutes dans fixed : 
+ z.fixed <- strsplit(nom.fixed,split=":",fixed=TRUE)
+ z.fixed <- lapply(z.fixed,sort)
+  
+ if(id.X_mixture==1)
+ {
+  z.mixture <- strsplit(nom.mixture,split=":",fixed=TRUE)
+  z.mixture <- lapply(z.mixture,sort)
+ }
+ else z.mixture <- list()
+
+if(!all(z.mixture %in% z.fixed))  stop("The covariates in mixture should also be included in the argument fixed")
+
 
 #ad 
 ## var dependante
@@ -157,37 +170,89 @@ Y0 <- newdata[,Y.name]
 
 ## var expli
 X0 <- X_fixed
-if(id.X_mixture == 1){
-	for(i in 1:length(colnames(X_mixture))){
-		if((colnames(X_mixture)[i] %in% colnames(X0))==F){
+oldnames <- colnames(X0)
+
+z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+z.X0 <- lapply(z.X0,sort)
+
+if(id.X_mixture == 1)
+{
+ z.mixture <- strsplit(colnames(X_mixture),split=":",fixed=TRUE)
+ z.mixture <- lapply(z.mixture,sort)
+	for(i in 1:length(colnames(X_mixture)))
+ {
+		#if((colnames(X_mixture)[i] %in% colnames(X0))==F)
+  if(!isTRUE(z.mixture[i] %in% z.X0))
+  {
 			X0 <- cbind(X0,X_mixture[,i])
-			
+			colnames(X0) <- c(oldnames, colnames(X_mixture)[i])
+			oldnames <- colnames(X0)
+    			
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)					
 		}                                                                
 	}
 }
-if(id.X_random == 1){
-	for(i in 1:length(colnames(X_random))){
-		if((colnames(X_random)[i] %in% colnames(X0))==F){
+else
+{
+ z.mixture <- list()
+}
+
+if(id.X_random == 1)
+{
+ z.random <- strsplit(colnames(X_random),split=":",fixed=TRUE)
+ z.random <- lapply(z.random,sort)
+	for(i in 1:length(colnames(X_random)))
+ {
+		#if((colnames(X_random)[i] %in% colnames(X0))==F)
+		if(!isTRUE(z.random[i] %in% z.X0))
+  {
 			X0 <- cbind(X0,X_random[,i])
+			colnames(X0) <- c(oldnames, colnames(X_random)[i])
+			oldnames <- colnames(X0)
+   			
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)			
 		}	 
 	}
 }
-if(id.X_classmb == 1){
-	for(i in 1:length(colnames(X_classmb))){
-		if((colnames(X_classmb)[i] %in% colnames(X0))==F){
-			X0 <- cbind(X0,X_classmb[,i],deparse.level=0)	 
+else
+{
+ z.random <- list()
+}
+
+if(id.X_classmb == 1)
+{
+ z.classmb <- strsplit(colnames(X_classmb),split=":",fixed=TRUE)
+ z.classmb <- lapply(z.classmb,sort)
+	for(i in 1:length(colnames(X_classmb)))
+ {
+		#if((colnames(X_classmb)[i] %in% colnames(X0))==F)
+		if(!isTRUE(z.classmb[i] %in% z.X0))
+  {
+			X0 <- cbind(X0,X_classmb[,i])
+   colnames(X0) <- c(oldnames,colnames(X_classmb)[i])
+   oldnames <- colnames(X0)
+       	
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)    
 		}	
 	}
+}
+else
+{
+ z.classmb <- list()
 }
 
 if(ncor0>0) 
 { if(!(cor.var.time %in% colnames(X0))) 
   {
    X0 <- cbind(X0, newdata[,cor.var.time])
+   colnames(X0) <- c(oldnames, cor.var.time)
   }
 }  
-
-colnames(X0) <- var.exp
+          
+#colnames(X0) <- var.exp
 
 if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("The data should not contain any missing value")
  
@@ -221,12 +286,21 @@ idprob0 <- rep(0,nvar.exp)
 idg0 <- rep(0,nvar.exp)
 idcor0 <- rep(0,nvar.exp)
 
-for (i in 1:nvar.exp)    {
- idea0[i] <- nom.X0[i]%in%inddepvar.random.nom
- idprob0[i] <- nom.X0[i]%in%inddepvar.classmb.nom      
- if(nom.X0[i]%in%nom.fixed & !(nom.X0[i]%in%nom.mixture)) idg0[i] <- 1 
- if(nom.X0[i]%in%nom.fixed & nom.X0[i]%in%nom.mixture) idg0[i] <- 2  
- }
+z.X0 <- strsplit(nom.X0,split=":",fixed=TRUE)
+z.X0 <- lapply(z.X0,sort)
+
+for (i in 1:nvar.exp)
+{
+# idea0[i] <- nom.X0[i]%in%inddepvar.random.nom
+# idprob0[i] <- nom.X0[i]%in%inddepvar.classmb.nom      
+# if(nom.X0[i]%in%nom.fixed & !(nom.X0[i]%in%nom.mixture)) idg0[i] <- 1 
+# if(nom.X0[i]%in%nom.fixed & nom.X0[i]%in%nom.mixture) idg0[i] <- 2 
+# 
+ idea0[i] <- z.X0[i] %in% z.random
+ idprob0[i] <- z.X0[i] %in% z.classmb   
+ if((z.X0[i] %in% z.fixed) & !(z.X0[i] %in% z.mixture)) idg0[i] <- 1 
+ if((z.X0[i] %in% z.fixed) & (z.X0[i] %in% z.mixture)) idg0[i] <- 2   
+}
  
 if (ncor0!=0) idcor0 <- as.numeric(nom.X0 %in% cor.var.time)
  
@@ -439,7 +513,8 @@ if(ng0==1 ){
 b <- b1
 }
 } 
-else {if(length(B)!=NPM)stop("The length of the vector B is not correct")
+else {
+ if(length(B)!=NPM) stop(paste("Vector B should be of length",NPM))
  else {b <-B}
 }
 
@@ -516,7 +591,7 @@ transfY <- rep(0,nsim)
 #cat(paste("B:"),"\n")
 #print(b)
 
-
+  
 out <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),
 as.integer(idea0),as.integer(idg0),as.integer(idcor0),as.integer(ns0),as.integer(ng0),
 as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),
@@ -529,7 +604,6 @@ as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),marker=as.double(marker)
 transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
 vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
 
-#cat("fin de fortran \n")
 
 ### Creation du vecteur cholesky
 Cholesky <- rep(0,(nea0*(nea0+1)/2))
@@ -594,6 +668,6 @@ res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,log
 class(res) <-c("lcmm") 
 
 cost<-proc.time()-ptm
-cat("The program took", round(cost[3],2), "seconds \n")
+cat("The program took", round(cost[3],2), "seconds \n") 
 res
 }

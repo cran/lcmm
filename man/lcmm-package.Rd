@@ -2,21 +2,26 @@
 \alias{lcmm-package}
 \docType{package}
 \title{
-Estimation of Mixed Models, Latent Class Mixed Models and Joint Latent Class Mixed Models for different types of outcomes (quantitative, bounded, curvilinear and ordinal outcomes).
+Estimation of extended mixed models using latent classes and latent processes.
 }
 \description{
-This package provides functions for the estimation of latent class mixed models (LCMM) and joint latent class mixed models (JLCM) using a maximum likelihood method. It also estimates mixed models for curvilinear and ordinal longitudinal outcomes (with or without latent classes of trajectories).
-}
+This package provides functions for the estimation of latent class mixed models (LCMM), joint latent class mixed models (JLCM) and mixed models for curvilinear and ordinal univariate and multivariate longitudinal outcomes (with or without latent classes of trajectory). All the models are estimated in a maximum likelihood framework using an iterative algorithm. The package also provides various post fit functions.}
 \details{
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.6.2 \cr
-Date: \tab 2013-03-06\cr
+Version: \tab 1.6.4 \cr
+Date: \tab 2014-04-11\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
-The package includes for the moment the estimation of latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function, and for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function. It also estimates (latent class) mixed models for multivariate (possibly curvilinear) longitudinal outcomes using \code{multlcmm} function. Finally, it estimates joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
+The package includes for the moment the estimation of :
+\itemize{
+\item latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function,
+\item latent class mixed models for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function,
+\item latent class mixed models for multivariate (possibly curvilinear) longitudinal outcomes using \code{multlcmm} function,
+\item joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
+}
 
 Please report to the maintainer any bug or comment regarding the package for future updates. 
 }
@@ -27,8 +32,8 @@ Maintainer: Cecile Proust-Lima  <cecile.proust@isped.u-bordeaux2.fr>
 }
 \references{
 
-Commenges, Liquet Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
-expected conditional {K}ullback-{L}eibler risks. Biometrics - in press
+Commenges, Liquet and Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
+expected conditional {K}ullback-{L}eibler risks. Biometrics 68(2), 380-7.
 
 Lin, Turnbull, McCulloch and Slate (2002). Latent class models for
 joint analysis of longitudinal biomarker and event process data: application to longitudinal
@@ -50,9 +55,9 @@ Proust-Lima and Taylor (2009). Development and validation of a dynamic prognosti
 tool for prostate cancer recurrence using repeated measures of post-treatment PSA: a joint
 modelling approach. Biostatistics 10, 535-49.
 
-Proust-Lima, Sene, Taylor, Jacqmin-Gadda (2012). Joint latent class models for longitudinal and time-to-event data: a review. Statistical Methods in Medical Research Apr 19 [Epub ahead of print]
+Proust-Lima, Sene, Taylor, Jacqmin-Gadda (2014). Joint latent class models for longitudinal and time-to-event data: a review. Statistical Methods in Medical Research 23, 74-90.
 
-Proust-Lima, Amievan Jacqmin-Gadda (2012). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol. 2012 Oct 22 [Epub ahead of print]
+Proust-Lima, Amievan Jacqmin-Gadda (2013). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol 66(3), 470-87.
 
 Verbeke and Lesaffre (1996). A linear mixed-effects model with heterogeneity in the random-effects population. Journal of the American Statistical Association 91, 217-21
 

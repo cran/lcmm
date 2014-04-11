@@ -4,11 +4,10 @@
 Estimation of latent class linear mixed models
 }
 \description{
-This function fits a latent class linear mixed model (LCLMM) also known as growth mixture model or heterogeneous linear mixed model. 
-The LCLMM consists in assuming that the population is divided in a finite number of latent classes; 
-each latent class is characterised by a specific mean trajectory which is described by a class-specific linear mixed model. 
+This function fits linear mixed models and latent class linear mixed models (LCLMM) also known as growth mixture models or heterogeneous linear mixed models. 
+The LCLMM consists in assuming that the population is divided in a finite number of latent classes. Each latent class is characterised by a specific trajectory modelled by a class-specific linear mixed model. 
 Both the latent class membership and the trajectory can be explained according to covariates. 
-This model is limited to a Gaussian outcome.
+This function is limited to a mixture of Gaussian outcomes. For other types of outcomes, please see function \code{lcmm}. For multivariate longitudinal outcomes, please see \code{multlcmm}.
 } 
 
 \usage{
@@ -21,33 +20,33 @@ hlme(fixed, mixture, random, subject, classmb, ng = 1,
 
 \arguments{
   \item{fixed}{
-a two-sided linear formula object for the fixed-effects in the linear mixed model. The response outcome is on the left of \code{~} and the covariates are separated by \code{+} on the right of the \code{~}. 
+two-sided linear formula object for the fixed-effects in the linear mixed model. The response outcome is on the left of \code{~} and the covariates are separated by \code{+} on the right of \code{~}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included on the right of \code{~}.
 }
   \item{mixture}{
-a one-sided formula object for the class-specific fixed effects in the linear mixed model (to specify only for a number of latent classes greater than 1). 
+one-sided formula object for the class-specific fixed effects in the linear mixed model (to specify only for a number of latent classes greater than 1). 
 Among the list of covariates included in \code{fixed}, the covariates with class-specific regression parameters are entered in \code{mixture} separated by \code{+}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included.
 }
   \item{random}{
-an optional one-sided formula for the random-effects in the linear mixed model. Covariates with a random-effect are separated by \code{+}. 
+optional one-sided formula for the random-effects in the linear mixed model. Covariates with a random-effect are separated by \code{+}. 
 By default, an intercept is included. If no intercept, \code{-1} should be the first term included.
 }
-  \item{subject}{name of the covariate representing the grouping structure.
+  \item{subject}{name of the covariate representing the grouping structure specified with ''.
 }
   \item{classmb}{
-an optional one-sided formula describing the covariates in the class-membership multinomial logistic model. Covariates included are separated by \code{+}. 
+optional one-sided formula describing the covariates in the class-membership multinomial logistic model. Covariates included are separated by \code{+}. 
 No intercept should be included in this formula.
 }
   \item{ng}{
-number of latent classes considered. If \code{ng=1} no \code{mixture} nor \code{classmb} should be specified. If \code{ng>1}, \code{mixture} is required.
+optional number of latent classes considered. If \code{ng=1} (by default) no \code{mixture} nor \code{classmb} should be specified. If \code{ng>1}, \code{mixture} is required.
 }
   \item{idiag}{
-optional logical for the variance-covariance structure of the random-effects. If \code{FALSE}, a non structured matrix of variance-covariance is considered (by default). 
+optional logical for the structure of the variance-covariance matrix of the random-effects. If \code{FALSE}, a non structured matrix of variance-covariance is considered (by default). 
 If \code{TRUE} a diagonal matrix of variance-covariance is considered. 
 }
  \item{nwg}{
-optional logical of class-specific variance-covariance of the random-effects. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
+optional logical indicating if the variance-covariance of the random-effects is class-specific. If \code{FALSE} the variance-covariance matrix is common over latent classes (by default).
 If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class (the proportional parameter in the last latent class equals 1 to ensure identifiability).
 }
   \item{cor}{
@@ -58,7 +57,7 @@ If \code{TRUE} a class-specific proportional parameter multiplies the variance-c
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
 }
   \item{B}{
-an optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
+optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
 If no vector is specified, a preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
 Due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
@@ -68,9 +67,9 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 }
 \item{convG}{optional threshold for the convergence criterion based on the derivatives. By default, convG=0.0001.
 }
-\item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
+\item{prior}{optional name of a covariate containing a prior information about the latent class membership. The covariate should be an integer with values in 0,1,...,ng. Value 0 indicates no prior for the subject while a value in 1,...,ng indicates that the subject belongs to the corresponding latent class. 
 }
-\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=300.}
+\item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=500.}
   \item{subset}{
 a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
   \item{na.action}{
@@ -81,16 +80,29 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
 
 
 \details{
-The parameters in the vector of initial values \code{B} or in the vector of maximum likelihood estimates \code{best} are included in the following order: 
-(1) ng-1 parameters are required for intercepts in the latent class membership model, and if covariates are included in \code{classmb}, ng-1 paramaters should be entered for each one; 
-(2) for all covariates in \code{fixed}, one parameter is required if the covariate is not in \code{mixture}, ng paramaters are required if the covariate is also in \code{mixture}; 
-(3) the variance of each random-effect specified in \code{random} (including the intercept) 
-if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of all the random-effects if \code{idiag=FALSE}; 
-(4) only if \code{nwg=TRUE}, ng-1 parameters for class-specific proportional coefficients
- for the variance covariance matrix of the random-effects; 
-(5) the variance of the residual error. 
-We understand that it can be difficult to enter the correct number of parameters in \code{B} at the first place. So we recommend to run the program without specifying the initial vector \code{B} even if this model does not converge. As the final vector \code{best} has exactly the same structure as \code{B} (even when the program stops without convergence), it will help defining a satisfying vector of initial values \code{B} for next runs. 
 
+A. THE VECTOR OF PARAMETERS B
+
+The parameters in the vector of initial values \code{B} or equivalently in the vector of maximum likelihood estimates \code{best} are included in the following order: 
+
+(1) ng-1 parameters are required for intercepts in the latent class membership model, and when covariates are included in \code{classmb}, ng-1 paramaters should be entered for each covariate; 
+
+(2) for all covariates in \code{fixed}, one parameter is required if the covariate is not in \code{mixture}, ng paramaters are required if the covariate is also in \code{mixture}; 
+
+(3) the variance of each random-effect specified in \code{random} (including the intercept) 
+when \code{idiag=TRUE}, or the inferior triangular variance-covariance matrix of all the random-effects when \code{idiag=FALSE}; 
+
+(4) only when \code{nwg=TRUE}, ng-1 parameters are required for the ng-1 class-specific proportional coefficients
+ in the variance covariance matrix of the random-effects; 
+
+(5) when \code{cor} is specified, 1 parameter corresponding to the variance of the Brownian motion should be entered with \code{cor=BM} and 2 parameters corresponding to the correlation and the variance parameters of the autoregressive process should be entered 
+
+(6) the standard error of the residual error. 
+
+We understand that it can be difficult to enter the correct number of parameters in \code{B} at the first place. So we recommend to run the program without specifying the initial vector \code{B} even if this model does not converge. To save time, the number of iterations can be restricted to 0 with \code{maxiter=0}. As the final vector \code{best} has exactly the same structure as \code{B} (even when the program stops without convergence), it will help defining a satisfying vector of initial values \code{B} for next runs. 
+
+
+B. CAUTIONS
 
 Some caution should be made when using the program:
 
@@ -102,10 +114,10 @@ However, we recommend to systematically enter initial values in \code{B} and try
 
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why specification of initial values in \code{B} should be preferred.
+This is a reason why the specification of initial values in \code{B} should be systematically preferred.
 
 
-(4) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
+(4) Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter stability and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 100. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
 If the parameters are on the boundaries of the parameter space, the identifiability of the model should be assessed. 
@@ -147,7 +159,7 @@ distribution for the random-effects. Computer Methods Programs Biomedicine 78, 1
 
 }
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 }
 \seealso{
 \code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{summary}}, \code{\link{plot.predict}}

@@ -6,37 +6,40 @@
 \alias{postprob.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Posterior classification stemmed from a \code{hlme}, \code{lcmm} or \code{Jointlcmm} estimation
+Posterior classification stemmed from a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} estimation
 }
 \description{
-This function provides informations about the posterior classification stemmed from a \code{hlme}, \code{lcmm} or \code{Jointlcmm} object.
+This function provides informations about the posterior classification stemmed from a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object.
 }
 \usage{
-postprob(x,\dots)
-\method{postprob}{hlme}(x,\dots)
-\method{postprob}{lcmm}(x,\dots)
-\method{postprob}{Jointlcmm}(x,\dots)
+\method{postprob}{hlme}(x,threshold=c(0.7,0.8,0.9),\dots)
+\method{postprob}{lcmm}(x,threshold=c(0.7,0.8,0.9),\dots)
+\method{postprob}{Jointlcmm}(x,threshold=c(0.7,0.8,0.9),\dots)
+\method{postprob}{multlcmm}(x,threshold=c(0.7,0.8,0.9),\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 
 \arguments{
-  \item{x}{an object inheriting from classes \code{hlme}, \code{lcmm} or \code{Jointlcmm} representing respectively a fitted latent class
-          linear mixed-effects model, a more general latent class mixed model or a joint latent class model.}
+  \item{x}{an object inheriting from classes \code{hlme}, \code{lcmm}, \code{Jointlcmm} or \code{multlcmm} representing respectively a fitted latent class
+          linear mixed-effects model, a more general latent class mixed model, a joint latent class model or a multivariate general latent class mixed model.}
+  \item{threshold}{optional vector of thresholds for the posterior probabilities}        
  \item{\dots}{
 further arguments to be passed to or from other methods.
           They are ignored in this function.
 }
 }
 
+\value{
+A list containing the posterior classification, the posterior classification table and the percentage of subjects classified with a posterior probability above the given thresholds.
+}
+
 \details{
-This function provides the number of subjects classified a posteriori in each latent class, and the classification table that contains the mean of the posterior probability of belonging to each latent class over the subjects classified in each of the latent classes. This table aims at evaluating the quality of the posterior classification. 
+This function provides the number of subjects classified a posteriori in each latent class, the percentage of subjects classified with a posterior probability above a certain threshold, and the classification table that contains the mean of the posterior probability of belonging to each latent class over the subjects classified in each of the latent classes. This table aims at evaluating the quality of the posterior classification. 
 For \code{hlme}, \code{lcmm} objects, the posterior classification and the classification table are derived from the posterior class-membership probabilities given the vector of repeated measures that are contained in pprob output matrix.
 For a \code{Jointlcmm} object, the first posterior classification and the classification table are derived from the posterior class-membership probabilities given the vector of repeated measures and the time-to-event information (that are contained in columns probYT1, probYT2, etc in pprob output matrix). The second posterior classification is derived from the posterior class-membership probabilities given only the vector of repeated measures (that are contained in columns probY1, probY2, etc in pprob output matrix).
-
-
 }
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 }
 \note{
 This function can only be used with latent class mixed models and joint latent class mixed models that include at least 2 latent classes

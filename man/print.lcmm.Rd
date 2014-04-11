@@ -7,7 +7,7 @@
 \alias{print.Diffepoce}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Brief summary of a \code{hlme}, \code{lcmm},\code{Jointlcmm},\code{multlcmm}, \code{epoce} or \code{Diffepoce} objects
+Brief summary of a \code{hlme}, \code{lcmm}, \code{Jointlcmm},\code{multlcmm}, \code{epoce} or \code{Diffepoce} objects
 }
 \description{
 The function provides a brief summary of \code{hlme}, \code{lcmm},\code{multlcmm} or \code{Jointlcmm} estimations, and \code{epoce} or \code{Diffepoce} computations.

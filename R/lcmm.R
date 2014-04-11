@@ -12,13 +12,19 @@ cor.time <- mm$cor[2]
 cor.char <- paste(cor.type,cor.time,sep="-") 
 if (all.equal(cor.char,character(0))!=TRUE)
 {
- if (link=="threshold") stop("The argument cor is only avaiable with linear, beta or splines link")
+ if (link=="threshold") stop("The argument cor is only available with linear, beta or splines link")
 }
 else
 {
   cor.char <- NULL
 }  
-### fin cor en char 
+  
+if (!is.null(cor.char))
+{
+ if(!(strsplit(cor.char,"-")[[1]][2] %in% colnames(data))) stop("Unable to find time variable from argument cor in data")
+ else { cor.var.time <- strsplit(cor.char,"-")[[1]][2] }
+}  
+### fin cor
 
 
 
@@ -90,7 +96,7 @@ if(!missing(classmb)){
 if(!is.null(cor.char))
 {
 	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
-	m$formula <- as.formula(paste(cor.time,1,sep="~"))
+	m$formula <- as.formula(paste(cor.var.time,1,sep="~"))
 	m$na.action <- na.action
   m[[1]] <- as.name("model.frame")
   m <- eval(m,sys.parent())    
@@ -149,7 +155,7 @@ if(all.equal(length(grep("-",unlist(strsplit(link,split="")))),0)==T){
 		nbzitr0 <- switch(link,"linear"=2,"beta"=2,"splines"=5,"thresholds"=2)
 		idlink0 <- switch(link,"linear"=0,"beta"=1,"splines"=2,"thresholds"=3)
 		ntrtot0 <- switch(link,"linear"=2,"beta"=4, "splines"= (nbzitr0 + 2), "thresholds"= as.integer(maxY0-minY0)) 
-		if(all.equal(link,"splines")==T){
+		if(all.equal(link,"splines")==T | all.equal(link,"Splines")==T){
 			link <- "splines"
 			type <- "equi"	
 		}
@@ -237,7 +243,11 @@ if (all.equal(idlink0,2)==T){
 		for(i in 2:(nbzitr0-1)){
 		zitr[i] <- zitr[i-1]+pas
 		}
-	} 
+	}
+  
+ #verifier s'il y a des obs entre les noeuds
+ hcounts <- hist(Y0,breaks=zitr,plot=FALSE,include.lowest=TRUE,right=TRUE)$counts
+ if(any(hcounts==0)) stop("Link function can not be estimated since some intervals defined by the nodes do not contain any observation.")  
 }      
 
 
@@ -270,7 +280,7 @@ if (idlink0!=3) {
 
 
 
-
+ 
 
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
@@ -281,7 +291,8 @@ result <- switch(link
 
 ,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action)
 ,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,subset=subset,na.action=na.action))
-
+  
+return(result)
 }
 
 

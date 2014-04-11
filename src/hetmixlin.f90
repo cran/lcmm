@@ -305,9 +305,6 @@
          vopt=0.d0
          vopt(1:npm0*(npm0+1)/2)=v(1:npm0*(npm0+1)/2)
                  
-                 ! ecart-type positif
-             b(npm) = abs(b(npm))
-             if (ncor.ne.0) b(npm-1)=abs(b(npm-1))
 
 !probas posteriori
 

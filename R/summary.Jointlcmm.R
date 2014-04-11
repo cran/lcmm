@@ -83,7 +83,11 @@ nvarxevt <-x$specif[[1]][3]
 NEF   <- x$specif[[1]][4]
 NVC   <- x$specif[[1]][5]
 NW    <- x$specif[[1]][6]
-ncor <- x$specif[[1]][10]
+ncor <- 0
+if(length(x$specif[[1]])>9)
+{
+ ncor <- x$specif[[1]][10]
+}
 NPM   <- length(x$best)
 
 
@@ -140,6 +144,7 @@ cat("\n")
 prmatrix(tmp,na.print="")
 cat("\n")
 
+tTable <- tmp
 
 if(NVC>0){
 cat("\n")
@@ -178,7 +183,7 @@ cat("\n")
 std <- NULL
 nom <- NULL
 if((NW>=1)&(x$specif[[3]]>1)) {
-nom <- paste("Proportional coefficient class",c(1:(x$ng-1)),sep="")
+nom <- paste("Proportional coefficient class",c(1:(x$specif[[3]]-1)),sep="")
 std <-cbind(abs(coef[(NEF+NVC+1):(NEF+NVC+NW)]),se[(NEF+NVC+1):(NEF+NVC+NW)]) 
 }
 if(ncor==2) {
@@ -195,7 +200,7 @@ colnames(std) <-c("coef","se")
 print(std, na.print="")
 cat("\n")
 
-
+return(invisible(tTable))
 
 }
 }

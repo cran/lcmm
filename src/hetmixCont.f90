@@ -1601,7 +1601,7 @@
       double precision,dimension(npm0*(npm0+3)/2)::V
       double precision,external::funcpac
 
-
+         !print*,"debut fortran"
 ! sorties initialisees
 
        ppi0=0.d0
@@ -1673,7 +1673,7 @@
       ,idea(nv0),idg(nv0),idcor(nv0),nmes(ns0),prior(ns0))
 
       eps=1.d-20
-
+             !print*,"apres alloc"
 ! enrigstrement pour les modules
       ns=ns0
       ng=ng0
@@ -1767,7 +1767,7 @@
       nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1
       npm=nef+nvc+nwg+ntrtot+ncor
 
-
+              !print*,"npm=",npm
 
 !       write(*,*)'idlink',idlink
 !       write(*,*)'idea',idea
@@ -1789,8 +1789,9 @@
          DO j=1,nvc
             mvc(j)=B(nef+j)
          END DO
-
+            !print*,"avant dmfsd"
          CALL dmfsd(mvc,nea,EPS,IER)
+         !print*,"apres dmfsd"
          DO j=1,nvc
             B(nef+j)=mvc(j)
          END DO
@@ -1820,7 +1821,7 @@
          cb=0.d0
          dd=0.d0
          
-!         write(*,*) "avant appel marq98 :"
+         !write(*,*) "avant appel marq98 :"
 !         write(*,*) "nef=",nef
 !         write(*,*) "nprob+ncssg+ncg*ng+nvarxevt+nrisq-1=",nprob,"+",ncssg,"+",ncg,"*",ng,"+",nvarxevt,"+",nrisq,"-",1
 !         write(*,*) "nvc=",nvc
@@ -1844,6 +1845,11 @@
          gconv(3)=dd
          vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
 
+
+         if (istop.eq.1.or.istop.eq.2) then  
+           !if (verbose==1) write(*,*)'avant transfo'
+           call transfo_estimee(b,npm,nsim0,marker,transfY)
+         end if 
 
 ! probas posteriori
 
@@ -1870,10 +1876,6 @@
                end do
             end do
 
-
-!            write(*,*)'avant transfo'
-
-            call transfo_estimee(b,npm,nsim0,marker,transfY)
 
 !         else
 !            ig=0
@@ -1957,7 +1959,7 @@
       if (id.ne.0) b1(id)=b1(id)+thi
       if (jd.ne.0) b1(jd)=b1(jd)+thj
 
-
+!            print*,"dans funcpa"
 !----------- rappel des parametres utilises ---------
 
   !if(id.eq.0.and.jd.eq.0) then
@@ -2037,7 +2039,7 @@
                end if
             end do
          end do    
-
+           !print*,"Corr ok"
                  
 ! creation de Y1
 
@@ -2142,7 +2144,7 @@
             P=MATMUL(Z,Ut)
             VC=0.d0
             VC=MATMUL(P,transpose(P))+Corr
-
+               !print*,"variance ok"
 ! Vi en vecteur
 
             jj=0
@@ -2153,8 +2155,9 @@
                   Vi(jj)=VC(j,k)
                end do
             end do
-
+                  !print*,"avant dsinv"
             CALL dsinv(Vi,nmes(i),eps,ier,det)
+            !print*,"apres dsinv"
             if (ier.eq.-1) then
                funcpac=-1.d9
                goto 654
@@ -2176,7 +2179,7 @@
 !     debut du calcul de la vraisemblance
        vrais=vrais-nmes(i)*dlog(dble(2*3.14159265))
 ! contribution individuelle a la vraisemblance
-
+          !print*,"debut du calcul de la vraisemblance"
 ! cas 1 : ng=1
 
        if (ng.eq.1) then
@@ -2390,7 +2393,7 @@
 ! FIN BOUCLE SUJET
 
       funcpac=vrais/2.D0+jacobien
-
+          !print*,"fin funcpa"
  654  continue
 
       return

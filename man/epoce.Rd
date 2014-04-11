@@ -1,10 +1,10 @@
 \name{epoce}
 \alias{epoce}
 \title{
-Computation of estimators of the Expected Prognostic Observed Cross-Entropy for evaluating predictive accuracy of joint latent class models estimated using \code{Jointlcmm}
+Computation of estimators of the Expected Prognostic Observed Cross-Entropy (EPOCE) for evaluating predictive accuracy of joint latent class models estimated using \code{Jointlcmm}
 }
 \description{
-This functions computes estimators of the Expected Prognostic Observed Cross-Entropy for evaluating the predictive accuracy of joint latent class models estimated using \code{Jointlcmm}. On the same data as used for estimation of the \code{Jointlcmm} object, this function computes both the Mean Prognostic Observed Log-Likelihood (MPOL) and the Cross-Validated Observed Log-Likelihood (CVPOL). The latter corrects for over-optimism of the MPOL by approximated cross-validation. On external data, this function only computes the Mean Prognostic Observed Log-Likelihood (MPOL).
+This function computes estimators of the Expected Prognostic Observed Cross-Entropy (EPOCE) for evaluating the predictive accuracy of joint latent class models estimated using \code{Jointlcmm}. On the same data as used for estimation of the \code{Jointlcmm} object, this function computes both the Mean Prognostic Observed Log-Likelihood (MPOL) and the Cross-Validated Observed Log-Likelihood (CVPOL), two estimators of EPOCE. The latter corrects the MPOL estimate for over-optimism by approximated cross-validation. On external data, this function only computes the Mean Prognostic Observed Log-Likelihood (MPOL).
 }
 \usage{
 epoce(model,pred.times,var.time,newdata = NULL,subset=NULL,na.action=1)
@@ -13,7 +13,7 @@ epoce(model,pred.times,var.time,newdata = NULL,subset=NULL,na.action=1)
   \item{model}{an object inheriting from class \code{Jointlcmm}
   }
   \item{pred.times}{
-Vector of times of prediction, from which predictive accuracy is evaluated (only subjects still at risk at the time of prediction are included in the computation, and only information before the time of prediction is considered 
+Vector of times of prediction, from which predictive accuracy is evaluated (only subjects still at risk at the time of prediction are included in the computation, and only information before the time of prediction is considered. 
 }
   \item{var.time}{
 Name of the variable indicating time in the dataset
@@ -27,24 +27,26 @@ a specification of the rows to be used: defaults to all rows. This can be any va
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
 \details{
-MPOL computed at time s equals minus the mean individual contribution to the conditional log-likelihood of the time to event given the longitudinal data up to time of prediction s and that the subject is still at risk of event in s. 
+EPOCE assesses the prognostic information of a joint latent class model. It relies on information theory.
 
-CVPOL computed in time s equals MPOL in s plus a penalty term that corrects for over-optimism when computing predictive accuracy measures on the same dataset as used for estimation. This penalty term is computed from the inverse of the Hessian of the joint log-likelihood and the product of the gradients of the contributions to respectively the joint log-likelihood and the conditional log-likelihood.
+MPOL computed at time s equals minus the mean individual contribution to the conditional log-likelihood of the time to event given the longitudinal data up to the time of prediction s and given the subject is still at risk of event in s. 
 
-The theory of EPOCE and its estimators MPOL and CVPOL is given in Commenges et al. (2012), and further detailed and illustrated for joint models in Proust-Lima et al. (2012).
+CVPOL computed at time s equals MPOL at time s plus a penalty term that corrects for over-optimism when computing predictive accuracy measures on the same dataset as used for estimation. This penalty term is computed from the inverse of the Hessian of the joint log-likelihood and the product of the gradients of the contributions to respectively the joint log-likelihood and the conditional log-likelihood.
+
+The theory of EPOCE and its estimators MPOL and CVPOL is given in Commenges et al. (2012), and further detailed and illustrated for joint models in Proust-Lima et al. (2013).
 }
 \value{
 \item{call.Jointlcmm}{the \code{Jointlcmm} call}
 \item{call.epoce}{the matched call}
-\item{EPOCE}{Dataframe containing, for each prediction time s, the number of subjects still at risk at s (and with at least one measure before s), the number of events after s, the MPOL and the CVPOL when computation is done on the dataset used for \code{Jointlcmm} estimation}
+\item{EPOCE}{Dataframe containing, for each prediction time s, the number of subjects still at risk at s (and with at least one measure before s), the number of events after time s, the MPOL, and the CVPOL when computation is done on the dataset used for \code{Jointlcmm} estimation}
 \item{IndivContrib}{Individual contributions to the prognostic observed log-likelihood at each time of prediction. Used for computing tracking intervals of EPOCE differences between models.}
-\item{new.data}{a boolean for internal use only, which is FALSE if computation is done on the same data as for code{Jointlcmm} estimation, and TRUE otherwise.}
+\item{new.data}{a boolean for internal use only, which is FALSE if computation is done on the same data as for \code{Jointlcmm} estimation, and TRUE otherwise.}
 }
 \references{
 Commenges, Liquet and Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
-expected conditional {K}ullback-{L}eibler risks. Biometrics - in press
+expected conditional {K}ullback-{L}eibler risks. Biometrics 68(2), 380-7.
 
-Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research - in press
+Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2014). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research 23, 74-90.
 }
 \author{
 Cecile Proust-Lima and Amadou Diakite
@@ -62,7 +64,7 @@ Cecile Proust-Lima and Amadou Diakite
 data(data_Jointlcmm)
 m <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,mixture=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="Weibull"
-,hazardtype="PH",ng=2,data=data_Jointlcmm,
+,hazardtype="PH",ng=2,data=data_Jointlcmm,logscale=TRUE,
 B=c(0.7608, -9.4974 , 1.0242,  1.4331 , 0.1063 , 0.6714, 10.4679, 11.3178,
  -2.5671, -0.5386,  1.4616, -0.0605,  0.9489,  0.1020 , 0.2079,  1.5045))
 summary(m)

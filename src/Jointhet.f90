@@ -104,7 +104,7 @@
       integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0,idcor0
       integer,dimension(nv0),intent(in) ::idxevt0
       integer, dimension(ns0), intent(in) :: nmes0,prior0
-      double precision,dimension(ns0):: Tentr0,Tevt0,Tsurvint0
+      double precision,dimension(ns0):: Tentr0,Tevt0,Tsurvint0                  
       double precision,dimension(nobs0),intent(in):: Y0
       double precision,dimension(nobs0*nv0), intent(in) :: X0
       double precision, intent(in) :: convB, convL, convG
@@ -265,7 +265,7 @@
 ! enrigstrement pour les modules
       ns=ns0
       ng=ng0
-          ncor=ncor0
+      ncor=ncor0
       nv=nv0
       nobs=nobs0
       if (nwg0.eq.0) then
@@ -291,7 +291,7 @@
       idprob=0
       idea=0
       idg=0
-          idcor=0
+      idcor=0
       idxevt=0
       nmestot=0
       ktemp=0
@@ -300,7 +300,7 @@
          idprob(k)=idprob0(k)
          idea(k)=idea0(k)
          idg(k)=idg0(k)
-                 idcor(k)=idcor0(k)
+         idcor(k)=idcor0(k)
          idxevt(k)=idxevt0(k)
 
          jtemp=0
@@ -433,6 +433,7 @@
       ca=0.d0
       cb=0.d0
       dd=0.d0
+      v=0.d0
 !      write(*,*)'B avant marq98',npm,(b(i),i=1,npm)
       call marq98(b,npm,ni,v,vrais,ier,istop,ca,cb,dd,funcpaj)
 
@@ -462,8 +463,8 @@
           
           
           ! ecart-type positif
-          b(npm) = abs(b(npm))
-          if (ncor.ne.0) b(npm-1)=abs(b(npm-1))
+          !b(npm) = abs(b(npm))
+          !if (ncor.ne.0) b(npm-1)=abs(b(npm-1))
 
 
 
@@ -517,13 +518,13 @@
 
          do g=1,ng
             brisq_est=0.d0
-            if (logspecif.eq.1.or.typrisq.eq.2) then
+            if (logspecif.eq.1) then
                   if (risqcom.eq.0) then
-               do k=1,nprisq
+                  do k=1,nprisq
                     brisq_est(k)=exp(b(nprob+nprisq*(g-1)+k))
                   end do
                   else if (risqcom.eq.1) then
-               do k=1,nprisq
+                  do k=1,nprisq
                     brisq_est(k)=exp(b(nprob+k))
                   end do
                   else if (risqcom.eq.2) then
@@ -624,7 +625,7 @@
         end do
         468 continue
         funcpaj =rl
-        !       write(*,*)'sortie funcpa',funcpaj
+!               write(*,*)'sortie funcpa',funcpaj     !**
 
         return
 
@@ -724,7 +725,7 @@
       do g=1,ng
 
          brisq=0.d0
-         if (logspecif.eq.1.or.typrisq.eq.2) then
+         if (logspecif.eq.1) then
             if (risqcom.eq.0) then
                do k=1,nprisq
                   brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
@@ -756,9 +757,7 @@
             end if
          end if
 
-
          call fct_risq_i(i,brisq,g,risq,surv,surv0,survint)
-
 
          if (risqcom.eq.2.and.ng.gt.1.and.g.lt.ng) then
                risq(g)=risq(g)*exp(b1(nprob+nprisq+g))
@@ -1195,12 +1194,21 @@
                           +(-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))*  &
                           (survint(g)+exp(bevtint)*(surv(g)      &
                           -survint(g))))
+ !                         print*,"expo_g=",pi(g)*risq(g)*                        &
+ !                         exp(DOT_PRODUCT(Xevt,bevt)                    &
+ !                         +(-det-Y4)/2.d0-exp(DOT_PRODUCT(Xevt,bevt))*  &
+ !                         (survint(g)+exp(bevtint)*(surv(g)      &
+ !                         -survint(g)))) !**
                   end if
                   if (Devt(i).eq.0) then
                      expo=expo+pi(g)*exp((-det-Y4)/2.d0             &
                           -exp(DOT_PRODUCT(Xevt,bevt))*                 &
                           (survint(g)+exp(bevtint)*(surv(g)      &
                           -survint(g))))
+!                          print*,"expo_g=",pi(g),"*exp(",(-det-Y4)/2.d0,             &
+!                          "-",exp(DOT_PRODUCT(Xevt,bevt)),"*",                &
+!                          (survint(g)+exp(bevtint)*(surv(g)      &
+!                          -survint(g))),")"        !**
                   end if
 
 
@@ -1212,18 +1220,19 @@
 
 
             if (expo.le.0.or.is_nan(expo).or.expo.gt.1.d30) then
-!               write(*,*)'i',i,Devt(i)
-!               write(*,*)'Y',Y4,det
-!               write(*,*)'Y',nmes(i),(Y1(j),j=1,nmes(i))
-!               do l=1,nea
-!                  write(*,*)'Z',nmes(i),(Z(j,l),j=1,nmes(i))
-!               end do
-!               write(*,*)'expo le 0',expo,(pi(g),g=1,ng)
-!               write(*,*)'risq(i,g)',(risq(i,g),g=1,ng)
-!               write(*,*)'surv(i,g)',(surv(i,g),g=1,ng)
-!               write(*,*)'survint(i,g)',(survint(i,g),g=1,ng)
-!               write(*,*)'expo lt 0 funcpa',expo
-               funcpij=-1.d9
+!               write(*,*)'i',i,Devt(i)                              !**
+!               write(*,*)'Y',Y4,det                                 !**
+!               write(*,*)'Y',nmes(i),(Y1(j),j=1,nmes(i))            !**
+!               do l=1,nea                                           !**
+!                  write(*,*)'Z',nmes(i),(Z(j,l),j=1,nmes(i))        !**
+!               end do                                               !**
+!               print*,"Xb evt=",DOT_PRODUCT(Xevt,bevt)           !**               
+!               write(*,*)'expo le 0',expo,(pi(g),g=1,ng)            !**
+!               write(*,*)'risq(i,g)',(risq(g),g=1,ng)             !**
+!               write(*,*)'surv(i,g)',(surv(g),g=1,ng)             !**
+!               write(*,*)'survint(i,g)',(survint(g),g=1,ng)       !**
+!               write(*,*)'expo lt 0 funcpa',expo                    !**
+               funcpij=-1.d9                                    
                goto 654
             end if
 
@@ -1363,7 +1372,7 @@
       do g=1,ng
 
          brisq=0.d0
-         if (logspecif.eq.1.or.typrisq.eq.2) then
+         if (logspecif.eq.1) then
                if (risqcom.eq.0) then
                  do k=1,nprisq
                    brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
@@ -1655,13 +1664,13 @@
           Y3=MATMUL(VC,Y2)
           Y4=DOT_PRODUCT(Y2,Y3)
 
-              risq2(i,g)=risq(i,g)
+          risq2(i,g)=risq(i,g)
           if (ind_survint(i).eq.1) then
              risq2(i,g)=risq(i,g)*exp(bevtint)
           end if
 
-          fi(g)=fi(g)- nmes(i)*log(dble(2*3.14159265))
-          fi(g)=fi(g) -det
+          fi(g)=fi(g) - nmes(i)*log(dble(2*3.14159265))
+          fi(g)=fi(g) - det
           fi(g)=fi(g) - Y4
           fi(g)=fi(g)/(2.d0)
           fi1(g)=dexp(fi(g))
@@ -2517,6 +2526,7 @@
         zi(nz+2)=zi(nz)
         zi(nz+3)=zi(nz)
         n=nz+2
+ 
 !------------------- Tsurv ---------------------------
       Do i=1,ns
 
@@ -2830,7 +2840,7 @@
       do g=1,ng
 
          brisq=0.d0
-         if (logspecif.eq.1.or.typrisq.eq.2) then
+         if (logspecif.eq.1) then
                if (risqcom.eq.0) then
                  do k=1,nprisq
                    brisq(k)=exp(b1(nprob+nprisq*(g-1)+k))
@@ -3359,7 +3369,6 @@
       double precision::som
       double precision,dimension(nsim)::time
 
-
       l=0
       do i=1,nsim
          if (typrisq.eq.2) then
@@ -3380,7 +3389,7 @@
                end if
             end do
          end if
-
+               
          if (typrisq.eq.3) then
             !------------ survie et risq pour Tsurv ----------------
             ll=0

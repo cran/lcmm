@@ -63,8 +63,11 @@ cat(paste("     maximum log-likelihood:", round(x$loglik,2))," \n")
 cat(paste("     AIC:", round(-2*x$loglik+2*length(x$best),2))," \n")
 cat(paste("     BIC:", round(-2*x$loglik+length(x$best)*log(x$ns),2))," \n")
 cat(" \n")
-
-ncor <- x$N[6]
+ncor <- 0
+if(length(x$N)>5)
+{
+ ncor <- x$N[6]
+}
 if (x$Ydiscrete==1&ncor==0){
 cat(paste("     Discrete posterior log-likelihood:", round(x$discrete_loglik,2))," \n")
 cat(paste("     Discrete AIC:", round(-2*x$discrete_loglik+2*length(x$best),2))," \n")
@@ -127,6 +130,7 @@ interc <- paste(interc,"(not estimated)")
 dimnames(tmp) <- list(c(interc,names(coef)[(NPROB+1):(NPROB+NEF)]), c("coef", "Se", "Wald", "p-value"))
 cat("\n")
 
+tTable <- tmp
 
 prmatrix(tmp,na.print="")
 cat("\n")
@@ -195,5 +199,7 @@ dimnames(tmp) <- list(names(coef)[(NPM-ntrtot+1-ncor):(NPM-ncor)], c("coef", "Se
 cat("\n")
 prmatrix(tmp,na.print="")
 cat("\n")
+
+return(invisible(tTable))
 }
 }

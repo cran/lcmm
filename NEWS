@@ -1,12 +1,38 @@
 News about R package lcmm :
 ---------------------------
 
+Changes in Version 1.6.4 (2014-04-11):
+
+* The new functions 'dynpred' and 'plot.dynpred' respectively compute and plot individual dynamic predictions obtained from a joint latent class model estimated by Jointlcmm.
+
+* The new function 'VarCovRE' computes the standard errors of the parameters of variance-covariance of the random effects for a hlme, lcmm, Jointlcmm or multlcmm object
+
+* The new function 'WaldMult' computes multivariate Wald tests and Wald tests for combinations of parameters from hlme, lcmm, Jointlcmm or multlcmm object
+
+* The new function 'VarExpl' computes the percentages of variance explained by the linear regression for a hlme, lcmm, Jointlclmm or multlcmm object
+
+* The new functions 'estimates' and 'VarCov' get respectively all parameters estimated and their variance-covariance matrix for a hlme, lcmm, Jointlcmm or multlcmm object
+
+* Function 'summary' now returns the table containing the results about the fixed effects in the longitudinal model 
+
+* All plots consider now the ... options
+
+* Functions plot.linkfunction and plot.predict have now an add argument
+
+* Function multlcmm now allows "splines" or "Splines" specification for the link functions
+
+* Functions 'lcmm' and 'multlcmm' now compute the transformations even if the maximum number of iterations is reached without convergence
+
+* bug identified and solved in multlcmm when the response variables are not integers
+
+* bug identified and solved in multlcmm when using contrast
+
+* bug identified and solved in plot.linkfunction for the y axes positions
+
+* bug identified and solved in hlme, lcmm, Jointlcmm and multlcmm when including interactions in 'mixture'.
 
 
 
-Changes in Version 1.6.3 (2013-03-14):
-
-* bug identified and solved in multlcmm when only one covariate was included in the fixed part.
 
 Changes in Version 1.6.2 (2013-03-06):
 

@@ -7,7 +7,7 @@ Estimation of mixed-effect models and latent class mixed-effect models for diffe
 \description{
 This function fits mixed models and latent class mixed models for different types of outcomes. It handles continuous longitudinal outcomes (Gaussian or non-Gaussian) as well as bounded quantitative, discrete and ordinal longitudinal outcomes. 
 The different types of outcomes are taken into account using parameterized nonlinear link functions between the observed outcome and the underlying latent process of interest it measures. 
-At the latent process level, the model estimates a standard linear mixed model or a latent class mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}) but it should be noted that the program also works when no random-effect is included. 
+At the latent process level, the model estimates a standard linear mixed model or a latent class linear mixed model when heterogeneity in the population is investigated (in the same way as in function \code{hlme}). It should be noted that the program also works when no random-effect is included. 
 Parameters of the nonlinear link function and of the latent process mixed model are estimated simultaneously using a maximum likelihood method. 
 }
 \usage{
@@ -50,7 +50,17 @@ optional logical of class-specific variance-covariance of the random-effects. If
 If \code{TRUE} a class-specific proportional parameter multiplies the variance-covariance matrix in each class (the proportional parameter in the last latent class equals 1 to ensure identifiability).
 }
   \item{link}{
-optional family of link functions to estimate. By default, "linear" option specifies a linear link function leading to a standard linear mixed model (homogeneous or heterogeneous as estimated in \code{hlme}).  Other possibilities include "beta" for estimating a link function from the family of Beta cumulative distribution functions, "thresholds" for using a threshold model to describe the correspondence between each level of an ordinal outcome and the underlying latent process, and "Splines" for approximating the link function by I-splines. For this latter case, the number of nodes and the nodes location should be also specified. The number of nodes is first entered followed by \code{-}, then the location is specified with "equi", "quant" or "manual" for respectively equidistant nodes, nodes at quantiles of the marker distribution or interior nodes entered manually in argument \code{intnodes}. It is followed by \code{-} and finally "splines" is indicated. For example, "7-equi-splines" means I-splines with 7 equidistant nodes, "6-quant-splines" means I-splines with 6 nodes located at the quantiles of the marker distribution and "9-manual-splines" means I-splines with 9 nodes, the vector of 7 interior nodes being entered in the argument \code{intnodes}.  
+optional family of link functions to estimate. By default, "linear" option specifies a linear link function leading to a standard linear mixed model (homogeneous or heterogeneous as estimated in \code{hlme}). 
+Other possibilities include "beta" for estimating a link function from the family of Beta cumulative distribution functions, 
+"thresholds" for using a threshold model to describe the correspondence between each level of an ordinal outcome and the underlying latent process, 
+and "Splines" for approximating the link function by I-splines. For this latter case, the number of nodes and the nodes
+ location should be also specified. The number of nodes is first entered followed by \code{-}, then the location 
+ is specified with "equi", "quant" or "manual" for respectively equidistant nodes, nodes at quantiles of the marker 
+ distribution or interior nodes entered manually in argument \code{intnodes}. It is followed by \code{-} and 
+ finally "splines" is indicated. For example, "7-equi-splines" means I-splines with 7 equidistant nodes, 
+ "6-quant-splines" means I-splines with 6 nodes located at the quantiles of the marker distribution and 
+ "9-manual-splines" means I-splines with 9 nodes, the vector of 7 interior nodes being entered in the 
+ argument \code{intnodes}.  
 }
   \item{intnodes}{
 optional vector of interior nodes. This argument is only required for a I-splines link function with nodes entered manually. 
@@ -96,7 +106,7 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
 
 A. THE PARAMETERIZED LINK FUNCTIONS
 
-\code{lcmm} function estimates latent class mixed models for different types of outcomes by assuming a parameterized link function for linking the outcome Y(t) with the underlying latent process L(t) it measures. To fix the latent process dimension, we chose to constrain the (first) intercept of the latent class mixed model at the latent process level at 0 and the standard error of the gaussian error of measurement at 1. These two parameters are replaced by additional parameters in the parameterized link function. 
+\code{lcmm} function estimates mixed models and latent class mixed models for different types of outcomes by assuming a parameterized link function for linking the outcome Y(t) with the underlying latent process L(t) it measures. To fix the latent process dimension, we chose to constrain the (first) intercept of the latent class mixed model at the latent process level at 0 and the standard error of the gaussian error of measurement at 1. These two parameters are replaced by additional parameters in the parameterized link function :
 
 1. With the "linear" link function, 2 parameters are required that correspond directly to the intercept and the standard error: (Y - b1)/b2 = L(t).
 
@@ -105,7 +115,8 @@ A. THE PARAMETERIZED LINK FUNCTIONS
 3. With the "splines" link function, n+2 parameters are required for the following transformation b_1 + b_2*I_1(Y(t)) + ... + b_\{n+2\} I_\{n+1\}(Y(t)), where I_1,...,I_\{n+1\} is the basis of quadratic I-splines.
 To constraint the parameters to be positive, except for b_1, the program estimates b_k^* (for k=2,...,n+2) so that b_k=(b_k^*)^2.
 
-4. With the "thresholds" link function for an ordinal outcome in levels 0,...,C. A maximumn of C parameters are required for the following transformation: Y(t)=c <=> b_c < L(t) <= b_\{c+1\} with b_0 = - infinity and b_\{C+1\}=+infinity. The number of parameters is reduced if some levels do not have any information. For example, if a level c is not observed in the dataset, the corresponding threshold b_\{c+1\} is constrained to be the same as the previous one b_\{c+\}. The number of parameters in the link function is reduced by 1.  
+4. With the "thresholds" link function for an ordinal outcome in levels 0,...,C. A maximumn of C parameters are required for the following transformation: Y(t)=c <=> b_c < L(t) <= b_\{c+1\} with b_0 = - infinity and b_\{C+1\}=+infinity. The number of parameters is reduced if some levels do not have any information. For example, if a level c is not observed in the dataset, the corresponding threshold b_\{c+1\} is constrained to be the same as the previous one b_\{c\}. The number of parameters in the link function is reduced by 1.  
+
 To constraint the parameters to be increasing, except for the first parameter b_1, the program estimates b_k^* (for k=2,...C) so that b_\{k\}=b_\{k-1\}+(b_k^*)^2.
 
 Details of these parameterized link functions can be found in the referred papers. 
@@ -194,7 +205,7 @@ The list returned is:
 
 
 \author{
-Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
+Cecile Proust-Lima, Amadou Diakite, Benoit Liquet and Viviane Philipps
 }
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
@@ -203,20 +214,20 @@ Cecile Proust-Lima, Amadou Diakite and Benoit Liquet
 
 Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over infinite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
 
-Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78:165-73
+Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78: 165-73.
 
 Proust, Jacqmin-Gadda, Taylor, Ganiayre, and Commenges (2006). A
 nonlinear model with latent process for cognitive evolution using multivariate longitudinal
-data. Biometrics 62, 1014-24.
+data. Biometrics 62: 1014-24.
 
 Proust-Lima, Dartigues and Jacqmin-Gadda (2011). Misuse of the linear mixed
-model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9), 1077-88
+model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9): 1077-88.
 
-Proust-Lima, Amieva and Jacqmin-Gadda  (2012). Analysis of multivariate mixed longitudinal
-data : a flexible latent process approach, British Journal of Mathematical and Statistical Psychology
+Proust-Lima, Amieva and Jacqmin-Gadda  (2013). Analysis of multivariate mixed longitudinal
+data : a flexible latent process approach, British Journal of Mathematical and Statistical Psychology 66(3): 470-87.
 
 Commenges, Proust-Lima, Samieri, Liquet (2012). A universal approximate cross-validation criterion and its
-asymptotic distribution, submitted.
+asymptotic distribution, Arxiv.
 }
 
 
@@ -275,27 +286,14 @@ plot.linkfunction(m15,bty="l")
 #### (applicable for models that only differ in the "link function" used. 
 ####  Otherwise, the latent process scale is different and a rescaling
 ####  is necessary)
-transfo <- data.frame(marker=m10$estimlink[,1],linear=m10$estimlink[,2],
-beta=m11$estimlink[,2],spl_3e=m12$estimlink[,2],spl_5q=m13$estimlink[,2],
-spl_5m=m14$estimlink[,2])
-dev.new()
-plot(transfo[,1]~transfo[,2],xlim=c(-10,5),col=1,type='l',
-xlab="latent process",ylab="marker",bty="l")
-par(new=TRUE)
-plot(transfo[,1]~transfo[,3],xlim=c(-10,5),col=2,type='l',
-xlab="",ylab="",bty="l")
-par(new=TRUE)
-plot(transfo[,1]~transfo[,4],xlim=c(-10,5),col=3,type='l',
-xlab="",ylab="",bty="l")
-par(new=TRUE)
-plot(transfo[,1]~transfo[,5],xlim=c(-10,5),col=4,type='l',
-xlab="",ylab="",bty="l")
-par(new=TRUE)
-plot(m15$estimlink[,1]~m15$estimlink[,2],xlim=c(-10,5),col=5,type='l'
-,xlab="",ylab="",bty="l")
-legend(x="bottomright",legend=c(colnames(transfo[,2:5]),"thresholds"),
-col=1:5,lty=1,inset=.02,bty="n")
-
+plot.linkfunction(m10,col=1,xlab="latent process",ylab="marker",bty="l",xlim=c(-10,5),legend=NULL)
+plot.linkfunction(m11,add=TRUE,col=2,legend=NULL)
+plot.linkfunction(m12,add=TRUE,col=3,legend=NULL)
+plot.linkfunction(m13,add=TRUE,col=4,legend=NULL)
+plot.linkfunction(m14,add=TRUE,col=5,legend=NULL)
+plot.linkfunction(m15,add=TRUE,col=6,legend=NULL)
+legend(x="bottomright",legend=c("linear","beta","spl_3e","spl_5q","spl_5m","thresholds"),
+col=1:6,lty=1,inset=.02,box.lty=0)
 
 #### Estimation of 2-latent class mixed models with different assumed link 
 #### functions with individual and class specific linear trend

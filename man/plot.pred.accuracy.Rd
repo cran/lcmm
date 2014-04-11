@@ -6,20 +6,14 @@
 Plots 
 }
 \description{
-This function displays plots related to predictive accuracy functions: \code{epoce} and \code{Diffepoce}
+This function displays plots related to predictive accuracy functions: \code{epoce} and \code{Diffepoce}.
 }
 \usage{
-\method{plot}{epoce}(x,ylim=NULL,xlim=NULL,\dots)
-\method{plot}{Diffepoce}(x,ylim=NULL,xlim=NULL,\dots)
+\method{plot}{epoce}(x,\dots)
+\method{plot}{Diffepoce}(x,\dots)
 }
 \arguments{
   \item{x}{an object inheriting from classes \code{epoce} or \code{Diffepoce}
-}
-  \item{ylim}{
-optional numeric vector of length 2, giving the y coordinate range.
-}
-  \item{xlim}{
-optional numeric vector of length 2, giving the x coordinate range.
 }
   \item{\dots}{
 other parameters to be passed through to plotting functions
@@ -29,11 +23,11 @@ other parameters to be passed through to plotting functions
 Returns plots related to \code{epoce} and \code{Diffepoce}
 }
 \details{
-For \code{epoce} objects, \code{plot} displays the EPOCE estimate (either MPOL or CVPOL) according to the time of prediction. 
-For \code{Diffepoce} objects, \code{plot} displays the difference in EPOCE estimates (either MPOL or CVPOL) and its 95% tracking interval between two joint latent class models
+For \code{epoce} objects, the function displays the EPOCE estimate (either MPOL or CVPOL) according to the time of prediction. 
+For \code{Diffepoce} objects, \code{plot} displays the difference in EPOCE estimates (either MPOL or CVPOL) and its 95\% tracking interval between two joint latent class models
 }
 \author{
-Cecile Proust-Lima
+Cecile Proust-Lima and Viviane Philipps
 }
 
 

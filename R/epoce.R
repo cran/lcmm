@@ -275,11 +275,13 @@ if(id.X_survival == 1) varX0.names <- unique(c(varX0.names,colnames(X_survival))
 ### construction de X0
 ## var expli
 X0 <- X_fixed
+noms1 <- colnames(X_fixed)  
 if(id.X_mixture == 1){
 	for(i in 1:length(colnames(X_mixture))){
 		if((colnames(X_mixture)[i] %in% colnames(X0))==F){
 			X0 <- cbind(X0,X_mixture[,i])
-			
+			noms1 <- c(noms1,colnames(X_mixture)[i])
+      colnames(X0) <- noms1
 		}
 	}
 }
@@ -287,6 +289,8 @@ if(id.X_random == 1){
 	for(i in 1:length(colnames(X_random))){
 		if((colnames(X_random)[i] %in% colnames(X0))==F){
 			X0 <- cbind(X0,X_random[,i])
+      noms1 <- c(noms1,colnames(X_random)[i])
+      colnames(X0) <- noms1
 		}	 
 	}
 }
@@ -294,6 +298,8 @@ if(id.X_classmb == 1){
 	for(i in 1:length(colnames(X_classmb))){
 		if((colnames(X_classmb)[i] %in% colnames(X0))==F){
 			X0 <- cbind(X0,X_classmb[,i],deparse.level=0)	 
+      noms1 <- c(noms1,colnames(X_classmb)[i])
+      colnames(X0) <- noms1
 		}	
 	}
 }
@@ -301,7 +307,8 @@ if(id.X_survival == 1){
 	for(i in 1:length(colnames(X_survival))){
 		if((colnames(X_survival)[i] %in% colnames(X0))==F){
 			X0 <- cbind(X0,X_survival[,i])
-			
+      noms1 <- c(noms1,colnames(X_survival)[i])
+			colnames(X0) <- noms1
 		}
 	}
 }

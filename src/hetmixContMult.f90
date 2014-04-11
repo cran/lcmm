@@ -5,11 +5,11 @@
       integer,save ::ny,ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,ncor &
           ,nprob,nvarprob,maxmes,nobs,nrisq,nvarxevt,nef,ncontr,nalea &
           ,nySPL,ntotvalSPL
-      double precision,dimension(:),allocatable,save::Y,uniqueY
+      double precision,dimension(:),allocatable,save::Y,uniqueY,minY,maxY,rangeY
       double precision,dimension(:,:),allocatable,save ::X
       integer,dimension(:),allocatable,save ::idea,idg,idprob,idcor,idcontr,indiceY
       integer,dimension(:),allocatable,save ::prior
-      integer,dimension(:),allocatable,save ::idlink,ntrtot,minY,maxY,rangeY
+      integer,dimension(:),allocatable,save ::idlink,ntrtot
       integer,dimension(:,:),allocatable,save ::nmes
       integer,dimension(:),allocatable,save::nvalSPL
       double precision,save :: epsY
@@ -30,11 +30,13 @@
       end module donnees_indivm
 
 
-
-      subroutine hetmixContMult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0,ny0,ns0,ng0,nv0,nobs0 &
-          ,nea0,nmes0,idiag0,nwg0,ncor0,nalea0,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
-          ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG,maxiter0,verbose0 &
-          ,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0,nvalSPL0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv)
+                                          
+      subroutine hetmixContMult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
+           ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
+           ,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
+           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG &
+           ,maxiter0,verbose0,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
+           ,nvalSPL0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv)
 
       use parameters
       use communm
@@ -86,7 +88,10 @@
 
 !      write(*,*)'indice entres',indiceY0
 
-
+!          print*,"Y0=",Y0(1:10)
+!          print*,"X0=",X0(nobs0-1:nobs+12)
+!          print*,"zitr0=",zitr0
+        
 ! sorties initialisees
 
        ppi0=0.d0
@@ -106,7 +111,6 @@
        vraisdiscret=0.d0
        UACV=0.d0
        rlindiv=0.d0
-
 
 
 ! en prevision de l'extension au conjoint
@@ -148,8 +152,9 @@
           !nvalSPL(nySPL)=nvalSPL0(k)
        end if
       end do
-      
-     ! if (verbose==1) write(*,*)'nySPL',nySPL
+                                                                         
+!        print*,"min,max",minY,maxY
+!      if (verbose==1) write(*,*)'nySPL',nySPL
       
       if(nySPL>0) then 
           allocate(nvalSPL(nySPL))
@@ -193,14 +198,14 @@
        end if
       end do
 
-      !if (verbose==1) write(*,*)'zitr',zitr
+      !if (verbose==1)       write(*,*)'zitr',zitr
 
-
+         
 
       allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0),uniqueY(ntotvalSPL) &
       ,idea(nv0),idg(nv0),idcor(nv0),idcontr(nv0),nmes(ns0,ny0),prior(ns0) &
       ,indiceY(nobs0))
-
+          
       eps=1.d-20
 
 ! enregistrement pour les modules
@@ -219,7 +224,7 @@
 
       idiag=idiag0
       
-      !if (verbose==1) write(*,*)'ntotvalSPL',ntotvalSPL
+ !     if (verbose==1) write(*,*)'ntotvalSPL',ntotvalSPL
 
       if (ntotvalSPL.gt.0) uniqueY(1:ntotvalSPL)=uniqueY0(1:ntotvalSPL)
       
@@ -295,7 +300,7 @@
       end do
 
       if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
-      !! if(verbose==1) write(*,*)"ng",ng,"ncg",ncg,"nprob",nprob
+ !      if(verbose==1) write(*,*)"ng",ng,"ncg",ncg,"nprob",nprob
          istop=12
          go to 1589
       end if
@@ -365,12 +370,13 @@
          ca=0.d0
          cb=0.d0
          dd=0.d0
-   !      if (verbose==1) write(*,*)"before optimisation",npm,b
+   !      write(*,*)"before optimisation",npm,b
+!         if (verbose==1) write(*,*)"before optimisation",npm,b
          call marq98(b,npm,ni,V,vrais,ier,istop,ca,cb,dd,vrais_mult)
 
-    !     if (verbose==1) write(*,*)"after optimisation",npm,b
+!         if (verbose==1) write(*,*)"after optimisation",npm,b
 !         write(*,*)
-!         write(*,*)'    FIN OPTIMISATION  ..... '
+   !      write(*,*)'    FIN OPTIMISATION  ..... '
         ! if(verbose==1) write(*,*)'istop',istop,'vrais',vrais
 
          gconv=0.d0
@@ -379,20 +385,20 @@
          gconv(3)=dd
          vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
 
-
-! probas posteriori
-
-
+         if (istop.eq.1.or.istop.eq.2) then  
+           !if (verbose==1) write(*,*)'avant transfo'
+           call transfos_estimees(b,npm,nsim0,marker,transfY)
+         end if  
 
          if (istop.eq.1) then
             if (ng.gt.1) then
-               ! if(verbose==1)  write(*,*)'avant postprob'
+!                if(verbose==1)  write(*,*)'avant postprob'
                call postprobm(B,npm,PPI)
             end if
 
 
 
-           ! if(verbose==1) write(*,*)'avant residuals'
+!            if(verbose==1) write(*,*)'avant residuals'
 
             call residualsm(b,npm,ppi,resid_m,pred_m_g,resid_ss &
           ,pred_ss_g,pred_RE,pred_RE_Y,Yobs)
@@ -400,28 +406,13 @@
 
             ig=0
             ij=0
-            do i=1,ns
+            do i=1,ns                                 
                do g=1,ng0
                   ig=ig+1
                   ppi0(ig)=PPI(i,g)
                end do
             end do
             
-
-
-
-       !    if (verbose==1) write(*,*)'avant transfo'
-
-            call transfos_estimees(b,npm,nsim0,marker,transfY)
-!         else
-!            ig=0
-!            ij=0
-!            do i=1,ns
-!               do g=1,ng0
-!                  ig=ig+1
-!                  ppi0(ig)=0.d0
-!               end do
-!            end do
 
             if (Ydiscret.eq.1.and.ncor.eq.0) then
                id=0
@@ -503,6 +494,10 @@
 ! definir le nombre total de mesures pour le sujet i : nmestot (valable que pour cette fonction)
 
      ! if (verbose==1) write(*,*)'i',i 
+     
+     !if(i==1 .and. id==0 .and. jd==0) then
+      !print*, "b=",b   
+     !end if
 
       b1=0.d0
       eps=1.D-20
@@ -655,9 +650,10 @@
             do kk=2,ntrtot(yk)
                  splaa(kk-3)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
             end do
-
+             !if(i==1 .and. id==0 .and. jd==0) print*,"eta0=",eta0,"splaa=",sqrt(splaa)
             do j=1,nmes(i,yk)
                ll=0
+               !if(i==1 .and. id==0 .and. jd==0) print*,"Y=",Y(nmescur+sumMesYk+j)
                if (Y(nmescur+sumMesYk+j).eq.zitr(ntrtot(yk)-2,numSPL)) then
                   ll=ntrtot(yk)-3
                end if
@@ -1075,7 +1071,7 @@
       integer ::ier,nmoins,nmes_cur,n2,nmoins2,kk,numSPL,sumntrtot
       double precision,dimension(maxmes,nea) ::Z,P
       double precision,dimension(maxmes,nv) ::X0,X2
-      double precision,dimension(maxmes,(ncontr+ny))::X01
+      double precision,dimension(maxmes,(ncontr+sum(idcontr)))::X01
       double precision,dimension(nprob+1) ::Xprob,bprob
       double precision,dimension(nea) ::err2
       double precision,dimension(nea,nea) ::Ut,Ut1
@@ -1083,7 +1079,7 @@
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,b3
-      double precision,dimension(ncontr+ny)::b01
+      double precision,dimension(ncontr+sum(idcontr))::b01
       double precision :: eps,det,temp
       double precision,dimension(nea,maxmes)::covUY
       double precision,dimension(maxmes) :: mu,Y1,Y2,pred1,err1,tcor
@@ -1413,7 +1409,6 @@
                end if
             end do
             !end do
-            
             
 
             mu=matmul(X0,b0)+matmul(X01,b01)
@@ -1818,9 +1813,9 @@ end do
          b1(k)=b(k)
       end do
 
-
-!       write(*,*)'infos',minY,maxY,nsim,npm
-!       write(*,*)'b',(b1(j),j=1,npm)
+ !     print*,"dans trasnfos"
+ !      write(*,*)'infos',minY,maxY,nsim,npm
+ !      write(*,*)'b',(b1(j),j=1,npm)
 
 
 
@@ -1840,7 +1835,6 @@ end do
        end do
        marker(yk*nsim)=maxY(yk)
 
-!       write(*,*)(marker(j),j=1,nsim)
 
        if (idlink(yk).eq.2) then
        numSPL = numSPL+1
@@ -1954,94 +1948,95 @@ end do
         end if
         sumntrtot = sumntrtot + ntrtot(yk)
         end do
-        
+ !     write(*,*)(marker(j),j=1,ny*nsim)
+ !     write(*,*)(transfY(j),j=1,ny*nsim)          
         end subroutine transfos_estimees
         !fin transfos_estimeees
 
 
 
 
-        subroutine mult_estim_splines_ssstd(nsim,aa,test,transf,yk)
-
-       use communm
-
-       implicit none
-
-       integer::nsim,j,k,l,yk
-       double precision,dimension(nsim)::mmm,mmm1,mmm2 &
-      ,iim,iim1,iim2
-       double precision,dimension(nsim*ny)::transf,test
-       double precision,dimension(ntrtot(yk))::aa,Xspl
-       double precision ::ht,htm,ht2,ht3,hht,h,hh,h2,h3,h2n,hn
-
-
-! matrice de transition pour delta-metho (carre des parms 2,..,ntr)
-
-       do j=1,nsim
-! ou se trouve la valeur
-         l=0
-
-         do k = 2,ntrtot(yk)-2
-               if ((test((yk-1)*nsim+j).ge.zitr(k-1,yk)).and.(test((yk-1)*nsim+j).lt.zitr(k,yk))) then
-                  l=k-1
-               end if
-            end do
-
-           if (test((yk-1)*nsim+j).eq.zitr(ntrtot(yk)-2,yk)) then
-               l=ntrtot(yk)-3
-            end if
-
-!         if (l.lt.1.or.l.gt.ntrtot-1) then
-!            write(*,*)'probleme estim splines',l
-!            write(*,*)'j=',j,'test(j)',test(j)
-!            stop
-!         end if
-
-
-               ht2 = zitr(l+1,yk)-test((yk-1)*nsim+j)
-               htm= test((yk-1)*nsim+j)-zitr(l-1,yk)
-               ht = test((yk-1)*nsim+j)-zitr(l,yk)
-               ht3 = zitr(l+2,yk)-test((yk-1)*nsim+j)
-               hht = test((yk-1)*nsim+j)-zitr(l-2,yk)
-               h = zitr(l+1,yk)-zitr(l,yk)
-               hh= zitr(l+1,yk)-zitr(l-1,yk)
-               hn= zitr(l+1,yk)-zitr(l-2,yk)
-               h2n=zitr(l+2,yk)-zitr(l-1,yk)
-               h2= zitr(l+2,yk)-zitr(l,yk)
-               h3= zitr(l+3,yk)-zitr(l,yk)
-
-               if (test((yk-1)*nsim+j).ne.zitr(ntrtot(yk)-2,yk)) then
-                  mmm2(j) = (3.d0*ht2*ht2)/(hh*h*hn)
-                  mmm1(j) = (3.d0*htm*ht2)/(h2n*hh*h)+(3.d0*ht*ht3)/(h2*h*h2n)
-                  mmm(j)  = (3.d0*ht*ht)/(h3*h2*h)
-               end if
-               if (test((yk-1)*nsim+j).eq.zitr(ntrtot(yk)-2,yk)) then
-                  mmm2(j) = 0.d0
-                  mmm1(j) = 0.d0
-                  mmm(j)  = 3.d0/h
-               end if
-
-               iim2(j)=hht*mmm2(j)/(3.d0)+ h2n*mmm1(j)/(3.d0) &
-      +h3*mmm(j)/(3.d0)
-               iim1(j)=htm*mmm1(j)/(3.d0)+h3*mmm(j)/(3.d0)
-
-               iim(j)=ht*mmm(j)/(3.d0)
-
-!-------- transformation et IC de la transformation :
-
-            Xspl=0.d0
-            Xspl(1)=1
-            do k=2,l
-               Xspl(k)=1
-            end do
-            Xspl(l+1)=iim2(j)
-            Xspl(l+2)=iim1(j)
-            Xspl(l+3)=iim(j)
-            transf((yk-1)*nsim+j)= dot_product(Xspl,aa)
-      end do
-
-      end subroutine mult_estim_splines_ssstd
-
+!        subroutine mult_estim_splines_ssstd(nsim,aa,test,transf,yk)
+!
+!       use communm
+!
+!       implicit none
+!
+!       integer::nsim,j,k,l,yk
+!       double precision,dimension(nsim)::mmm,mmm1,mmm2 &
+!      ,iim,iim1,iim2
+!       double precision,dimension(nsim*ny)::transf,test
+!       double precision,dimension(ntrtot(yk))::aa,Xspl
+!       double precision ::ht,htm,ht2,ht3,hht,h,hh,h2,h3,h2n,hn
+!
+!
+!! matrice de transition pour delta-metho (carre des parms 2,..,ntr)
+!
+!       do j=1,nsim
+!! ou se trouve la valeur
+!         l=0
+!
+!         do k = 2,ntrtot(yk)-2
+!               if ((test((yk-1)*nsim+j).ge.zitr(k-1,yk)).and.(test((yk-1)*nsim+j).lt.zitr(k,yk))) then
+!                  l=k-1
+!               end if
+!            end do
+!
+!           if (test((yk-1)*nsim+j).eq.zitr(ntrtot(yk)-2,yk)) then
+!               l=ntrtot(yk)-3
+!            end if
+!
+!!         if (l.lt.1.or.l.gt.ntrtot-1) then
+!!            write(*,*)'probleme estim splines',l
+!!            write(*,*)'j=',j,'test(j)',test(j)
+!!            stop
+!!         end if
+!
+!
+!               ht2 = zitr(l+1,yk)-test((yk-1)*nsim+j)
+!               htm= test((yk-1)*nsim+j)-zitr(l-1,yk)
+!               ht = test((yk-1)*nsim+j)-zitr(l,yk)
+!               ht3 = zitr(l+2,yk)-test((yk-1)*nsim+j)
+!               hht = test((yk-1)*nsim+j)-zitr(l-2,yk)
+!               h = zitr(l+1,yk)-zitr(l,yk)
+!               hh= zitr(l+1,yk)-zitr(l-1,yk)
+!               hn= zitr(l+1,yk)-zitr(l-2,yk)
+!               h2n=zitr(l+2,yk)-zitr(l-1,yk)
+!               h2= zitr(l+2,yk)-zitr(l,yk)
+!               h3= zitr(l+3,yk)-zitr(l,yk)
+!
+!               if (test((yk-1)*nsim+j).ne.zitr(ntrtot(yk)-2,yk)) then
+!                  mmm2(j) = (3.d0*ht2*ht2)/(hh*h*hn)
+!                  mmm1(j) = (3.d0*htm*ht2)/(h2n*hh*h)+(3.d0*ht*ht3)/(h2*h*h2n)
+!                  mmm(j)  = (3.d0*ht*ht)/(h3*h2*h)
+!               end if
+!               if (test((yk-1)*nsim+j).eq.zitr(ntrtot(yk)-2,yk)) then
+!                  mmm2(j) = 0.d0
+!                  mmm1(j) = 0.d0
+!                  mmm(j)  = 3.d0/h
+!               end if
+!
+!               iim2(j)=hht*mmm2(j)/(3.d0)+ h2n*mmm1(j)/(3.d0) &
+!      +h3*mmm(j)/(3.d0)
+!               iim1(j)=htm*mmm1(j)/(3.d0)+h3*mmm(j)/(3.d0)
+!
+!               iim(j)=ht*mmm(j)/(3.d0)
+!
+!!-------- transformation et IC de la transformation :
+!
+!            Xspl=0.d0
+!            Xspl(1)=1
+!            do k=2,l
+!               Xspl(k)=1
+!            end do
+!            Xspl(l+1)=iim2(j)
+!            Xspl(l+2)=iim1(j)
+!            Xspl(l+3)=iim(j)
+!            transf((yk-1)*nsim+j)= dot_product(Xspl,aa)
+!      end do
+!
+!      end subroutine mult_estim_splines_ssstd
+!
 
 
       subroutine postprobm(b,npm,PPI)

@@ -14,11 +14,12 @@ This function displays 2 plots: the marginal residuals against the marginal pred
 \method{plot}{hlme}(x,\dots)
 \method{plot}{lcmm}(x,\dots)
 \method{plot}{Jointlcmm}(x,\dots)
+\method{plot}{multlcmm}(x,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 
 \arguments{
-  \item{x}{an object inheriting from classes \code{hlme}, \code{lcmm} or \code{Jointlcmm}, representing respectively a fitted latent class linear mixed model, a more general latent class mixed model or a joint latent class model
+  \item{x}{an object inheriting from classes \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm}, representing respectively a fitted latent class linear mixed model, a more general latent class mixed model or a joint latent class model
 }
   \item{\dots}{
 other parameters to be passed through to plotting functions
@@ -29,13 +30,13 @@ Returns two plots
 }
 
 \author{
-Cecile Proust-Lima and Benoit Liquet
+Cecile Proust-Lima, Viviane Philipps and Benoit Liquet
 }
 
 
 
 \seealso{
-\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{Jointlcmm}}
+\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{multlcmm}}, \code{\link{Jointlcmm}}
 }
 
 

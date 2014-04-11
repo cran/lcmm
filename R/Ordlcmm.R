@@ -123,38 +123,103 @@ if(id.X_classmb == 1)var.exp <- c(var.exp,colnames(X_classmb))
 var.exp <- unique(var.exp)
 ## ad
 
-if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
+#if(!(all(nom.mixture %in% nom.fixed))) stop("The covariates in mixture should be also included in the argument fixed")
+# controler si les variables de mixture sont toutes dans fixed : 
+ z.fixed <- strsplit(nom.fixed,split=":",fixed=TRUE)
+ z.fixed <- lapply(z.fixed,sort)
+  
+ if(id.X_mixture==1)
+ {
+  z.mixture <- strsplit(nom.mixture,split=":",fixed=TRUE)
+  z.mixture <- lapply(z.mixture,sort)
+ }
+ else z.mixture <- list()
+
+if(!all(z.mixture %in% z.fixed))  stop("The covariates in mixture should also be included in the argument fixed")
 
 #ad 
 ## var dependante
 Y.name <- as.character(attributes(terms(fixed))$variables[2])
 Y0 <- newdata[,Y.name]
 #ad 
+
 ## var expli
 X0 <- X_fixed
-if(id.X_mixture == 1){
-	for(i in 1:length(colnames(X_mixture))){
-		if((colnames(X_mixture)[i] %in% colnames(X0))==F){
+oldnames <- colnames(X0)
+
+z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+z.X0 <- lapply(z.X0,sort)
+
+if(id.X_mixture == 1)
+{
+ z.mixture <- strsplit(colnames(X_mixture),split=":",fixed=TRUE)
+ z.mixture <- lapply(z.mixture,sort)
+	for(i in 1:length(colnames(X_mixture)))
+ {
+		#if((colnames(X_mixture)[i] %in% colnames(X0))==F)
+  if(!isTRUE(z.mixture[i] %in% z.X0))
+  {
 			X0 <- cbind(X0,X_mixture[,i])
-			
-		}
+			colnames(X0) <- c(oldnames, colnames(X_mixture)[i])
+			oldnames <- colnames(X0)
+   			
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)					
+		}                                                                
 	}
 }
-if(id.X_random == 1){
-	for(i in 1:length(colnames(X_random))){
-		if((colnames(X_random)[i] %in% colnames(X0))==F){
+else
+{
+ z.mixture <- list()
+}
+
+if(id.X_random == 1)
+{
+ z.random <- strsplit(colnames(X_random),split=":",fixed=TRUE)
+ z.random <- lapply(z.random,sort)
+	for(i in 1:length(colnames(X_random)))
+ {
+		#if((colnames(X_random)[i] %in% colnames(X0))==F)
+		if(!isTRUE(z.random[i] %in% z.X0))
+  {
 			X0 <- cbind(X0,X_random[,i])
+			colnames(X0) <- c(oldnames, colnames(X_random)[i])
+			oldnames <- colnames(X0)
+   			
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)			
 		}	 
 	}
 }
-if(id.X_classmb == 1){
-	for(i in 1:length(colnames(X_classmb))){
-		if((colnames(X_classmb)[i] %in% colnames(X0))==F){
-			X0 <- cbind(X0,X_classmb[,i],deparse.level=0)	 
+else
+{
+ z.random <- list()
+}
+
+if(id.X_classmb == 1)
+{
+ z.classmb <- strsplit(colnames(X_classmb),split=":",fixed=TRUE)
+ z.classmb <- lapply(z.classmb,sort)
+	for(i in 1:length(colnames(X_classmb)))
+ {
+		#if((colnames(X_classmb)[i] %in% colnames(X0))==F)
+		if(!isTRUE(z.classmb[i] %in% z.X0))
+  {
+			X0 <- cbind(X0,X_classmb[,i])
+			colnames(X0) <- c(oldnames, colnames(X_classmb)[i])
+			oldnames <- colnames(X0)
+      	
+   z.X0 <- strsplit(colnames(X0),split=":",fixed=TRUE)
+   z.X0 <- lapply(z.X0,sort)    
 		}	
 	}
 }
-colnames(X0) <- var.exp
+else
+{
+ z.classmb <- list()
+}
+
+#colnames(X0) <- var.exp
 
 
 if((any(is.na(X0))==TRUE)|(any(is.na(Y0))==TRUE))stop("The data should not contain any missing value")
@@ -185,12 +250,21 @@ idea0 <- rep(0,nvar.exp)
 idprob0 <- rep(0,nvar.exp)
 idg0 <- rep(0,nvar.exp)
 
-for (i in 1:nvar.exp)    {
- idea0[i] <- nom.X0[i]%in%inddepvar.random.nom
- idprob0[i] <- nom.X0[i]%in%inddepvar.classmb.nom      
- if(nom.X0[i]%in%nom.fixed & !(nom.X0[i]%in%nom.mixture)) idg0[i] <- 1 
- if(nom.X0[i]%in%nom.fixed & nom.X0[i]%in%nom.mixture) idg0[i] <- 2  
- }
+z.X0 <- strsplit(nom.X0,split=":",fixed=TRUE)
+z.X0 <- lapply(z.X0,sort)
+
+for (i in 1:nvar.exp)    
+{
+# idea0[i] <- nom.X0[i]%in%inddepvar.random.nom
+# idprob0[i] <- nom.X0[i]%in%inddepvar.classmb.nom      
+# if(nom.X0[i]%in%nom.fixed & !(nom.X0[i]%in%nom.mixture)) idg0[i] <- 1 
+# if(nom.X0[i]%in%nom.fixed & nom.X0[i]%in%nom.mixture) idg0[i] <- 2 
+ 
+ idea0[i] <- z.X0[i] %in% z.random
+ idprob0[i] <- z.X0[i] %in% z.classmb   
+ if((z.X0[i] %in% z.fixed) & !(z.X0[i] %in% z.mixture)) idg0[i] <- 1 
+ if((z.X0[i] %in% z.fixed) & (z.X0[i] %in% z.mixture)) idg0[i] <- 2     
+}
 
 if((int.fixed+int.random)>0) idprob0[1] <- 0
 
@@ -327,7 +401,14 @@ V2 <- rep(0,NPM2*(NPM2+1)/2)
 
 marker <- rep(0,(maxY-minY+1)*2)
 transfY <- rep(0,(maxY-minY+1)*2)
-init <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),as.integer(istop),as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),as.double(marker),as.double(transfY),as.double(UACV),as.double(rlindiv),PACKAGE="lcmm")
+init <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),
+as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),
+as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),
+best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),
+as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),
+as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),
+as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),as.double(marker),as.double(transfY),
+as.double(UACV),as.double(rlindiv),PACKAGE="lcmm")
 
 
 k <- NPROB
@@ -350,7 +431,8 @@ if (i>1){
 	l <- l+1
 	for (g in 1:ng){
 	t <- t+1
-	b[k+t] <- init$best[l]+(g-(ng+1)/2)*sqrt(init$V[l*(l+1)/2])
+	if(init$conv==1) b[k+t] <- init$best[l]+(g-(ng+1)/2)*sqrt(init$V[l*(l+1)/2])
+	else  b[k+t] <- init$best[l]+(g-(ng+1)/2)*init$best[l]
 	}
 }
 }
@@ -433,7 +515,14 @@ transfY <- rep(0,(maxY-minY+1)*2)
 
 
 
-out <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),marker=as.double(marker),transfY=as.double(transfY),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
+out <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),
+as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),
+as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),
+V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),
+ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),
+pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),
+as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),marker=as.double(marker),
+transfY=as.double(transfY),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
 
 ### Creation du vecteur cholesky
 

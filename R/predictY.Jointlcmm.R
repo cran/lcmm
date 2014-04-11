@@ -29,6 +29,7 @@ if(x$Names2[[1]][1]!="intercept"){
 	colnames(newdata1) <- x$Names2[[1]]
 	newdata1 <- data.frame(newdata1)
 }
+
 #------------>
 X1 <- NULL
 X2 <- NULL
@@ -50,9 +51,12 @@ if(na.action==1){
 	na.action=na.fail
 }
 
-### pour les facteurs
-
 Xnames2 <- x$Names2[[1]]
+X0names <- x$Names[[2]]
+xN <- x$specif[[1]]
+
+
+### pour les facteurs
 
  #cas où une variable du dataset est un facteur
  olddata <- eval(x$call$data)
@@ -199,6 +203,18 @@ if(!is.null(x$call$survival))
 }
 else {na.survival <- NULL}
 
+#cor
+na.cor <- NULL
+if(length(xN)>9)
+{
+ if(xN[10]>0)
+ {
+  z <- which(x$specif[[10]]==1)
+  var.cor <- newdata1[,X0names[z]]
+  na.cor <- which(is.na(var.cor))
+ }
+}
+
 ########### For survival
 #if(!is.null(x$call$survival)){ 
 #	res.evt <- x$call$survival
@@ -227,10 +243,10 @@ else {na.survival <- NULL}
 #	m[[1]] <- as.name("model.frame")
 #	m <- eval(m, sys.parent())
 #	na.survival <- attr(m,"na.action")
-
+   
 ## Table sans donnees manquante: newdata
-	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival))
-	if(!is.null(na.action)){
+	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival,na.cor))
+	if(length(na.action)){
 		newdata1 <- newdata1[-na.action,]
 	}
 ##7/05/2012
@@ -247,8 +263,8 @@ else {na.survival <- NULL}
 #		newdata1 <- data[-na.action,]
 #	}
 #}
-
-
+                                            
+  
 
 ## Construction de nouvelles var explicatives sur la nouvelle table
 ## fixed
@@ -298,6 +314,15 @@ else {na.survival <- NULL}
 		id.X_survival <- 0
 	}	
 	
+##cor
+if(length(xN)>9)
+{
+ if(xN[10]>0)  #on reprend la variable de temps de cor
+ {
+  z <- which(x$specif[[10]]==1)
+  var.cor <- newdata1[,X0names[z]]
+ }
+}
 	
 ## Construction des var expli
 newdata1 <- X_fixed
@@ -331,6 +356,13 @@ if(id.X_survival == 1){
 			
 		}
 	}
+}
+if(length(xN)>9)
+{
+ if(xN[10]>0)
+ { 
+  if(x$specif[[4]][z]==0 & x$specif[[5]][z]==0 & x$specif[[6]][z]==0 & x$specif[[7]][z]==0) newdata1 <- cbind(newdata1,var.cor)
+ }
 }
 
 #colnames(newdata1) <- namesNew
@@ -373,9 +405,9 @@ if (x$specif[[3]]>1){
 colnames(Y) <- c(paste("Ypred_class",1:x$specif[[3]],sep=""))
 }
 res <- Y
-
+return(res)
 }else{
-cat("Predictions can not be computed since the program stopped abnormally.")
+cat("Predictions can not be computed since the program stopped abnormally. \n")
 }
 }
 

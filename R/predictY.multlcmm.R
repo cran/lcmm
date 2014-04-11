@@ -100,7 +100,11 @@ if(x$conv==1|x$conv==2)
    best <- x$best
    nef <- x$N[3]
    nvc <- x$N[4]
-   if(nvc>0) best[nef+1:nvc] <- x$cholesky[-1]
+   if(nvc>0) 
+   {
+    if(x$idiag==0) best[nef+1:nvc] <- x$cholesky[-1]
+    else best[nef+1:nvc] <- x$cholesky[c((1:(nvc+1)*2:(nvc+2))/2)[-1]]
+   }
    npm <- length(best)
    nbzitr <- rep(2,ny)
    nbzitr[which(x$linktype==2)] <- x$nbnodes
@@ -161,7 +165,7 @@ if(x$conv==1|x$conv==2)
    for (j in 1:ndraws)
    {   #cat("boucle sur ndraws j=",j,"\n")
     bdraw <- rnorm(npm)
-    bdraw <- x$best + Chol %*% bdraw
+    bdraw <- best + Chol %*% bdraw
    
     out <- .Fortran("predict_mult",as.double(X0),as.integer(x$idprob0),as.integer(x$idea0),
     as.integer(x$idg0),as.integer(x$idcor0),as.integer(x$idcontr0),as.integer(x$ng),as.integer(ncor),
@@ -177,9 +181,9 @@ if(x$conv==1|x$conv==2)
    quantile(x[!is.na(x)],probs=c(0.025,0.5,0.975))
    }
    ydistr <- apply(ydraws,1,FUN=f)
-   Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
-   Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
-   Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
+   Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=FALSE)
+   Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=FALSE)
+   Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=FALSE)
   
    #Ypred <- cbind(Ypred_50,Ypred_2.5,Ypred_97.5)
    Ypred <- data.frame(rep(x$Ynames,each=maxmes),Ypred_50,Ypred_2.5,Ypred_97.5)

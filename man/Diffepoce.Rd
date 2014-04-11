@@ -1,10 +1,10 @@
 \name{Diffepoce}
 \alias{Diffepoce}
 \title{
-Computation of the difference of EPOCE estimators and its 95\% tracking interval between two joint latent class models estimated using \code{Jointlcmm}
+Computation of the difference of expected prognostic cross-entropy (EPOCE) estimators and its 95\% tracking interval between two joint latent class models estimated with \code{Jointlcmm}
 }
 \description{
-This functions computes the difference of CVPOL or MPOL and its 95\% tracking interval between two joint latent class models estimated using \code{Jointlcmm} and evaluated using \code{epoce}. Difference in CVPOL is computed when EPOCE was previously estimated on the same dataset as used for estimation (using an approximated cross-validation), and difference in MPOL is computed when EPOCE was previously estimated on an external dataset. 
+This function computes the difference of 2 EPOCE estimates (CVPOL or MPOL) and its 95\% tracking interval between two joint latent class models estimated using \code{Jointlcmm} and evaluated using \code{epoce} function. Difference in CVPOL is computed when the EPOCE was previously estimated on the same dataset as used for estimation (using an approximated cross-validation), and difference in MPOL is computed when the EPOCE was previously estimated on an external dataset. 
 }
 \usage{
 Diffepoce(epoceM1,epoceM2)
@@ -16,20 +16,20 @@ Diffepoce(epoceM1,epoceM2)
   }
 }
 \details{
-From the EPOCE estimates and the individual contributions to the prognostic observed log-likelihood obtained on the same dataset with \code{epoce} for two different joint latent class models, the difference of CVPOL (or MPOL) and its 95\% tracking interval is computed. The 95\% tracking interval is: 
+From the EPOCE estimates and the individual contributions to the prognostic observed log-likelihood obtained with \code{epoce} function on the same dataset from two different estimated joint latent class models, the difference of CVPOL (or MPOL) and its 95\% tracking interval is computed. The 95\% tracking interval is: 
 
-Delta(MPOL) +/- qnorm(0.95)*sqrt(VARIANCE) for an external dataset
+Delta(MPOL) +/- qnorm(0.975)*sqrt(VARIANCE) for an external dataset
 
-Delta(CVPOL) +/- qnorm(0.95)*sqrt(VARIANCE) for the dataset used in \code{Jointlcmm}
+Delta(CVPOL) +/- qnorm(0.975)*sqrt(VARIANCE) for the dataset used in \code{Jointlcmm}
 
-where Delta(CVPOL) (Delta(MPOL)) is the difference of CVPOL or MPOL of the two joint latent class models, and VARIANCE is the empirical variance of the difference of individual contributions to the prognostic observed log-likelihoods of the two joint latent class models.
+where Delta(CVPOL) (or Delta(MPOL)) is the difference of CVPOL (or MPOL) of the two joint latent class models, and VARIANCE is the empirical variance of the difference of individual contributions to the prognostic observed log-likelihoods of the two joint latent class models.
 
-See Commenges et al. (2012) for further details.
+See Commenges et al. (2012) and Proust-Lima et al. (2012) for further details.
 }
 \value{
-\item{call.Jointlcmm1}{the \code{Jointlcmm} call for the first \code{epoce} object in epoceM1
+\item{call.Jointlcmm1}{the \code{Jointlcmm} call for epoceM1
 }
-\item{call.Jointlcmm2}{the \code{Jointlcmm} call for the second \code{epoce} object in epoceM2
+\item{call.Jointlcmm2}{the \code{Jointlcmm} call for epoceM2
 }
 \item{call}{the matched call}
 \item{DiffEPOCE}{Dataframe containing, for each prediction time s, the difference in either MPOL or CVPOL depending on the dataset used, and the 95\% tracking bands (TIinf and TIsup)
@@ -39,9 +39,9 @@ See Commenges et al. (2012) for further details.
 }
 \references{
 Commenges, Liquet and Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
-expected conditional {K}ullback-{L}eibler risks. Biometrics - in press
+expected conditional {K}ullback-{L}eibler risks. Biometrics 68(2), 380-7.
 
-Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2012). Joint latent class models of longitudinal and time-to-event data: a review. Statistical Methods in Medical Research - in press
+Proust-Lima, Sene, Taylor, Jacqmin-Gadda (2014). Joint latent class models for longitudinal and time-to-event data: a review. Statistical Methods in Medical Research 23, 74-90.
 }
 \author{
 Cecile Proust-Lima and Amadou Diakite
@@ -58,7 +58,7 @@ m2 <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,mixture=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="Weibull"
 ,hazardtype="PH",ng=2,data=data_Jointlcmm,
 B=c( 0.7608, -9.4974,  1.0242,  1.4331,  0.1063 , 0.6714, 10.4679, 11.3178,
- -2.5671, -0.5386,  1.4616, -0.0605,  0.9489,  0.1020,  0.2079,  1.5045))
+ -2.5671, -0.5386,  1.4616, -0.0605,  0.9489,  0.1020,  0.2079,  1.5045),logscale=TRUE)
 m1 <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="Weibull"
 ,hazardtype="PH",ng=1,data=data_Jointlcmm,
