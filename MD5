@@ -1,6 +1,6 @@
-ff664060c231bbfc3f42d13cde0d7b91 *DESCRIPTION
+89c5b4ba03a6e430ed7e44238817710a *DESCRIPTION
 dbaf34c3dc8776a78d3f39f8529e4345 *NAMESPACE
-87a5749b003e8d65005de1f887c67bab *NEWS
+d530b323ac7a411d337c03973e715930 *NEWS
 f5762729d623c90ff4b7e52754fb00e7 *R/Contlcmm.R
 46789ef1a82e8dc31b810692b51c4d2a *R/Diffepoce.R
 97139b03db5af8eb4bda153f37b4b259 *R/Jointlcmm.R
@@ -32,11 +32,11 @@ eb360f71b215f49f34742fc9f9455df9 *R/link.confint.lcmm.R
 2816e48170866ed38e5d19f32136a9b1 *R/link.confint.multlcmm.R
 d4e0402001f7c8c04d2b8c6fe048ceb7 *R/mixture.R
 e2d61aef3ed209aba5aa33ce2c00991b *R/multlcmm.R
-44427269f98e18f36339f1fb386f197f *R/plot.Diffepoce.R
+4a6686b032c6e7fbd5ebeca9c96ce842 *R/plot.Diffepoce.R
 b0c046b87178dfbc6eadc118e42a5ca1 *R/plot.Jointlcmm.R
 5f28704aaab37b5a9d5a4cb9bf78704d *R/plot.baselinerisk.Jointlcmm.R
 b3d9f4545d1272256b8d52d1d84e1703 *R/plot.dynpred.R
-fb1d44d5657f338c4c2cb260c1c6daaf *R/plot.epoce.R
+8b8f6de1c1f6cc565a96feffbedae6d9 *R/plot.epoce.R
 036643cefc0602da5e563df2b7b7e465 *R/plot.hlme.R
 4753911275b3137d053305345f76abf9 *R/plot.lcmm.R
 c9d1bdc2b2ffcedb02a6b659b4b06c97 *R/plot.linkfunction.lcmm.R
@@ -61,7 +61,7 @@ ba08d207c6ebf752a90092e3653c43eb *R/predictY.Jointlcmm.R
 3c5e51b47f5e3fa99cd9f1ed43da7884 *R/predictY.hlme.R
 7ef416c1731e09fca2a072fa8fca0a89 *R/predictY.lcmm.R
 03ce6a069b8a397f065562026a3a7524 *R/predictY.multlcmm.R
-d07580a392157dffa8db98477787d486 *R/print.Diffepoce.R
+d4e804bbd2ecb9d2d0923034450c15bd *R/print.Diffepoce.R
 311b54e587b2dd2c2a00a53e45945479 *R/print.Jointlcmm.R
 c9b1ff752d234684163757a98dc6d66a *R/print.epoce.R
 250c55123f3f93227cd64453a9b13a14 *R/print.hlme.R
@@ -90,7 +90,7 @@ d235de67cd032c2a650f0da0877276b3 *man/dynpred.Rd
 b70d88ae77c4ed8202ce67754fe9a181 *man/epoce.Rd
 84f3c38610b29d5f16cd2e02fb8f1eb9 *man/estimates.Rd
 bd89ec6121ae7101ed9e903edbf867c4 *man/hlme.Rd
-3ccf3a8ff4c370c7a0bcfdb6e7e88e6f *man/lcmm-package.Rd
+256d7d22fcab0c1285a4fa0c304cd8f5 *man/lcmm-package.Rd
 2ee854715d7dd43af61efcaefa871b3d *man/lcmm.Rd
 d5ad0abb6a1a10bc44be9c4e9af92350 *man/link.confint.Rd
 1cf3e9d59613438ee767aed2cd4a672b *man/multlcmm.rd
@@ -110,8 +110,7 @@ dcd3ee1ec2ae1a75c2d39fe0305f802e *man/predictY.Rd
 247b37dc19b1234f803379fed35a3147 *man/summary.lcmm.Rd
 87f1f7e9ba2fb66484ade4ded055bc42 *src/AOptim.f90
 dcc475f76296b2aeb71b366634d2d396 *src/Jointhet.f90
-9c1c117c51c6c58b7c8a0d968602804b *src/Makevars.in
-298eec3008b9ded7ad3f295b0f80391c *src/Makevars.win
+cea0927f4c0e8c269c1c298ae248cfda *src/Makevars
 5ae04228b0dbdade88728080cef23b12 *src/calculusTransfo.f90
 6bfc4add936bb11683381b65beffd696 *src/cvpl.f90
 0183516135aec66cd6efc16546e31ea1 *src/hetmixCont.f90

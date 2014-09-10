@@ -3,7 +3,9 @@ plot.epoce <- function(x,...)
 	if (!inherits(x, "epoce")) stop("use only with \"epoce\" objects")
 
 	if (all(is.na(x$EPOCE[,4]))|all(is.na(x$EPOCE[,5]))) stop("can't produce the plot with missing EPOCE")
-
+        
+        if (all(is.infinite(x$EPOCE[,4]))|all(is.infinite(x$EPOCE[,5]))) stop("can't produce the plot with infinite EPOCE")
+        
    dots <- list(...)
 
    if(length(list(...)$main)) 
@@ -31,13 +33,7 @@ plot.epoce <- function(x,...)
    }
    else  pch1 <- 18
 
-   if(length(list(...)$ylim)) 
-   {
-    ylim1 <- eval(match.call()$ylim)
-    dots <- dots[setdiff(names(dots),"ylim")]
-   }
-   else ylim1 <- c(min(x$EPOCE[!(is.na(x$EPOCE[,5])),5],x$EPOCE[!(is.na(x$EPOCE[,4])),4]),max(x$EPOCE[!(is.na(x$EPOCE[,4])),4],x$EPOCE[!(is.na(x$EPOCE[,5])),5]))	
-   
+ 
    if(length(list(...)$xlab)) 
    {
     xlab1 <- as.character(eval(match.call()$xlab))
@@ -59,6 +55,23 @@ plot.epoce <- function(x,...)
    
    if(x$new.data==FALSE) y1 <- x$EPOCE[,5]
    else y1 <- x$EPOCE[,4]
+
+   if(length(list(...)$ylim)) 
+   {
+       ylim1 <- eval(match.call()$ylim)
+       dots <- dots[setdiff(names(dots),"ylim")]
+   }
+   else
+       {
+           if(all(is.na(y1)) | all(is.infinite(y1)))
+               {
+                   ylim1 <- c(-1000,1000)
+               }
+           else
+               {
+                   ylim1 <- c(min(y1[!(is.na(y1)) & is.finite(y1)]),max(y1[!(is.na(y1)) & is.finite(y1)]))
+               }
+       }        
 
    
    names.plot <- c("adj","ann","asp","axes","bg","bty","cex","cex.axis","cex.lab","cex.main","cex.sub","col","col.axis",

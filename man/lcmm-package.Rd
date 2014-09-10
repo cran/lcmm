@@ -10,8 +10,8 @@ This package provides functions for the estimation of latent class mixed models 
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.6.4 \cr
-Date: \tab 2014-04-11\cr
+Version: \tab 1.6.6 \cr
+Date: \tab 2014-09-10\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }

@@ -1,6 +1,12 @@
 News about R package lcmm :
 ---------------------------
 
+
+Changes in Version 1.6.5 (2014-09-08):
+
+* bug solved about installation problem with parallel make.
+
+
 Changes in Version 1.6.4 (2014-04-11):
 
 * The new functions 'dynpred' and 'plot.dynpred' respectively compute and plot individual dynamic predictions obtained from a joint latent class model estimated by Jointlcmm.
