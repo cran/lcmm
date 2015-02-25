@@ -7,6 +7,9 @@ Plots
 }
 \description{
 This function displays plots related to predictive accuracy functions: \code{epoce} and \code{Diffepoce}.
+
+
+These functions do not apply for the moment with multiple causes of event (competing risks).
 }
 \usage{
 \method{plot}{epoce}(x,\dots)

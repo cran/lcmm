@@ -1055,7 +1055,7 @@
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea) :: err2
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1
+      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1,SigmaE,CovDev
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob,b3
@@ -1138,10 +1138,11 @@
 
          end do
 
-        !matrice Ci=Ri+s2*I
+        !matrice Corr et sigmaE
         
         Corr=0.d0
         tcor=0.d0
+        SigmaE=0.d0
         if (ncor.gt.0) then
            do k=1,nv
               if (idcor(k).eq.1) then
@@ -1153,7 +1154,7 @@
          end if
          do j1=1,nmes(i)
             do j2=1,nmes(i)
-               if (j1.eq.j2) Corr(j1,j2) = b1(npm)*b1(npm)
+               if (j1.eq.j2) sigmaE(j1,j2) = b1(npm)*b1(npm)
                if (ncor.eq.1) then 
                   Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
                else if (ncor.eq.2) then
@@ -1183,13 +1184,14 @@
             Valea=0.d0
             VC=0.d0
             P=0.d0
+            Covdev=0.d0
 
 
             P=MATMUL(Z,Ut)
             Valea=MATMUL(Ut,transpose(P))
             VC=0.d0
-            VC=MATMUL(P,transpose(P))+Corr
-
+            VC=MATMUL(P,transpose(P))+Corr+SigmaE
+            CovDev = MATMUL(P,transpose(P))+Corr
 
 !     Vi en vecteur
 
@@ -1252,15 +1254,13 @@
             err2=0.d0
             err2=MATMUL(Valea,err1)
             pred1=0.d0
-            pred1=mu+MATMUL(Z,err2)
-            err1=0.d0
-            err1=MATMUL(Z,err2)
+            pred1=mu+MATMUL(CovDev,err1)
             do j=1,nmes(i)
                resid_m(nmes_cur+j)=Y2(j)
                pred_m(nmes_cur+j)=mu(j)
                pred_m_g(nmes_cur+j,1)=mu(j)
 
-               resid_ss(nmes_cur+j)=Y2(j)-err1(j)
+               resid_ss(nmes_cur+j)=Y1(j)-pred1(j)
                pred_ss(nmes_cur+j)=pred1(j)
                pred_ss_g(nmes_cur+j,1)=pred_ss(nmes_cur+j)
 
@@ -1379,7 +1379,8 @@
                VC=0.d0
                P=MATMUL(Z,Ut1)
                Valea=MATMUL(Ut1,transpose(P))
-               VC=MATMUL(P,transpose(P))+Corr
+               VC=MATMUL(P,transpose(P))+Corr+SigmaE
+               CovDev = MATMUL(P,transpose(P))+Corr
 
 
 !     Vi en vecteur
@@ -1405,7 +1406,7 @@
                      end do
                   end do
                   do k=1,nea
-                    pred_RE((i-1)*nea+k)=99999.d0
+                    pred_RE((i-1)*nea+k)=9999.d0
                   end do
                   goto 654
                end if
@@ -1430,7 +1431,7 @@
                err2=0.d0
                err2=MATMUL(Valea,err1)
                pred1=0.d0
-               pred1=mu+MATMUL(Z,err2)
+               pred1=mu+MATMUL(CovDev,err1)
 
                do j=1,nmes(i)
                   pred_m_g(nmes_cur+j,g)=mu(j)

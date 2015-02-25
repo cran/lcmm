@@ -1,4 +1,3 @@
-
 VarExpl.Jointlcmm <- function(x,values)
 {
  if(missing(x)) stop("The model should be specified")
@@ -8,33 +7,28 @@ VarExpl.Jointlcmm <- function(x,values)
  if(any(is.na(values))) stop("values should not contain any missing values")
 
 
- if(x$conv==1 | x$conv==2)
+ if (x$conv==1 | x$conv==2)
  {
-  res <- matrix(0,nrow=1,ncol=x$specif[[3]])
+  res <- matrix(0,nrow=1,ncol=x$ng)
 
-  N <- x$specif[[1]]
-  Xnames <- x$Names[[2]]
-  idea <- x$specif[[4]]
-  
   names.random <- NULL
   name.cor <- NULL
-  if(N[5]>0) names.random <- Xnames[which(idea==1)]
-  if(length(N)>9 & N[10]>0) name.cor <- Xnames[which(x$specif[[10]]==1)]
+  if (x$N[5]>0) names.random <- x$Names$Xnames[which(x$idea==1)]
+  if (x$N[7]>0) name.cor <- x$Names$Xnames[which(x$idcor==1)]
 
-  if(!is.null(names.random) | !is.null(name.cor))
+  if (!is.null(names.random) | !is.null(name.cor))
   {
    names.values <- unique(c(names.random,name.cor))   #contient I(T^2))
 
    vars <- unique(c(all.vars(x$call$random),all.vars(x$call$cor)))
    if(!all(vars %in% colnames(values))) stop(paste(c("values should give a value for each of the following covariates: ","\n",vars,collapse=" ")))
 
-   ### pour les facteurs
 
-   #cas où une variable du dataset est un facteur
+   #cas ou une variable du dataset est un facteur
    olddata <- eval(x$call$data)
    for(v in setdiff(vars,"intercept"))
    {
-    if(is.factor(olddata[,v]))
+    if (is.factor(olddata[,v]))
     {
      mod <- levels(olddata[,v])
      if (!(levels(as.factor(values[,v])) %in% mod)) stop(paste("invalid level in factor", v))
@@ -42,11 +36,11 @@ VarExpl.Jointlcmm <- function(x,values)
     }
    }
 
-   #cas où on a factor() dans l'appel
+   #cas ou on a factor() dans l'appel
    call_random <- x$call$random
    z <- all.names(call_random)
    ind_factor <- which(z=="factor")
-   if(length(ind_factor))
+   if (length(ind_factor))
    {
     nom.factor <- z[ind_factor+1]
     for (v in nom.factor)
@@ -58,57 +52,68 @@ VarExpl.Jointlcmm <- function(x,values)
    }
    call_random <- gsub("factor","",call_random)
 
-   if(!is.null(name.cor)) values1 <- model.matrix(formula(paste(call_random[2],name.cor,sep="")),data=values)
+
+   #values
+   if (!is.null(name.cor)) values1 <- model.matrix(formula(paste("~",paste(call_random[2],name.cor,sep="+"))),data=values)
    else values1 <- model.matrix(formula(call_random),data=values)
 
-   if(colnames(values1)[1]=="(Intercept)") colnames(values1)[1] <- "intercept"
+   if (colnames(values1)[1]=="(Intercept)") colnames(values1)[1] <- "intercept"
 
-   if(nrow(values1)>1) warning("only the first line of values will be used")
+   if (nrow(values1)>1) warning("only the first line of values is used")
    var.random <- values1[1,names.random]
    var.cor <- values1[1,name.cor]
 
-   nea <- sum(idea==1)
+   #Varcov effets aleatoires
+   nea <- sum(x$idea==1)
    VarU <- matrix(0,nea,nea)
-   if(nea==N[5])
+   if (nea==x$N[5])
    {
-    diag(VarU) <- x$best[N[4]+1:N[5]]
+    diag(VarU) <- x$best[sum(x$N[1:4])+1:x$N[5]]
    }
    else
    {
-    VarU[lower.tri(VarU,diag=TRUE)] <- x$best[N[4]+1:N[5]]
+    VarU[lower.tri(VarU,diag=TRUE)] <- x$best[sum(x$N[1:4])+1:x$N[5]]
     VarU <- t(VarU)
-    VarU[lower.tri(VarU,diag=TRUE)] <- x$best[N[4]+1:N[5]]
+    VarU[lower.tri(VarU,diag=TRUE)] <- x$best[sum(x$N[1:4])+1:x$N[5]]
    }
 
+   # calcul de Z'Var(U)Z
    numer <- t(var.random) %*% VarU %*% var.random
-   if(x$specif[[3]]>0)
+   if (x$ng>0)
    {
-    nw <- rep(1,x$specif[[3]])
-    if(N[6]>0) nw <- c((x$best[N[4]+N[5]+1:N[6]])^2,1)
+    nw <- rep(1,x$ng)
+    if (x$N[6]>0) nw <- c((x$best[sum(x$N[1:5])+1:x$N[6]])^2,1)
     numer <- numer * nw
    }
 
+   # calcul de Z'Var(U)Z + Corr
    Corr <- 0
-   if(length(N)>9 & N[10]>0)
+   if (x$N[7]>0)
    {
-    var.cor <- values[name.cor]
-    if(N[10]==1)
+    if (x$N[7]==1)
     {
-     Corr <- (x$best[N[4]+N[5]+N[6]])^2 * var.cor
+     Corr <- (x$best[sum(x$N[1:6])+1])^2 * var.cor
     }
-    if(N[10]==2)
+    if (x$N[7]==2)
     {
-     Corr <- (x$best[N[4]+N[5]+N[6]])^2
+     Corr <- (x$best[sum(x$N[1:6])+2])^2
     }
    }
-
-   denom <- numer + Corr + (x$best[length(x$best)])^2
-
-   res[1,] <- numer/denom *100
+   numer <- numer + Corr 
+   if(x$linktype==-1)
+   {
+   denom <- numer  + (x$best[length(x$best)])^2
+  }
+  else
+  {
+    denom <- numer + 1  
+  }
+   # % Variance expliquee
+   res[1,] <- as.numeric(numer/denom *100)
   }
 
   rownames(res) <- "%Var"
-  colnames(res) <- paste("class",1:x$specif[[3]],sep="")
+  colnames(res) <- paste("class",1:x$ng,sep="")
  }
  else
  {

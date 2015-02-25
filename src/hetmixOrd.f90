@@ -335,7 +335,7 @@
 
         if (d.eq.0) then
                 do i=1,n
-                        intval(i)=0
+                        intval(i)=0.d0
                 end do
         end if
 !
@@ -356,14 +356,14 @@
 
                         if (d.eq.modofm) then
                         do i=1,n
-                                fulsms(i,prtcnt)=0
+                                fulsms(i,prtcnt)=0.d0
                         end do
-                        fulsms(n+1,prtcnt)=0
+                        fulsms(n+1,prtcnt)=0.d0
                         end if
 
                         if (fulsms(n+1,prtcnt).eq.0 .and.fulwgt .ne.0) then
                                 call fulsmh(s,m,n,f,fulsms(1,prtcnt),x,work)
-                                intcls=intcls+fulsms(n+1,prtcnt)
+                                intcls=intcls+INT(fulsms(n+1,prtcnt))
                         end if
 
                         do i=1,n
@@ -663,17 +663,17 @@
         double precision,dimension(*)::point,weight,intval,x,funs,ic
 
         do i = 1,ndim
-                ic(i) = 1
+                ic(i) = 1.d0
         end do
 
         do i = 1,numfun
-                intval(i) = 0
+                intval(i) = 0.d0
         end do
 
- 10   wtprod = 1
+ 10   wtprod = 1.d0
 
         do i= 1,ndim
-                ici = ic(i)
+                ici = INT(ic(i))
                 x(i) = point(ici)
                 wtprod = wtprod*weight(ici)
         end do
@@ -685,9 +685,9 @@
         end do
 
         do i = 1,ndim
-                ic(i) = ic(i) + 1
+                ic(i) = ic(i) + 1.d0
                 if (ic(i) .le. np) goto 10
-                ic(i) = 1
+                ic(i) = 1.d0
         end do
 
         end subroutine mltrul

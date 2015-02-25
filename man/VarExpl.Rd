@@ -42,6 +42,7 @@ Cecile Proust-Lima, Viviane Philipps
 }
 
 \examples{
+\dontrun{
 
 data(data_Jointlcmm)
 
@@ -54,5 +55,5 @@ B=c(-1.071, -0.192,  0.106, -0.005, -0.193,  1.012,  0.870,  0.881,
 
 # variation percentages explained by linear mixed regression
 VarExpl(m1,data.frame(Time=0))
-
+}
 }

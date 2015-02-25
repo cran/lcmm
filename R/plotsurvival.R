@@ -1,13 +1,14 @@
 
 
-plot.survival.Jointlcmm <- function(x,legend.loc="topright",legend,add=FALSE,...)
+.plotsurvival <- function(x,legend.loc="topright",legend,add=FALSE,...)
 {
  if(missing(x)) stop("The argument x should be specified")
- if (!inherits(x, "Jointlcmm")) stop("use only with \"Jointlcmm\" objects")
+ nbevt <- length(x$N)-9
+ if(nbevt>1) stop("Survival functions are not provided in a competing risks setting. Please see 'cuminc' function.")
  if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")
  if((x$conv %in% c(1,2)) & (sum(is.na(x$predSurv)==0)))
  {
-   ng <- x$specif[[3]]
+   ng <- x$ng
 
    dots <- list(...)
 
@@ -92,11 +93,11 @@ plot.survival.Jointlcmm <- function(x,legend.loc="topright",legend,add=FALSE,...
 
   if(!isTRUE(add))
   {
-   do.call("matplot",c(dots,list(x$predSurv[,1],y=exp(-x$predSurv[,(1+x$specif[[3]]+1:ng)]),xlab=xlab1,ylab=ylab1,main=title1,type=type1,ylim=ylim1,col=color)))
+   do.call("matplot",c(dots.plot,list(x$predSurv[,1],y=exp(-x$predSurv[,(1+ng+1:ng)]),xlab=xlab1,ylab=ylab1,main=title1,type=type1,ylim=ylim1,col=color,lty=lty1)))
   }
   else
   {
-   do.call("matlines",c(dots,list(x$predSurv[,1],y=exp(-x$predSurv[,(1+x$specif[[3]]+1:ng)]),type=type1,col=color))) 
+   do.call("matlines",c(dots.plot,list(x$predSurv[,1],y=exp(-x$predSurv[,(1+ng+1:ng)]),type=type1,col=color))) 
   }
   
   names.legend <- c("fill","border","lty","lwd","pch","angle","density","bg","box.lwd",
@@ -114,6 +115,3 @@ plot.survival.Jointlcmm <- function(x,legend.loc="topright",legend,add=FALSE,...
   cat("Output can not be produced. The program stopped abnormally or there was an error in the computation of the estimated baseline risk functions and survival functions.\n")
  }
 }
-
-
-plot.survival <- function(x,legend.loc="topright",...) UseMethod("plot.survival")

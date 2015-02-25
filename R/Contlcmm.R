@@ -58,18 +58,32 @@ int.mixture <- 0
 int.random <- 0
 int.classmb <- 0
 
-           
+
 ## Table sans donnees manquante: newdata
 
-newdata <- data  
 #prendre le subset :
-if(!(is.null(subset))) 
-newdata <- data[subset,]
+newdata <- data  
+if(!isTRUE(all.equal(as.character(cl$subset),character(0))))
+    {
+        cc <- cl
+        cc <- cc[c(1,which(names(cl)=="subset"))]
+        cc[[1]] <- as.name("model.frame")
+        cc$formula <- formula(paste("~",paste(colnames(data),collapse="+")))
+        cc$data <- data
+        cc$na.action <- na.pass
+        newdata <- eval(cc)
+    }
+
+
+#if(!(is.null(subset))) 
+#newdata <- data[subset,]
 
 #enlever les NA
 	if(!is.null(na.action)){
 		newdata <- newdata[-na.action,]
 	}
+
+attributes(newdata)$terms <- NULL
 
 ### names of covariate in intial fit
 X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(fixed)),data=newdata))[-1]))
@@ -80,6 +94,7 @@ if(ncor0>0) X0.names2 <- unique(c(X0.names2,cor.var.time))
 
 ## Construction de nouvelles var eplicatives sur la nouvelle table
 ## fixed
+
 	X_fixed <- model.matrix(fixed,data=newdata)
 	if(colnames(X_fixed)[1]=="(Intercept)"){
 		colnames(X_fixed)[1] <- "intercept"
@@ -664,7 +679,7 @@ colnames(estimlink) <- c("Y","transfY")
 ### ad 2/04/2012
 if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,Ydiscrete=Ydiscrete,discrete_loglik=out$vraisdiscret,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action)
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,Ydiscrete=Ydiscrete,discrete_loglik=out$vraisdiscret,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action,AIC=2*(length(out$best)-out$loglik),BIC=length(out$best)*log(ns0)-2*out$loglik)
 class(res) <-c("lcmm") 
 
 cost<-proc.time()-ptm

@@ -1,7 +1,7 @@
-plot.linkfunction.lcmm <- function(x,legend.loc="topright",legend=NULL,add=FALSE,...)
+.plotlinkfunction <- function(x,legend.loc="topright",legend=NULL,add=FALSE,...)
 {
  if(missing(x)) stop("The argument x should be specified")
- if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
+ if(x$linktype==-1) stop("The model does not define any link function")
  if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")
    
  if(x$conv %in% c(1,2))
@@ -47,7 +47,7 @@ plot.linkfunction.lcmm <- function(x,legend.loc="topright",legend=NULL,add=FALSE
    diff <- x$estimlink[(2*(x$linknodes[2]-x$linknodes[1]+1)-1),2]-x$estimlink[2,2]
    diff <- diff/ntrtot
 
-   xlim1 <- c(x$estimlink[2,2]-diff,x$estimlink[(2*(x$linknodes[2]-x$linknodes[1]+1)-1),2]+diff)
+   xlim1 <- as.vector(c(x$estimlink[2,2]-diff,x$estimlink[(2*(x$linknodes[2]-x$linknodes[1]+1)-1),2]+diff))
   } 
   else
   {
@@ -66,11 +66,11 @@ plot.linkfunction.lcmm <- function(x,legend.loc="topright",legend=NULL,add=FALSE
  
   if(!isTRUE(add))
   {
-   do.call("plot",c(dots,list(x=x$estimlink[,2],y=x$estimlink[,1],xlab=xlab1,ylab=ylab1,main=title1,type=type1,xlim=xlim1)))
+   do.call("plot",c(dots.plot,list(x=x$estimlink[,2],y=x$estimlink[,1],xlab=xlab1,ylab=ylab1,main=title1,type=type1,xlim=xlim1)))
   }
   else
   {
-   do.call("lines",c(dots,list(x=x$estimlink[,2],y=x$estimlink[,1])))
+   do.call("lines",c(dots.plot,list(x=x$estimlink[,2],y=x$estimlink[,1])))
   }
  }
  else
@@ -78,5 +78,3 @@ plot.linkfunction.lcmm <- function(x,legend.loc="topright",legend=NULL,add=FALSE
   cat("Output can not be produced since the program stopped abnormally. \n")
  }
 }
-
-plot.linkfunction <- plot.link <- function(x,legend.loc="topright",legend=NULL,add=FALSE,...) UseMethod("plot.linkfunction")

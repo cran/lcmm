@@ -5,6 +5,8 @@ Computation of estimators of the Expected Prognostic Observed Cross-Entropy (EPO
 }
 \description{
 This function computes estimators of the Expected Prognostic Observed Cross-Entropy (EPOCE) for evaluating the predictive accuracy of joint latent class models estimated using \code{Jointlcmm}. On the same data as used for estimation of the \code{Jointlcmm} object, this function computes both the Mean Prognostic Observed Log-Likelihood (MPOL) and the Cross-Validated Observed Log-Likelihood (CVPOL), two estimators of EPOCE. The latter corrects the MPOL estimate for over-optimism by approximated cross-validation. On external data, this function only computes the Mean Prognostic Observed Log-Likelihood (MPOL).
+
+This function does not apply for the moment with multiple causes of event (competing risks).
 }
 \usage{
 epoce(model,pred.times,var.time,newdata = NULL,subset=NULL,na.action=1)
@@ -56,7 +58,7 @@ Cecile Proust-Lima and Amadou Diakite
 \code{\link{Jointlcmm}},\code{\link{print.epoce}},\code{\link{summary.epoce}},\code{\link{plot.epoce}}
 }
 \examples{
-%\dontrun{
+\dontrun{
 ## estimation of a joint latent class model with 2 latent classes (ng=2)
 # (see the example section of Jointlcmm for details about
 #  the model specification)
@@ -75,6 +77,6 @@ VecTime <- c(1,3,5,7,9,11,13,15)
 cvpl <- epoce(m,var.time="Time",pred.times=VecTime)
 summary(cvpl)
 plot(cvpl,bty="l",ylim=c(0,2))
-%}
+}
 }
 

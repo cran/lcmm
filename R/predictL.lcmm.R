@@ -1,5 +1,5 @@
 
-predictL.lcmm <- function(x,newdata,na.action=1,...)
+predictL.lcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
 {
 if(missing(newdata)) stop("The argument newdata should be specified")
 if(missing(x)) stop("The argument x should be specified")
@@ -8,6 +8,8 @@ if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) {
 stop(paste(c("newdata should at least include the following covariates: ","\n",x$Xnames2[-1]),collapse=" "))}
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
+if(missing(var.time)) stop("missing argument 'var.time'")
+if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 #if(is.null(x$call$random)) x$call$random <- ~-1
 #if(is.null(x$call$classmb)) x$call$classmb <- ~-1
@@ -50,7 +52,7 @@ if(na.action==1){
 
 ### pour les facteurs
 
- #cas où une variable du dataset est un facteur
+ #cas ou une variable du dataset est un facteur
  olddata <- eval(x$call$data)
   for(v in x$Xnames2[-1])
  {
@@ -62,7 +64,7 @@ if(na.action==1){
   }
  }
  
- #cas où on a factor() dans l'appel
+ #cas ou on a factor() dans l'appel
  z <- all.names(call_fixed)
  ind_factor <- which(z=="factor")
  if(length(ind_factor))
@@ -166,14 +168,24 @@ if(!is.null(x$call$classmb)){
 }else{
 	na.classmb <- NULL
 }
+
+
+#var.time
+if(var.time %in% colnames(newdata1))
+    {
+        times <- newdata1[,var.time,drop=FALSE]
+    }
+else
+    {
+        times <- newdata[,var.time,drop=FALSE]
+    }
+
 ## Table sans donnees manquante: newdata
 na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))
 if(!is.null(na.action)){
 	newdata1 <- newdata1[-na.action,]
+        times <- times[-na.action]
 }
-
-# nouvelle table sans donnees manquantes
-#X <- newdata1[,var.time]
 
 
 
@@ -226,11 +238,14 @@ if(x$N[6]>0)  #on ajoute la variable de temps de cor
 
 ## Construction des var expli
 newdata1 <- X_fixed
+colX <- colnames(X_fixed)
 
 if(id.X_mixture == 1){
 	for(i in 1:length(colnames(X_mixture))){
 		if((colnames(X_mixture)[i] %in% colnames(newdata1))==F){
-			newdata1 <- cbind(newdata1,X_mixture[,i])			
+			newdata1 <- cbind(newdata1,X_mixture[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_mixture)[i])
+                        colX <- colnames(newdata1)
 		}
 	}
 }
@@ -238,71 +253,192 @@ if(id.X_random == 1){
 	for(i in 1:length(colnames(X_random))){
 		if((colnames(X_random)[i] %in% colnames(newdata1))==F){
 			newdata1 <- cbind(newdata1,X_random[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_random)[i])
+                        colX <- colnames(newdata1)
 		}	 
 	}
 }
 if(id.X_classmb == 1){
 	for(i in 1:length(colnames(X_classmb))){
 		if((colnames(X_classmb)[i] %in% colnames(newdata1))==F){
-			newdata1 <- cbind(newdata1,X_classmb[,i],deparse.level=0)	 
+			newdata1 <- cbind(newdata1,X_classmb[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_classmb)[i])
+                        colX <- colnames(newdata1)
 		}	
 	}
 }
 if(x$N[6]>0)
 { 
- if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+ if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0)
+     {
+         newdata1 <- cbind(newdata1,var.cor)
+         colnames(newdata1) <- c(colX,x$Xnames[z])
+         colX <- colnames(newdata1)
+     }
 }
 
-kk<-0
-for(k in 1:length(x$idg0)){
-if(x$idg0[k]==1){
-X1 <- cbind(X1,newdata1[,k])
-if (k==1) b1 <- c(b1,0)
-if (k>1) {
-place <- x$N[1]+kk
-b1 <- c(b1,x$best[place+1])
-kk <- kk+1
-}
-}
 
-if(x$idg0[k]==2){
-X2 <- cbind(X2,newdata1[,k])
-if (k==1){
-place1 <- x$N[1]+kk+1
-place2 <- x$N[1]+kk+x$ng-1
-b2 <- rbind(b2,c(0,x$best[place1:place2]))
-kk <- kk+x$ng-1
-}
-if (k>1){
-place1 <- x$N[1]+kk+1
-place2 <- x$N[1]+kk+x$ng
-b2 <- rbind(b2,x$best[place1:place2])
-kk <- kk+x$ng}
-}
-}
+### calcul des predicitons
 
-Ypred<-matrix(0,length(newdata1[,1]),x$ng)
-for(g in 1:x$ng){
-if(length(b1) != 0){
-Ypred[,g]<- X1 %*% b1 
-}
-if(length(b2) != 0){
-Ypred[,g]<- Ypred[,g] + X2 %*% b2[,g]
-}
-}
+  placeV <- list() #places pour les variances
+  placeV$commun <- NA
+  for(i in 1:x$ng)
+  {
+   placeV[paste("class",i,sep="")] <- NA
+  }
+    
+  kk<-0
+  for(k in 1:length(x$idg0))
+  {
+   if(x$idg0[k]==1)
+   {
+    X1 <- cbind(X1,newdata1[,k])
+    if (k==1) b1 <- c(b1,0)
+    if (k>1) 
+    {
+     place <- x$N[1]+kk
+     b1 <- c(b1,x$best[place+1])
+     placeV$commun <- c(placeV$commun,place+1)     
+     kk <- kk+1
+    }
+   }
+   
+   if(x$idg0[k]==2)
+   {
+    X2 <- cbind(X2,newdata1[,k])
+    if (k==1)
+    {
+     place1 <- x$N[1]+kk+1
+     place2 <- x$N[1]+kk+x$ng-1
+     b2 <- rbind(b2,c(0,x$best[place1:place2]))
+     for(i in 2:x$ng)
+     {
+      placeV[[paste("class",i,sep="")]] <- c(placeV[[paste("class",i,sep="")]],x$N[1]+kk+i-1)
+     } 
+     kk <- kk+x$ng-1
+    }
+    if (k>1)
+    {
+     place1 <- x$N[1]+kk+1
+     place2 <- x$N[1]+kk+x$ng
+     b2 <- rbind(b2,x$best[place1:place2])
+     for(i in 1:x$ng)
+     {
+      placeV[[paste("class",i,sep="")]] <- c(placeV[[paste("class",i,sep="")]],x$N[1]+kk+i)
+     }
+     kk <- kk+x$ng
+    }
+   }
+  }
+  
+  
+  Y<-matrix(0,length(newdata1[,1]),x$ng)
+  colnames(Y) <- paste("class",1:x$ng,sep="") 
+  for(g in 1:x$ng){
+  if(length(b1) != 0){
+  Y[,g]<- X1 %*% b1 
+  }
+  if(length(b2) != 0){
+  Y[,g]<- Y[,g] + X2 %*% b2[,g]
+  }
+  }
 
-colnames(Ypred) <- paste("pred_class",1:x$ng,sep="")
-if (x$ng==1) colnames(Ypred) <- "pred"
+  #extraction de Var(beta)
+  Vbeta <- matrix(0,x$N[2],x$N[2])
+  npm <- length(x$best)
+  indice <- 1:npm * (1:npm+1) /2
+  indtmp <- indice[(x$N[1]+1):(x$N[1]+x$N[2])]
+  indtmp <- cbind(indtmp-0:(length(indtmp)-1),indtmp)
+  
+  indV <- NULL
+  for(i in 1:nrow(indtmp))
+  {
+   indV <- c(indV,seq(indtmp[i,1],indtmp[i,2]))
+  }
+  
+  Vbeta[upper.tri(Vbeta, diag=TRUE)] <- x$V[indV]
+  Vbeta <- t(Vbeta)
+  Vbeta[upper.tri(Vbeta, diag=TRUE)] <- x$V[indV] 
+  
+  
+  #IC pour les predictions 
+  lower <- matrix(0,nrow(Y),ncol(Y))  
+  upper <- matrix(0,nrow(Y),ncol(Y))
+  colnames(lower) <- paste("lower.class",1:x$ng,sep="")
+  colnames(upper) <- paste("upper.class",1:x$ng,sep="") 
+   
+  if(x$ng==1)
+  {
+   varpred <- apply(X1[,-1,drop=FALSE],1,function(x) matrix(x,nrow=1) %*% Vbeta %*% matrix(x,ncol=1)) 
+   lower[,1] <- Y[,1] -1.96 * sqrt(varpred)
+   upper[,1] <- Y[,1] +1.96 * sqrt(varpred)
+  }
+  else
+  {
+   for(g in 1:x$ng)
+   {
+    ind <- na.omit(c(placeV[["commun"]],placeV[[paste("class",g,sep="")]]))
 
-res <- Ypred
+    if(g==1)
+    {
+     if(x$idg0[1]==1)
+     {
+      X12 <- X12 <- cbind(X1[,-1,drop=FALSE],X2)
+     }
+     
+     if(x$idg0[1]==2)
+     {
+      X12 <- X12 <- cbind(X1,X2[,-1,drop=FALSE])
+     }
+    }
+    else
+    {
+     X12 <- cbind(X1,X2)    
+    }
+    
+    X12 <- X12[,order(ind),drop=FALSE]
+
+    varclass <- Vbeta[sort(ind)-x$N[1],sort(ind)-x$N[1]]
+    varpred <- apply(X12,1,function(x) matrix(x,nrow=1) %*% varclass %*% matrix(x,ncol=1)) 
+    
+    lower[,g] <- Y[,g] -1.96 * sqrt(varpred)
+    upper[,g] <- Y[,g] +1.96 * sqrt(varpred)    
+   }
+
+
+}  
+
+
+  if(confint==TRUE)
+      {
+          res <- cbind(Y,lower,upper)
+          if(x$ng==1) colnames(res) <- c("pred","lower.pred","upper.pred")
+          if(x$ng>1) colnames(res) <- c(paste("pred_class",1:x$ng,sep=""),paste("lower.pred_class",1:x$ng,sep=""),paste("upper.pred_class",1:x$ng,sep=""))
+
+          res.list <- NULL
+          res.list$pred <- res
+          res.list$times <- times
+      }
+  if(confint==FALSE)
+      {
+          if(x$ng==1) colnames(Y) <- "pred"
+          if(x$ng>1) colnames(Y) <- paste("pred_class",1:x$ng,sep="")
+
+          res.list <- NULL
+          res.list$pred <- Y
+          res.list$times <- times
+      }
+
 }
 else{
 cat("Output can not be produced since the program stopped abnormally.")
-res <- NA
+ res.list <- list(pred=NA,times=NA)
 }
 
- res
+  class(res.list) <- "predictL"
+  return(res.list)
+
 }         
 
 
-predictL <- function(x,...) UseMethod("predictL")
+predictL <- function(x,newdata,var.time,na.action=1,confint=FALSE,...) UseMethod("predictL")

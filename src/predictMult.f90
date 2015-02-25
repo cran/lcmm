@@ -13,7 +13,7 @@ subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
   integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,nsim,methInteg,nalea,ny
   integer,dimension(ny),intent(in)::idlink,nbzitr
   double precision,dimension(npm),intent(in)::b1
-  double precision,intent(in) ::epsY
+  double precision,dimension(ny),intent(in) ::epsY
   double precision,dimension(maxval(nbzitr),ny),intent(in)::zitr0
 
   ! for computation
@@ -891,7 +891,7 @@ do yk=1,ny
    do g=1,ng
      do j=1,maxmes
         if (ymarg(maxmes*(yk-1)+j,g).ne.9999.d0) then
-        ymarg(maxmes*(yk-1)+j,g)=ymarg(maxmes*(yk-1)+j,g)*(maxY(yk)-minY(yk)+2*epsY)+minY(yk)-epsY
+        ymarg(maxmes*(yk-1)+j,g)=ymarg(maxmes*(yk-1)+j,g)*(maxY(yk)-minY(yk)+2*epsY(yk))+minY(yk)-epsY(yk)
        if (ymarg(maxmes*(yk-1)+j,g).lt.minY(yk)) ymarg(maxmes*(yk-1)+j,g)=minY(yk)
         if (ymarg(maxmes*(yk-1)+j,g).gt.maxY(yk)) ymarg(maxmes*(yk-1)+j,g)=maxY(yk)
         end if

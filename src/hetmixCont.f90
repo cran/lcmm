@@ -327,7 +327,7 @@
 
         if (d.eq.0) then
                 do i=1,n
-                        intval(i)=0
+                        intval(i)=0.d0
                 end do
         end if
 !
@@ -348,14 +348,14 @@
 
                         if (d.eq.modofm) then
                         do i=1,n
-                                fulsms(i,prtcnt)=0
+                                fulsms(i,prtcnt)=0.d0
                         end do
-                        fulsms(n+1,prtcnt)=0
+                        fulsms(n+1,prtcnt)=0.d0
                         end if
 
                         if (fulsms(n+1,prtcnt).eq.0 .and.fulwgt .ne.0) then
                                 call fulsmh(s,m,n,f,fulsms(1,prtcnt),x,work)
-                                intcls=intcls+fulsms(n+1,prtcnt)
+                                intcls=intcls+INT(fulsms(n+1,prtcnt))
                         end if
 
                         do i=1,n
@@ -655,17 +655,17 @@
         double precision,dimension(*)::point,weight,intval,x,funs,ic
 
         do i = 1,ndim
-                ic(i) = 1
+                ic(i) = 1.d0
         end do
 
         do i = 1,numfun
-                intval(i) = 0
+                intval(i) = 0.d0
         end do
 
- 10   wtprod = 1
+ 10   wtprod = 1.d0
 
         do i= 1,ndim
-                ici = ic(i)
+                ici = INT(ic(i))
                 x(i) = point(ici)
                 wtprod = wtprod*weight(ici)
         end do
@@ -677,9 +677,9 @@
         end do
 
         do i = 1,ndim
-                ic(i) = ic(i) + 1
+                ic(i) = ic(i) + 1.d0
                 if (ic(i) .le. np) goto 10
-                ic(i) = 1
+                ic(i) = 1.d0
         end do
 
         end subroutine mltrul
@@ -1644,14 +1644,14 @@
       maxY=zitr0(nbzitr0)
 
       rangeY=0
-      if (Ydiscret.eq.1) rangeY=maxY-minY
+      if (Ydiscret.eq.1) rangeY=INT(maxY)-INT(minY)
 
 
       epsY=epsY0
       idlink=idlink0
       if (idlink.eq.0) ntrtot=2
       if (idlink.eq.1) ntrtot=4
-      if (idlink.eq.3) ntrtot=zitr0(nbzitr0)-zitr0(1)
+      if (idlink.eq.3) ntrtot=INT(zitr0(nbzitr0))-INT(zitr0(1))
       if (idlink.eq.2) then
          ntrtot=nbzitr0+2
          allocate(zitr(-1:(ntrtot)))
@@ -2807,7 +2807,7 @@
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea) ::err2
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1
+      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1,SigmaE,CovDev
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob,b3
@@ -2876,10 +2876,11 @@
 
          end do
                  
-!matrice Ci=Ri+s2*I
+!matrice Corr et sigmaE
         
         Corr=0.d0
         tcor=0.d0
+        SigmaE=0.d0
         if (ncor.gt.0) then
            do k=1,nv
               if (idcor(k).eq.1) then
@@ -2891,7 +2892,7 @@
          end if
          do j1=1,nmes(i)
             do j2=1,nmes(i)
-               if (j1.eq.j2) Corr(j1,j2) = 1
+               if (j1.eq.j2) SigmaE(j1,j2) = 1
                if (ncor.eq.1) then 
                   Corr(j1,j2) = Corr(j1,j2)+b1(npm)*b1(npm)*min(tcor(j1),tcor(j2))
                else if (ncor.eq.2) then
@@ -3011,12 +3012,15 @@
             Valea=0.d0
             VC=0.d0
             P=0.d0
-
+            CovDev=0.d0
 
             P=MATMUL(Z,Ut)
             Valea=MATMUL(Ut,transpose(P))
             VC=0.d0
-            VC=MATMUL(P,transpose(P))+Corr
+            VC=MATMUL(P,transpose(P))+Corr+SigmaE
+
+!covDev covariance matrix for individual deviation
+            CovDev=MATMUL(P,transpose(P))+Corr
 
 !     Vi en vecteur
 
@@ -3078,14 +3082,12 @@
             err2=0.d0
             err2=MATMUL(Valea,err1)
             pred1=0.d0
-            pred1=mu+MATMUL(Z,err2)
-            err1=0.d0
-            err1=MATMUL(Z,err2)
+            pred1=mu+MATMUL(CovDev,err1)
             do j=1,nmes(i)
                resid_m(nmes_cur+j)=Y2(j)
                pred_m_g(nmes_cur+j)=mu(j)
 
-               resid_ss(nmes_cur+j)=Y2(j)-err1(j)
+               resid_ss(nmes_cur+j)=Y1(j)-pred1(j)
                pred_ss_g(nmes_cur+j)=pred1(j)
             end do
 
@@ -3237,7 +3239,13 @@
                VC=0.d0
                P=MATMUL(Z,Ut1)
                Valea=MATMUL(Ut1,transpose(P))
-               VC=MATMUL(P,transpose(P))+Corr
+               VC=MATMUL(P,transpose(P))+Corr+SigmaE
+
+! covDev covariance matrix for individual deviation
+
+            CovDev=MATMUL(P,transpose(P))+Corr
+
+
 !     Vi en vecteur
                jj=0
                do j=1,nmes(i)
@@ -3282,7 +3290,7 @@
                err2=0.d0
                err2=MATMUL(Valea,err1)
                pred1=0.d0
-               pred1=mu+MATMUL(Z,err2)
+               pred1=mu+MATMUL(CovDev,err1)
 
                do j=1,nmes(i)
                   pred_m_g((g-1)*nobs+nmes_cur+j)=mu(j)

@@ -96,8 +96,8 @@ number of points used to plot the estimated link function. By default, nsim=100.
 }
   \item{range}{optional vector indicating the range of the outcome (that is the minimum and maximum). By default, the range is defined according to the minimum and maximum observed values of the outcome. The option should be used only for Beta and Splines transformations.
 }
-\item{subset}{optional vector giving the line numbers of the data frame \code{data} to use. By default, all lines.}
-
+\item{subset}{optional vector giving the subset of observations in \code{data} to use. By default, all lines.
+}
   \item{na.action}{
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
 }
@@ -193,7 +193,6 @@ The list returned is:
 (with the number of the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). This output is not available yet when specifying a thresholds transformation.}
 \item{pprob}{table of posterior classification and posterior individual class-membership probabilities}
 \item{Xnames}{list of covariates included in the model}
-
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject. This output is not available yet when specifying a thresholds transformation.}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
 \item{estimlink}{table containing the simulated values of the marker and corresponding estimated link function}
@@ -201,16 +200,30 @@ The list returned is:
 \item{linktype}{indicator of link function type: 0 for linear, 1 for beta, 2 for splines and 3 for thresholds}
 \item{linknodes}{vector of nodes useful only for the 'splines' link function}
 
+%\item{idprob0}{internal information used in related functions}
+%\item{idea0}{internal information used in related functions}
+%\item{idg0}{internal information used in related functions}
+%\item{idcor0}{internal information used in related functions}
+%\item{Xnames2}{list of all cariates in the model}
+%\item{Ydiscret}{indicator of discrete likelihood calculation}
+%\item{discrete_loglik}{if Ydiscret=1, discrete log-likelihood of the model}
+%\item{UACV}{UACV}
+%\item{IndivContrib}{individual contributions to the discrete log-likelihood}
+%\item{na.action}{lines excluded from dataset due to uncomplete observations}
 }
 
 
 \author{
 Cecile Proust-Lima, Amadou Diakite, Benoit Liquet and Viviane Philipps
+
+\email{cecile.proust-lima@inserm.fr}
 }
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 
 \references{
+
+Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
 
 Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over infinite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
 
@@ -233,7 +246,7 @@ asymptotic distribution, Arxiv.
 
 \seealso{
 
-\code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{plot.linkfunction}}, \code{\link{plot.predict}}, \code{\link{hlme}}
+\code{\link{postprob}}, \code{\link{plot.lcmm}}, \code{\link{plot.predict}}, \code{\link{hlme}}
 }
 \examples{
 \dontrun{
@@ -264,7 +277,7 @@ summary(m13)
 m14<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
 data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
 summary(m14)
-plot.linkfunction(m14,bty="l")
+plot(m14,which="linkfunction",bty="l")
 
 
 # Thresholds
@@ -280,18 +293,19 @@ B=c(-0.8379, -0.1103,  0.3832,  0.3788 , 0.4524, -7.3180,  0.5917,  0.7364,
  0.5310 , 0.5352, 0.6498,  0.6653,  0.5851,  0.6525,  0.6701 , 0.6670 ,
  0.6767 , 0.7394 , 0.7426, 0.7153,  0.7702,  0.6421))
 summary(m15)
-plot.linkfunction(m15,bty="l")
+plot(m15,which="linkfunction",bty="l")
 
 #### Plot of estimated different link functions:
 #### (applicable for models that only differ in the "link function" used. 
 ####  Otherwise, the latent process scale is different and a rescaling
 ####  is necessary)
-plot.linkfunction(m10,col=1,xlab="latent process",ylab="marker",bty="l",xlim=c(-10,5),legend=NULL)
-plot.linkfunction(m11,add=TRUE,col=2,legend=NULL)
-plot.linkfunction(m12,add=TRUE,col=3,legend=NULL)
-plot.linkfunction(m13,add=TRUE,col=4,legend=NULL)
-plot.linkfunction(m14,add=TRUE,col=5,legend=NULL)
-plot.linkfunction(m15,add=TRUE,col=6,legend=NULL)
+plot(m10,which="linkfunction",col=1,xlab="latent process",ylab="marker",
+bty="l",xlim=c(-10,5),legend=NULL)
+plot(m11,which="linkfunction",add=TRUE,col=2,legend=NULL)
+plot(m12,which="linkfunction",add=TRUE,col=3,legend=NULL)
+plot(m13,which="linkfunction",add=TRUE,col=4,legend=NULL)
+plot(m14,which="linkfunction",add=TRUE,col=5,legend=NULL)
+plot(m15,which="linkfunction",add=TRUE,col=6,legend=NULL)
 legend(x="bottomright",legend=c("linear","beta","spl_3e","spl_5q","spl_5m","thresholds"),
 col=1:6,lty=1,inset=.02,box.lty=0)
 
@@ -320,7 +334,7 @@ summary(m22)
 postprob(m22)
 
 data <- data_Jointlcmm[data_Jointlcmm$ID==193,]
-plot.predict(m22,var.time="Time",newdata=data,bty="l")
+plot(predictL(m22,var.time="Time",newdata=data,bty="l")
 
 }    
 }

@@ -9,9 +9,9 @@ subroutine calculus_transfo(b,npm,ny,idlink,ntrtot,imoins,zitr0,maxnbzitr,marker
       integer, dimension(ny)::idlink,ntrtot,dimide
       integer,dimension(maxval(dimide),ny)::ide
       double precision,dimension(maxval(ntrtot))::splaa
-      double precision::aa1,bb1,dd1,aa,bb,betai,eps,ytemp,cc1,epsY
+      double precision::aa1,bb1,dd1,aa,bb,betai,eps,ytemp,cc1
       double precision, dimension(npm)::b
-      double precision,dimension(ny)::minY,maxY
+      double precision,dimension(ny)::minY,maxY,epsY
       double precision,dimension(maxnbzitr,ny)::zitr0
       double precision,dimension(:),allocatable::zitr
       double precision,dimension(maxval(ntrtot))::Xspl
@@ -157,7 +157,7 @@ subroutine calculus_transfo(b,npm,ny,idlink,ntrtot,imoins,zitr0,maxnbzitr,marker
           bb=aa*(1-aa1)/aa1
 
           do j=1,nsim
-                ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY)/(maxY(yk)-minY(yk)+2*epsY)
+                ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
                 transfY((yk-1)*nsim+j)=(betai(aa,bb,ytemp)-cc1)/dd1
 !                if (transfY((yk-1)*nsim+j).eq.999.d0) then
 !                    write(*,*)'problem'

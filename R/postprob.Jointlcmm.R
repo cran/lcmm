@@ -4,7 +4,7 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
  
  res <- list()
  
- if(x$specif[[3]]==1) 
+ if(x$ng==1) 
  { 
   cat("Postprob function can only be used when ng > 1 \n")
  } 
@@ -12,32 +12,32 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
  {
   if(x$conv==1|x$conv==2) 
   {  
-    classif<-NULL
+    classif <- NULL
     classifY <- NULL
-    cl.table<-NULL
+    cl.table <- NULL
     thr.table <- NULL
     pprob <- x$pprob[,-1]
     pprobY <- x$pprobY[,-1]
-    for (g in 1:x$specif[[3]]) 
+    for (g in 1:x$ng) 
     {
     temp<- subset(pprob,pprob[,1]==g)
     tempY<- subset(pprobY,pprobY[,1]==g)
-    temp1<-apply(temp[,2:(x$specif[[3]]+1)],2,mean)
-    temp1Y<-apply(tempY[,2:(x$specif[[3]]+1)],2,mean)
+    temp1<-apply(temp[,1+1:x$ng],2,mean)
+    temp1Y<-apply(tempY[,1+1:x$ng],2,mean)
     cl.table<-rbind(cl.table,temp1)
     classif<-cbind(classif,length(temp[,1]))
     classifY<-cbind(classifY,length(tempY[,1]))
     if(!is.null(threshold)) thr.table <- cbind(thr.table,sapply(threshold,function(x) length(which(temp[,1+g]>x)))/length(temp[,1]))  
    }
    
-   classif <- rbind(classif,100*classif/x$specif[[2]])
-   classifY <- rbind(classifY,100*classifY/x$specif[[2]])
+   classif <- rbind(classif,100*classif/x$ns)
+   classifY <- rbind(classifY,100*classifY/x$ns)
    
-   rownames(cl.table)<-paste("class",1:x$specif[[3]],sep="")
-   colnames(cl.table)<-paste("prob",1:x$specif[[3]],sep="")
-   colnames(classif)<-paste("class",1:x$specif[[3]],sep="")
+   rownames(cl.table)<-paste("class",1:x$ng,sep="")
+   colnames(cl.table)<-paste("prob",1:x$ng,sep="")
+   colnames(classif)<-paste("class",1:x$ng,sep="")
    rownames(classif)<-c("N","%")
-   colnames(classifY)<-paste("class",1:x$specif[[3]],sep="")
+   colnames(classifY)<-paste("class",1:x$ng,sep="")
    rownames(classifY)<-c("N","%")
     
    if(!is.null(thr.table))
@@ -45,10 +45,10 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
     thr.table <- 100*thr.table  
     
     rownames(thr.table) <- paste("prob>",threshold,sep="") 
-    colnames(thr.table) <- paste("class",1:x$specif[[3]],sep="") 
-   } 
-   
-   if(sum(is.na(pprob[,2:(x$specif[[3]]+1)]))==0)
+    colnames(thr.table) <- paste("class",1:x$ng,sep="") 
+   }
+    
+   if(sum(is.na(pprob[1+1:x$ng]))==0)
    {
     cat(" \n")
     cat("Posterior classification based on longitudinal and time-to-event data:", "\n")
@@ -60,14 +60,14 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
     print(round(cl.table,4))
     #print(cl.table)
     cat(" \n")
-     
+    
     if(!is.null(thr.table))
     {
      cat("Posterior probalities above a threshold (%):", "\n")
      print(round(thr.table,2))
      cat(" \n")    
-    }     
-    
+    }
+
     res <- c(res,list(round(classif,2),round(cl.table,4)))
     if(!is.null(thr.table)) res <- c(res,list(round(thr.table,2)))
    }
@@ -77,7 +77,7 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
    }
    
    
-   if(sum(is.na(pprobY[,2:(x$specif[[3]]+1)]))==0)
+   if(sum(is.na(pprobY[,1+1:x$ng]))==0)
    {
     cat(" \n")
     cat("Posterior classification based only on longitudinal data:", "\n")
@@ -99,11 +99,6 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
  
  return(invisible(res))
 }
-
-
-
-
-
 
 
 postprob <- function(x,threshold=c(0.7,0.8,0.9),...) UseMethod("postprob")

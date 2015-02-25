@@ -8,6 +8,13 @@ plot.epoce <- function(x,...)
         
    dots <- list(...)
 
+        if(length(list(...)$add))
+            {
+                add <- eval(match.call()$add)
+            }
+        else
+            add <- FALSE
+        
    if(length(list(...)$main)) 
    {
     title1 <- as.character(eval(match.call()$main))
@@ -80,7 +87,18 @@ plot.epoce <- function(x,...)
    "omd","omi","pch","pin","plt","ps","pty","smo","srt","sub","tck","tcl","type","usr","xaxp","xaxs","xaxt","xlab",
    "xlim","xpd","yaxp","yaxs","yaxt","ylab","ylbias","ylim") 
    dots.plot <- dots[intersect(names(dots),names.plot)]   
-   
-   do.call("plot",c(dots.plot,list(x=x$EPOCE[,1],y=y1,pch=pch1,type=type1,ylab=ylab1,xlab=xlab1,main=title1,ylim=ylim1)))
+
+        if(add==FALSE)
+            { 
+                do.call("plot",c(dots.plot,list(x=x$EPOCE[,1],y=y1,pch=pch1,type=type1,ylab=ylab1,xlab=xlab1,main=title1,ylim=ylim1)))
+            }
+        else
+            {
+                title1 <- ""
+                xlab1 <- ""
+                ylab1 <- ""
+
+                do.call("points",c(dots.plot,list(x=x$EPOCE[,1],y=y1,pch=pch1,type=type1,ylab=ylab1,xlab=xlab1,main=title1,ylim=ylim1)))
+            }
 }
 

@@ -75,7 +75,7 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
   if (idlink.eq.0) ntrtot=2
   if (idlink.eq.1) ntrtot=4
-  if (idlink.eq.3) ntrtot=zitr0(nbzitr)-zitr(1)
+  if (idlink.eq.3) ntrtot=INT(zitr0(nbzitr))-INT(zitr0(1))
   if (idlink.eq.2) then
      ntrtot=nbzitr+2
      allocate(zitr(-1:(ntrtot)),splaa(-1:(ntrtot-3)))
@@ -140,6 +140,8 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
   nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1
   npm2=nef+nvc+nwg+ntrtot+ncor
+
+
 
   if (npm.ne.npm2) then
      ymarg=9999.d0
@@ -290,7 +292,6 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
 
      if (idlink.eq.0) then  ! Linear link
-
         ymarg=9999.d0
         goto 654
         ! ne devrait pas venir ici
@@ -979,7 +980,7 @@ end subroutine predict_cont
     2 term=one
       ai=one
       betain=one
-      ns=qq+cx*psq
+      ns=INT(qq+cx*psq)
 !c
 !c     user soper's reduction formulae.
 !c

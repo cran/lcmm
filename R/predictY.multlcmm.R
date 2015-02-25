@@ -1,11 +1,12 @@
-predictY.multlcmm <- function(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...)
+predictY.multlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...)
 {
 if(missing(newdata)) stop("The argument newdata should be specified")
 if(missing(x)) stop("The argument x should be specified")
 if (!inherits(x, "multlcmm")) stop("use only with \"lcmm\" or \"multlcmm\" objects")
 if (!all(x$Xnames2 %in% colnames(newdata))) stop(paste(c("newdata should at least include the following covariates: ","\n",x$Xnames2),collapse=" "))
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
-#if(plot==TRUE & (missing(mfrow) | missing(x.plot))) stop("Arguments mfrow and x.plot are required if plot=TRUE")
+if(missing(var.time)) stop("missing argument 'var.time'")
+if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 if(x$conv==1|x$conv==2) 
 {
@@ -16,28 +17,13 @@ if(x$conv==1|x$conv==2)
   }
   if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
   
-  
-  ### Traitement des donnees manquantes
-  newdata <- newdata[,x$Xnames2]
-  newdata <- as.data.frame(newdata)
-  colnames(newdata) <- x$Xnames2
-  
-  linesNA <- apply(newdata,2,function(v) which(is.na(v)))
-  linesNA <- unique(unlist(linesNA))
-  
-  if(length(linesNA) & na.action==2) stop("newdata contains missing values")
-  if(length(linesNA) & na.action==1)
-  {                                                                              
-   newdata <- as.data.frame(newdata[-linesNA,])
-   colnames(newdata) <- x$Xnames2[-1]
-  }
-  
-  
+
+ 
   ##pour les facteurs
   olddata <- eval(x$call$data)
   termes <- x$Xnames[-1]
   
-   #cas où une variable dans le dataset du modèle est un facteur
+   #cas ou une variable dans le dataset du modele est un facteur
    for(v in x$Xnames2[-1])
    {
     if (is.factor(olddata[,v]))
@@ -54,7 +40,7 @@ if(x$conv==1|x$conv==2)
     }
    }
   
-   #cas où on a factor() dans l'appel de la fonction
+   #cas ou on a factor() dans l'appel de la fonction
    dans_appel <- c(all.names(x$call$fixed),all.names(x$call$random),all.names(x$call$mixture),all.names(x$call$classmb))
    ind_factor <- which(dans_appel=="factor")
    if(length(ind_factor))
@@ -74,6 +60,27 @@ if(x$conv==1|x$conv==2)
     }
    }
   
+  
+  ## var.time
+  times <- newdata[,var.time,drop=FALSE]
+  
+  ### Traitement des donnees manquantes
+  newdata <- newdata[,x$Xnames2]
+  newdata <- as.data.frame(newdata)
+  colnames(newdata) <- x$Xnames2
+  
+  linesNA <- apply(newdata,2,function(v) which(is.na(v)))
+  linesNA <- unique(unlist(linesNA))
+  
+  if(length(linesNA) & na.action==2) stop("newdata contains missing values")
+  if(length(linesNA) & na.action==1)
+  {                                                                              
+   newdata <- as.data.frame(newdata[-linesNA,])
+   colnames(newdata) <- x$Xnames2
+   times <- times[-linesNA]
+  }
+  
+ 
   
   ###matrice avec toutes les var et toutes les interactions
   newdata1 <- model.matrix(as.formula(paste("~",paste(termes,collapse="+"))),data=newdata)
@@ -218,13 +225,19 @@ if(x$conv==1|x$conv==2)
 #   }
   }
 
+  res.list <- NULL
+  res.list$pred <- Ypred
+  res.list$times <- times
 }
 
 else
 {
  cat(" The program stopped abnormally. No prediction can be computed.\n")
- Ypred <- NA
+
+ res.list <- list(pred=NA,times=NA)
 }
 
- Ypred
+
+ class(res.list) <- "predictY"
+ return(res.list)
 }

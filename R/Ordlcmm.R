@@ -43,15 +43,25 @@ int.random <- 0
 int.classmb <- 0
 
 ## Table sans donnees manquante: newdata
-newdata <- data  
 #prendre le subset :
-if(!(is.null(subset))) 
-newdata <- data[subset,]
+newdata <- data  
+if(!isTRUE(all.equal(as.character(cl$subset),character(0))))
+    {
+        cc <- cl
+        cc <- cc[c(1,which(names(cl)=="subset"))]
+        cc[[1]] <- as.name("model.frame")
+        cc$formula <- formula(paste("~",paste(colnames(data),collapse="+")))
+        cc$data <- data
+        cc$na.action <- na.pass
+        newdata <- eval(cc)
+    }
 
 #enlever les NA
 	if(!is.null(na.action)){
 		newdata <- newdata[-na.action,]
 	}
+
+attributes(newdata)$terms <- NULL
 
 ### names of covariate in intial fit
 X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(formula(terms(fixed)),data=newdata))[-1]))
@@ -586,7 +596,7 @@ colnames(estimlink) <- c("Y","transfY")
 if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
 
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=rep(0,nvar.exp),loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action)
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=rep(0,nvar.exp),loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action,AIC=2*(length(out$best)-out$loglik),BIC=length(out$best)*log(ns0)-2*out$loglik)
 class(res) <-c("lcmm")  
 
 cost<-proc.time()-ptm

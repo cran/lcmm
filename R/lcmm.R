@@ -111,13 +111,30 @@ else { na.cor <- NULL }
 
 attr.fixed <- attributes(terms(fixed))
 depvar <- as.character(attr.fixed$variables[2])
-if(!is.null(na.action)){
-Y0 <- data[-na.action,depvar]
-}else{
-Y0 <- data[,depvar]
+if(!isTRUE(all.equal(as.character(mm$subset),character(0))))
+    {
+        cc <- mm
+        cc <- cc[c(1,which(names(mm)=="subset"))]
+        cc[[1]] <- as.name("model.frame")
+        cc$formula <- formula(paste("~",depvar))
+        cc$data <- data
+        cc$na.action <- na.pass
+        ysubset <- eval(cc)
+    }
+else
+    {
+        ysubset <- data[,depvar,drop=FALSE]
+    }
+
+if(!is.null(na.action))
+{
+    Y0 <- ysubset[-na.action,]
 }
-
-
+else
+{
+    Y0 <- ysubset
+}
+Y0 <- unlist(Y0)
 
 minY0 <- min(Y0)
 maxY0 <- max(Y0)
@@ -130,6 +147,16 @@ if ((!missing(range)) & length(range)==2)
   maxY0 <- range[2]
  } 
 }
+else
+    {
+        min2 <- round(minY0,3)
+        if(minY0<min2) min2 <- min2-0.001
+        minY0 <- min2
+
+        max2 <- round(maxY0,3)
+        if(maxY0>max2) max2 <- max2+0.001
+        maxY0 <- max2
+    }
 
 if(all.equal((maxY0-minY0),0) == T){
 	stop("All the values of the dependent variable are the same. No estimation can be performed in that case.")
@@ -244,7 +271,7 @@ if (all.equal(idlink0,2)==T){
 		zitr[i] <- zitr[i-1]+pas
 		}
 	}
-  
+
  #verifier s'il y a des obs entre les noeuds
  hcounts <- hist(Y0,breaks=zitr,plot=FALSE,include.lowest=TRUE,right=TRUE)$counts
  if(any(hcounts==0)) stop("Link function can not be estimated since some intervals defined by the nodes do not contain any observation.")  
@@ -264,6 +291,7 @@ if (idlink0!=3) {
         if(!(all.equal(minY0,as.integer(minY0))==T) | !(all.equal(maxY0,as.integer(maxY0))==T)|!all(Y0 %in% minY0:maxY0)){
 		Ydiscrete <- 0
 	}
+
 }
 
 

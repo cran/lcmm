@@ -45,7 +45,7 @@ Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 This function can only be used with latent class mixed models and joint latent class mixed models that include at least 2 latent classes
 }
 \seealso{
-\code{\link{Jointlcmm}}, \code{\link{lcmm}}, \code{\link{hlme}},\code{\link{plot.postprob}}  
+\code{\link{Jointlcmm}}, \code{\link{lcmm}}, \code{\link{hlme}},\code{\link{plot.lcmm}}  
 }
 \examples{
 %\dontrun{

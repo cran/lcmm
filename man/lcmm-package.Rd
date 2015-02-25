@@ -5,13 +5,13 @@
 Estimation of extended mixed models using latent classes and latent processes.
 }
 \description{
-This package provides functions for the estimation of latent class mixed models (LCMM), joint latent class mixed models (JLCM) and mixed models for curvilinear and ordinal univariate and multivariate longitudinal outcomes (with or without latent classes of trajectory). All the models are estimated in a maximum likelihood framework using an iterative algorithm. The package also provides various post fit functions.}
+Functions for the estimation of latent class mixed models (LCMM), joint latent class mixed models (JLCM) and mixed models for curvilinear and ordinal univariate and multivariate longitudinal outcomes (with or without latent classes of trajectory). All the models are estimated in a maximum likelihood framework using an iterative algorithm. The package also provides various post fit functions.}
 \details{
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.6.6 \cr
-Date: \tab 2014-09-10\cr
+Version: \tab 1.7.1 \cr
+Date: \tab 2015-02-25\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
@@ -20,7 +20,7 @@ The package includes for the moment the estimation of :
 \item latent class mixed models for Gaussian longitudinal outcomes using \code{hlme} function,
 \item latent class mixed models for other quantitative, bounded quantitative (curvilinear) and discrete longitudinal outcomes using \code{lcmm} function,
 \item latent class mixed models for multivariate (possibly curvilinear) longitudinal outcomes using \code{multlcmm} function,
-\item joint latent class mixed models for a Gaussian longitudinal outcome and a right-censored (potentially left-truncated) time-to-event using \code{Jointlcmm} function. 
+\item joint latent class mixed models for a Gaussian (or curvilinear) longitudinal outcome and a right-censored (potentially left-truncated and of multiple causes) time-to-event using \code{Jointlcmm} function. 
 }
 
 Please report to the maintainer any bug or comment regarding the package for future updates. 
@@ -28,9 +28,11 @@ Please report to the maintainer any bug or comment regarding the package for fut
 \author{
 Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
 
-Maintainer: Cecile Proust-Lima  <cecile.proust@isped.u-bordeaux2.fr>
+\email{cecile.proust-lima@inserm.fr}
 }
 \references{
+
+Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
 
 Commenges, Liquet and Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
 expected conditional {K}ullback-{L}eibler risks. Biometrics 68(2), 380-7.

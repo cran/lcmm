@@ -5,6 +5,8 @@ Computation of the difference of expected prognostic cross-entropy (EPOCE) estim
 }
 \description{
 This function computes the difference of 2 EPOCE estimates (CVPOL or MPOL) and its 95\% tracking interval between two joint latent class models estimated using \code{Jointlcmm} and evaluated using \code{epoce} function. Difference in CVPOL is computed when the EPOCE was previously estimated on the same dataset as used for estimation (using an approximated cross-validation), and difference in MPOL is computed when the EPOCE was previously estimated on an external dataset. 
+
+This function does not apply for the moment with multiple causes of event (competing risks).
 }
 \usage{
 Diffepoce(epoceM1,epoceM2)
@@ -51,7 +53,7 @@ Cecile Proust-Lima and Amadou Diakite
 \code{\link{Jointlcmm}},\code{\link{epoce}},\code{\link{summary.Diffepoce}}
 }
 \examples{
-%\dontrun{
+\dontrun{
 #### estimation with 2 latent classes (ng=2)
 data(data_Jointlcmm)
 m2 <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,mixture=~Time,subject='ID'
@@ -75,5 +77,5 @@ cvpol2
 DeltaEPOCE <- Diffepoce(cvpol1,cvpol2)
 summary(DeltaEPOCE)
 plot(DeltaEPOCE,bty="l")
-%}
+}
 }

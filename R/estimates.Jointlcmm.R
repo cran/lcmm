@@ -1,4 +1,3 @@
-
 estimates.Jointlcmm <- function(x,cholesky=TRUE)
 {
  if(missing(x)) stop("The argument x should be specified")
@@ -10,20 +9,11 @@ estimates.Jointlcmm <- function(x,cholesky=TRUE)
   res <- x$best
   cholesky <- as.logical(cholesky)
 
-  N <- x$specif[[1]]
-  if(isTRUE(cholesky) & N[5]>0)
+  if(isTRUE(cholesky) & x$N[5]>0)
   {
-   if(!isTRUE(x$call$idiag) | N[5]==1)
-   {
-    res[N[4]+1:N[5]] <- x$cholesky
-   }
-   else
-   {
-    nea <- sum(x$specif[[4]])
-    res[N[4]+1:N[5]] <- x$cholesky[-setdiff(1:(nea*(nea+1)/2),1:nea*(1:nea+1)/2)]
-   }
+   res[sum(x$N[1:4])+1:x$N[5]] <- x$cholesky
 
-   names(res) <- sub("Varcov","cholesky",names(res))
+   names(res) <- sub("varcov","cholesky",names(res))
   }
  }
  else

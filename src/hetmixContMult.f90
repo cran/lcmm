@@ -12,7 +12,7 @@
       integer,dimension(:),allocatable,save ::idlink,ntrtot
       integer,dimension(:,:),allocatable,save ::nmes
       integer,dimension(:),allocatable,save::nvalSPL
-      double precision,save :: epsY
+      double precision,dimension(:),allocatable,save :: epsY
       double precision,dimension(:,:),allocatable,save::zitr
       double precision,dimension(:),allocatable,save::mm,mm1,mm2,im,im1,im2
       end module communm
@@ -35,7 +35,7 @@
            ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
            ,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
            ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG &
-           ,maxiter0,verbose0,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
+           ,maxiter0,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
            ,nvalSPL0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv)
 
       use parameters
@@ -45,8 +45,8 @@
       IMPLICIT NONE
 
         !Declaration des variables en entree
-      integer,intent(in)::nv0,maxiter0,Ydiscret,ny0,verbose0
-      double precision,intent(in)::epsY0
+      integer,intent(in)::nv0,maxiter0,Ydiscret,ny0
+      double precision,dimension(ny0),intent(in)::epsY0
       integer, dimension(ny0),intent(in)::idlink0,nbzitr0,nvalSPL0
       double precision,dimension(maxval(nbzitr0),ny0),intent(in)::zitr0
       integer,dimension(nobs0),intent(in)::indiceY0
@@ -134,9 +134,8 @@
       epsb=convL
       epsd=convG
       maxiter=maxiter0
-      verbose=verbose0
 
-      allocate(rangeY(ny0),minY(ny0),maxY(ny0),idlink(ny0),ntrtot(ny0))
+      allocate(rangeY(ny0),minY(ny0),maxY(ny0),idlink(ny0),ntrtot(ny0),epsY(ny0))
 
       !nvalSPL=0
       nySPL=0 
@@ -440,7 +439,7 @@
       deallocate(Y,X,idprob,idea,idg,idcor,idcontr,nmes,prior,uniqueY,indiceY,ntrtot)
 
 
-      deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL)
+      deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL,epsY)
 
 
 
@@ -627,17 +626,18 @@
 
             do j=1,nmes(i,yk)
 
-               ytemp=(dble(Y(nmescur+sumMesYk+j))-minY(yk)+epsY)/(maxY(yk)-minY(yk)+2*epsY)
+               ytemp=(dble(Y(nmescur+sumMesYk+j))-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
                Y1(sumMesYk+j)=(betai(aa,bb,ytemp)-cc1)/dd1
 
 
                if (Y1(sumMesYk+j).eq.999.d0) then
                   vrais_mult_i=-1.d9
+                  !print*,"-1.d9 Y1=999"
                   goto 654
                end if
 
                jacobien = jacobien + log(abs(beta_densite(ytemp,aa,bb))/dd1)
-               jacobien=jacobien-log(abs(maxY(yk)-minY(yk)+2*epsY))
+               jacobien=jacobien-log(abs(maxY(yk)-minY(yk)+2*epsY(yk)))
             end do
 
          else if (idlink(yk).eq.2) then ! Splines link
@@ -668,6 +668,7 @@
 
                if (ll.lt.1.or.ll.gt.ntrtot(yk)-3) then          
                 vrais_mult_i=-1.d9
+                !print*,"-1.d9 ll<1 ou ll>ntrtot-3"
                 goto 654
                end if
                if (ll.gt.1) then
@@ -722,6 +723,7 @@
             CALL dsinv(Vi,sum(nmes(i,:)),eps,ier,det)
             if (ier.eq.-1) then
                vrais_mult_i=-1.d9
+               !print*,"-1.d9 dsinv"
                goto 654
             end if
 
@@ -964,6 +966,7 @@
                   CALL dsinv(Vi,sum(nmes(i,:)),eps,ier,det)
                   if (ier.eq.-1) then
                      vrais_mult_i=-1.d9
+                     !print*,"-1.d9 dsinv 2"
                      goto 654
                   end if
 
@@ -1028,7 +1031,7 @@
 
         use communm,only:ns,nmes
         use donnees_indivm,only:nmescur
-        use parameters, only:verbose
+        !use parameters, only:verbose
 
         implicit none
 
@@ -1075,7 +1078,7 @@
       double precision,dimension(nprob+1) ::Xprob,bprob
       double precision,dimension(nea) ::err2
       double precision,dimension(nea,nea) ::Ut,Ut1
-      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1,Valea
+      double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1,Valea,SigmaE,CovDev
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,b3
@@ -1155,8 +1158,7 @@
 
          end do
                  
-!matrice Ci=Ri+s2*I
-        
+!matrice Corri=Ri 
         Corr=0.d0
         tcor=0.d0
         if (ncor.gt.0) then
@@ -1184,12 +1186,13 @@
          Valea=0.d0
          Y1=0.d0
 
+        SigmaE=0.d0
       sumMesYk=0
       sumntrtot=0
       numSPL=0
       do yk=1,ny
          do j1=1,nmes(i,yk)
-            Corr(sumMesYk+j1,sumMesYk+j1) =Corr(sumMesYk+j1,sumMesYk+j1)+b1(nef+nvc+nwg+ncor+yk)**2 !erreur du test yk
+            SigmaE(sumMesYk+j1,sumMesYk+j1) = b1(nef+nvc+nwg+ncor+yk)**2 !erreur du test yk
          
             if (nalea.eq.ny) then
                do j2=1,nmes(i,yk)
@@ -1225,7 +1228,7 @@
 
                !nmescur=nmescur+1
 
-               ytemp=dble(Y(nmes_cur+sumMesYk+j)-minY(yk)+epsY)/(maxY(yk)-minY(yk)+2*epsY)
+               ytemp=dble(Y(nmes_cur+sumMesYk+j)-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
                Y1(sumMesYk+j)=(betai(aa,bb,ytemp)-cc1)/dd1
 
                if (Y1(sumMesYk+j).eq.999.d0) then
@@ -1324,12 +1327,17 @@
             covUY=0.d0
             VC=0.d0
             P=0.d0
+            CovDev=0.d0
 
 
             P=MATMUL(Z,Ut)
             covUY=MATMUL(Ut,transpose(P))
             VC=0.d0
-            VC=MATMUL(P,transpose(P))+Corr+Valea
+            VC=MATMUL(P,transpose(P))+Corr+Valea+SigmaE
+
+! covDev covariance matrix for individual deviation
+
+            CovDev=MATMUL(P,transpose(P))+Corr+Valea
 
 !     Vi en vecteur
 
@@ -1418,16 +1426,17 @@
             err1=MATMUL(VC1,Y2)
             err2=0.d0
             err2=MATMUL(covUY,err1)
+
             pred1=0.d0
-            pred1=mu+MATMUL(Z,err2)
-            err1=0.d0
-            err1=MATMUL(Z,err2)
+            pred1=MATMUL(CovDev,err1)
+
+
+
             do j=1,sum(nmes(i,:))
                resid_m(nmes_cur+j)=Y2(j)
                pred_m_g(nmes_cur+j)=mu(j)
-
-               resid_ss(nmes_cur+j)=Y2(j)-err1(j)
-               pred_ss_g(nmes_cur+j)=pred1(j)
+               pred_ss_g(nmes_cur+j)=mu(j)+pred1(j)
+               resid_ss(nmes_cur+j)=Y2(j)-pred1(j)
             end do
 
 
@@ -1614,7 +1623,12 @@
                VC=0.d0
                P=MATMUL(Z,Ut1)
                covUY=MATMUL(Ut1,transpose(P))
-               VC=MATMUL(P,transpose(P))+Corr+Valea
+               VC=MATMUL(P,transpose(P))+Corr+Valea+SigmaE
+
+! covDev covariance matrix for individual deviation
+
+            CovDev=MATMUL(P,transpose(P))+Corr+Valea
+
 !     Vi en vecteur
                jj=0
                do j=1,sum(nmes(i,:))
@@ -1662,14 +1676,15 @@
                err2=0.d0
                err2=MATMUL(covUY,err1)
                pred1=0.d0
-               pred1=mu+MATMUL(Z,err2)
+               pred1=MATMUL(CovDev,err1)
+
 
                do j=1,sum(nmes(i,:))
                   pred_m_g((g-1)*nobs+nmes_cur+j)=mu(j)
-                  pred_ss_g((g-1)*nobs+nmes_cur+j)=pred1(j)
+                  pred_ss_g((g-1)*nobs+nmes_cur+j)=mu(j)+pred1(j)
 
                   resid_ss(nmes_cur+j)=resid_ss(nmes_cur+j) &
-                      +ppi(i,g)*(Y1(j)-pred1(j))
+                      +ppi(i,g)*(Y1(j)-mu(j)-pred1(j))
                   resid_m(nmes_cur+j)=resid_m(nmes_cur+j)+pi(g)*(Y2(j))
                end do
                do k=1,nea
@@ -1930,7 +1945,7 @@ end do
             bb=aa*(1-aa1)/aa1
 
             do j=1,nsim
-                  ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY)/(maxY(yk)-minY(yk)+2*epsY)
+                  ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
                   transfY((yk-1)*nsim+j)=(betai(aa,bb,ytemp)-cc1)/dd1
                   if (transfY((yk-1)*nsim+j).eq.999.d0) then
 !                    write(*,*)'problem'
@@ -2190,7 +2205,7 @@ end do
 
             do j=1,nmes(i,yk)
 
-               ytemp=(dble(Y(nmes_cur+sumMesYk+j))-minY(yk)+epsY)/(maxY(yk)-minY(yk)+2*epsY)
+               ytemp=(dble(Y(nmes_cur+sumMesYk+j))-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
                Y1(sumMesYk+j)=(betai(aa,bb,ytemp)-cc1)/dd1
 
                if (Y1(sumMesYk+j).eq.999.d0) then

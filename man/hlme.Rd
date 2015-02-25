@@ -148,6 +148,10 @@ The list returned is:
 
 }
 \references{
+
+
+Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm,  Arxiv
+
 Verbeke G and Lesaffre E (1996). A linear mixed-effects model with heterogeneity in
 the random-effects population. Journal of the American Statistical Association 91, 217-21
 
@@ -160,9 +164,11 @@ distribution for the random-effects. Computer Methods Programs Biomedicine 78, 1
 }
 \author{
 Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
+
+\email{cecile.proust-lima@inserm.fr}
 }
 \seealso{
-\code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{summary}}, \code{\link{plot.predict}}
+\code{\link{postprob}}, \code{\link{plot.hlme}}, \code{\link{summary}}, \code{\link{predictY}}
 }
 \examples{
 %\dontrun{
@@ -193,7 +199,7 @@ subject='ID',ng=2,data=data_hlme,B=c(0.11,-0.74,-0.07,20.71,
 29.39,-1,0.13,2.45,-0.29,4.5,0.36,0.79,0.97))
 m2
 summary(m2)
-postprob(m2)
+plot(m2,which="postprob")
 ### same model as m2 with the vector of initial values specified
 m3<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
@@ -203,7 +209,7 @@ summary(m3)
 ## plot of predicted trajectories using some newdata
 newdata<-data.frame(Time=seq(0,5,length=100),
 X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
-plot.predict(m3,newdata,"Time","right",bty="l")
+plot(predictY(m3,newdata,var.time="Time"),legend.loc="right",bty="l")
 
 %}
 }

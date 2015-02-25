@@ -1,5 +1,5 @@
 
-multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,verbose=FALSE,nsim=100,prior,range=NULL,na.action=1)
+multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1)
 {
  ptm<-proc.time()
  cat("Be patient, multlcmm is running ... \n")
@@ -113,6 +113,21 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  else ttesLesVar <- unique(ttesLesVar)
  ttesLesVar <- setdiff(ttesLesVar, nomsY)
 
+ ### argument subset
+ form1 <- paste(c(nom.subject,nomsY,ttesLesVar,nom.prior),collapse="+")
+ if(!isTRUE(all.equal(as.character(cl$subset),character(0))))
+     {
+         cc <- cl
+         cc <- cc[c(1,which(names(cl)=="subset"))]
+         cc[[1]] <- as.name("model.frame")
+         cc$formula <- formula(paste("~",form1))
+         cc$data <- data
+         cc$na.action <- na.pass
+         data <- eval(cc)
+     }
+
+attributes(data)$terms <- NULL
+ 
  ###subset de data avec les variables utilisees
  newdata <- data[,c(nom.subject,nomsY,ttesLesVar,nom.prior)]
  if(!is.null(nom.prior))
@@ -128,12 +143,14 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  outcome <- NULL
  prior <- NULL
  data0 <- NULL
+ nayk <- vector("list",ny0)
  for (k in 1:ny0)
  {
   dtemp <- newdata[,c(nom.subject,nomsY[k],ttesLesVar,nom.prior)]
   #enlever les NA
   linesNA <- apply(dtemp,2,function(v) which(is.na(v)))
   linesNA <- unique(unlist(linesNA))
+  if(length(linesNA)) nayk[[k]] <- linesNA
   if(na.action==1 & length(linesNA)>0) dtemp <- dtemp[-linesNA,]
   if(na.action==2 & length(linesNA)>0) stop("Data contains missing values")
   assign(dataY[k],dtemp)
@@ -229,17 +246,9 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  idlink0[which(link=="linear")] <- 0
  idlink0[which(link=="beta")] <- 1
 
- if (any(idlink0==1))
- {
-  if (epsY<=0)
-  {
-   epsY <- 0.5
-   stop("Argument 'epsY' should be positive.")
-  }
- } 
   
  spl <- strsplit(link[which(idlink0==2)],"-")
- if(any(sapply(spl,length)!=3)) stop("Invalid argument link")
+ if(any(sapply(spl,length)!=3)) stop("Invalid argument 'link'")
 
  nySPL <- length(spl)
  nybeta <- sum(idlink0==1)
@@ -250,8 +259,8 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   ind12 <- which(idlink0==1 | idlink0==2)
   for (i in 1:(nySPL+nybeta))
   {
-   rg <- range(get(dataY[ind12[i]]))
-   if(rg[1]>range[2*(i-1)+1] | rg[2]<range[2*(i-1)+2]) stop("The range specified do not cover the entire range of the data")
+   rg <- range(get(dataY[ind12[i]])[,nomsY[ind12[i]]])
+   if(rg[1]<range[2*(i-1)+1] | rg[2]>range[2*(i-1)+2]) stop("The range specified do not cover the entire range of the data")
   }
  }
  if((is.null(range) & (nybeta+nySPL)>0) | length(range)!=2*(nySPL+nybeta))
@@ -259,11 +268,39 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   range <- NULL
   for(k in which(idlink0!=0))
   {
-   range <- c(range, min(get(dataY[k])[,nomsY[k]]), max(get(dataY[k])[,nomsY[k]]))
+      min1 <- min(get(dataY[k])[,nomsY[k]])
+      min2 <- round(min1,3)
+      if(min1<min2) min2 <- min2-0.001
+
+      max1 <- max(get(dataY[k])[,nomsY[k]])
+      max2 <- round(max1,3)
+      if(max1>max2) max2 <- max2+0.001
+      
+      range <- c(range, min2, max2)
   }
  }
 
 
+ ## epsY
+ if (any(idlink0==1))
+     {
+         if (any(epsY<=0))
+             {
+                 stop("Argument 'epsY' should be positive.")
+             }
+
+         if(length(epsY)==1) epsY <- rep(epsY,nybeta)
+         
+         if(length(epsY)!=nybeta) stop(paste("Argument 'epsY' should be of length",nybeta))
+         if(nybeta!=ny0)
+             {
+                 epsY2 <- rep(0,ny0)
+                 epsY2[which(idlink0==1)] <- epsY
+                 epsY <- epsY2
+             }
+
+     } 
+ 
 
  nbzitr0 <- rep(2,ny0) #nbzitr0 = nb de noeuds si splines, 2 sinon
  nbnodes <- NULL  #que pour les splines
@@ -306,7 +343,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
     if(!length(nodes)) stop("The length of intnodes is not correct")
     intnodes2[(sum(nbnodes[1:nbspl]-2)-(nbnodes[nbspl]-2)+1):sum(nbnodes[1:nbspl]-2)] <-  nodes
     nb <- nb+nbnodes[nbspl]-2
-  
+
     idrg <- length(which(idlink0[1:k] != 0))
     if(any(nodes <= range[2*(idrg-1)+1]) | any(nodes >= range[2*idrg])) stop("Interior nodes must be in the range of the outcome")
    }
@@ -378,13 +415,22 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   yk <- get(dataY[k])[,nomsY[k]]
   uniqueTemp <- sort(unique(yk))
   permut <- order(order(yk))  # sort(y)[order(order(y))] = y
-  indice <- rep(1:length(uniqueTemp), as.vector(table(yk)))
-  indiceTemp <- nb + indice[permut]
+  if(length(as.vector(table(yk)))==length(uniqueTemp))
+      {
+          indice <- rep(1:length(uniqueTemp), as.vector(table(yk)))
+          indiceTemp <- nb + indice[permut]
 
-  nb <- nb + length(uniqueTemp)
-  uniqueY0 <- c(uniqueY0, uniqueTemp)
-  indiceY0 <- c(indiceY0, indiceTemp)
-  nvalSPL0 <- c(nvalSPL0, length(uniqueTemp))
+          nb <- nb + length(uniqueTemp)
+          uniqueY0 <- c(uniqueY0, uniqueTemp)
+          indiceY0 <- c(indiceY0, indiceTemp)
+          nvalSPL0 <- c(nvalSPL0, length(uniqueTemp))
+      }
+  else
+      {
+          uniqueY0 <- yk
+          indiceY0 <- c(1:length(yk))
+          nvalSPL0 <- length(yk)
+      }
  }
 
  
@@ -598,7 +644,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
   nef2 <- sum(idg0!=0)-1
   NPM2 <- nef2+ nvc+ncor0+ny0+sum(ntrtot0)
-  b2 <- c(n=rep(0,nef2),b[(nef+1):NPM])
+  b2 <- c(rep(0,nef2),b[(nef+1):NPM])
   ind1 <- which(substr(names(b2),1,7)=="varprop")
   if(length(ind1)) b2 <- b2[-ind1]
   ind2 <- which(substr(names(b2),1,11)=="std.randomY")
@@ -614,16 +660,14 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   convB2 <- max(0.01,convB)
   convL2 <- max(0.01,convL)
   convG2 <- max(0.01,convG)
-  verbose2 <- FALSE
 
-  if (verbose) cat("Computing initial values... \n")
   init <- .Fortran("hetmixContMult",as.double(Y0),as.double(X0),as.integer(prior02),as.integer(idprob02),as.integer(idea0),
   as.integer(idg02),as.integer(idcor0),as.integer(idcontr02),as.integer(ny0),as.integer(ns0),as.integer(ng02),
   as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg02),
   as.integer(ncor0),as.integer(nalea02),as.integer(NPM2),best=as.double(b2),V=as.double(V2),loglik=as.double(loglik2),
   niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi02),resid_m=as.double(resid_m),
   resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g2),pred_ss_g=as.double(pred_ss_g2),predRE=as.double(predRE),
-  predRE_Y=as.double(predRE_Y2),as.double(convB2),as.double(convL2),as.double(convG2),as.integer(maxiter2),as.integer(verbose2),as.double(epsY),
+  predRE_Y=as.double(predRE_Y2),as.double(convB2),as.double(convL2),as.double(convG2),as.integer(maxiter2),as.double(epsY),
   as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(uniqueY0),as.integer(indiceY0),as.integer(nvalSPL0),
   marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
   vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
@@ -667,7 +711,6 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
   b[nef+nvc+nw+ncor0+1:ny0] <- init$best[nef2+nvc+ncor0+1:ny0]
   b[(nef+nvc+nw+ncor0+ny0+nalea0+1):NPM] <-init$best[(nef2+nvc+ncor0+ny0+1):NPM2]
 
-  if(verbose==TRUE) cat("initial parameters : \n",b,"\n")
  }
 
  
@@ -678,7 +721,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  as.integer(ncor0),as.integer(nalea0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),
  niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),
  resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),
- predRE_Y=as.double(predRE_Y),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.integer(verbose),as.double(epsY),
+ predRE_Y=as.double(predRE_Y),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),
  as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(uniqueY0),as.integer(indiceY0),as.integer(nvalSPL0),
  marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
  vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),PACKAGE="lcmm")
@@ -772,7 +815,8 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
  idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,
  call=cl,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,
  predRE_Y=predRE_Y,Ynames=nomsY,Xnames=nom.X0,Xnames2=ttesLesVar,cholesky=Cholesky,
- estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,nbnodes=nbnodes)
+ estimlink=estimlink,epsY=epsY,linktype=idlink0,linknodes=zitr,nbnodes=nbnodes,
+ na.action=nayk,AIC=2*(length(out$best)-out$loglik),BIC=length(out$best)*log(ns0)-2*out$loglik)
  
  names(res$best) <- names(b)
  class(res) <-c("multlcmm")

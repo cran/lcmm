@@ -6,7 +6,7 @@ print.Diffepoce <- function(x,...){
 	cl <- x$call.JLCM1
 	cl$B <- NULL
 	dput(cl)
-	cl <- x$call.JLCM2
+	cl <- x$call.JLCM1
 	cl$B <- NULL
 	dput(cl)
 	cat(" \n")	

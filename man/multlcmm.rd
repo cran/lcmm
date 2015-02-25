@@ -13,9 +13,9 @@ Parameters of the nonlinear link functions and of the latent process mixed model
 \usage{
 multlcmm(fixed, mixture, random, subject, classmb, ng = 1, 
 idiag = FALSE,nwg = FALSE, randomY=FALSE, link = "linear", 
-intnodes = NULL, epsY = 0.5, cor=NULL,data, B, convB = 1e-04, 
-convL = 1e-04, convG = 1e-04, maxiter=100, verbose=FALSE,
-nsim=100, prior,range=NULL, na.action=1)
+intnodes = NULL, epsY = 0.5, cor=NULL, data, B, convB = 1e-04, 
+convL = 1e-04, convG = 1e-04, maxiter=100,
+nsim=100, prior,range=NULL, subset=NULL, na.action=1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -82,13 +82,14 @@ Due to possible local maxima in latent class mixed models, the \code{B} vector s
 }
   \item{maxiter}{optional maximum number of iterations for the Marquardt iterative algorithm. By default, maxiter=100.
 }
-  \item{verbose}{optional logical for printing information during the optimization procedure (for internal use only). By default verbose=FALSE.}
   \item{nsim}{
 number of points used to plot the estimated link functions. By default, nsim=100.
 }
   \item{prior}{name of the covariate containing the prior on the latent class membership. The covariate should be an integer with values in 0,1,...,ng. When there is no prior, the value should be 0. When there is a prior for the subject, the value should be the number of the latent class (in 1,...,ng).
 }
   \item{range}{optional vector indicating the range of the outcomes (that is the minimum and maximum). By default, the range is defined according to the minimum and maximum observed values of the outcome. The option should be used only for Beta and Splines transformations.
+  }
+  \item{subset}{optional vector giving the subset of observations in \code{data} to use. By default, all lines.
 }
   \item{na.action}{
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.
@@ -158,7 +159,6 @@ The list returned is:
 \item{conv}{status of convergence: =1 if the convergence criteria were satisfied, =2 if the maximum number of iterations was reached, =4 or 5 if a problem occured during optimisation}
 \item{call}{the matched call}
 \item{niter}{number of Marquardt iterations}
-\item{dataset}{dataset}
 \item{N}{internal information used in related functions}
 \item{idiag}{internal information used in related functions}
 \item{pred}{table of individual predictions and residuals in the underlying latent process scale; it includes marginal predictions (pred_m), marginal residuals (resid_m), subject-specific predictions (pred_ss) and subject-specific residuals
@@ -166,26 +166,27 @@ The list returned is:
 (with the number of the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...).}
 \item{pprob}{table of posterior classification and posterior individual class-membership probabilities}
 \item{Xnames}{list of covariates included in the model}
-
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject.}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
 \item{estimlink}{table containing the simulated values of each outcome and the corresponding estimated link function}
 \item{epsY}{definite positive reals used to rescale the markers in (0,1) when the beta link function is used. By default, epsY=0.5.}
 \item{linktype}{indicators of link function types: 0 for linear, 1 for beta, 2 for splines and 3 for thresholds}
 \item{linknodes}{vector of nodes useful only for the 'splines' link functions}
-
+%% idea0, idprob0,idg0,idcontr0,idcor0,Xnames2,na.action,pred_RE_Y,Ynames,nbnodes
 }
 
 
 \author{
 Cecile Proust-Lima and Viviane Philipps
+
+\email{cecile.proust-lima@inserm.fr}
 }
 
 
 \references{
 
-Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over infinite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
 
+Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
 
 Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78: 165-73.
 
@@ -205,20 +206,20 @@ asymptotic distribution, Arxiv.
 
 \seealso{
 
-\code{\link{postprob}}, \code{\link{plot.postprob}}, \code{\link{plot.linkfunction}}, \code{\link{predictL}}, \code{\link{predictY}} \code{\link{lcmm}}
+\code{\link{postprob}}, \code{\link{plot.multlcmm}}, \code{\link{predictL}}, \code{\link{predictY}} \code{\link{lcmm}}
 }
 
 \examples{
-
+\dontrun{
 data(data_Jointlcmm)
 # Latent process mixed model for two curvilinear outcomes. Link functions are 
 # aproximated by I-splines, the first one has 3 nodes (i.e. 1 internal node 8),
 # the second one has 4 nodes (i.e. 2 internal nodes 12,25)
-\dontrun{
+
 m1 <- multlcmm(Ydep1+Ydep2~1+Time*X2+contrast(X2),random=~1+Time,
 subject="ID",randomY=TRUE,link=c("4-manual-splines","3-manual-splines"),
 intnodes=c(8,12,25),data=data_Jointlcmm)
-}
+
 # to reduce the computation time, the same model is estimated using 
 # a vector of initial values
 m1 <- multlcmm(Ydep1+Ydep2~1+Time*X2+contrast(X2),random=~1+Time,
@@ -227,14 +228,15 @@ intnodes=c(8,12,25),data=data_Jointlcmm,
 B=c(-1.071, -0.192,  0.106, -0.005, -0.193,  1.012,  0.870,  0.881,
   0.000,  0.000, -7.520,  1.401,  1.607 , 1.908,  1.431,  1.082,
  -7.528,  1.135 , 1.454 , 2.328, 1.052))
+
+
 # output of the model
 summary(m1)
 # estimated link functions
-plot.linkfunction(m1)
+plot(m1,which="linkfunction")
 # variation percentages explained by linear mixed regression
 VarExpl(m1,data.frame(Time=0))
 
-\dontrun{
 #### Heterogeneous latent process mixed model with linear link functions 
 #### and 2 latent classes of trajectory 
 m2 <- multlcmm(Ydep1+Ydep2~1+Time*X2,random=~1+Time,subject="ID",
@@ -246,8 +248,8 @@ summary(m2)
 # posterior classification
 postprob(m2)
 # longitudinal predictions in the outcomes scales for a given profile of covariates 
-newdata <- data.frame(Time=seq(0,5,length=100), X1=rep(0,100), X2=rep(0,100),X3=rep(0,100))
-predGH <- predictY(m2,newdata,methInteg=0,nsim=20) 
+newdata <- data.frame(Time=seq(0,5,length=100),X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
+predGH <- predictY(m2,newdata,var.time="Time",methInteg=0,nsim=20) 
 head(predGH)
 }
 }

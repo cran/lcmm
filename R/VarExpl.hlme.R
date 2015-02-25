@@ -26,7 +26,7 @@ VarExpl.hlme <- function(x,values)
 
    ### pour les facteurs
  
-   #cas où une variable du dataset est un facteur
+   #cas ou une variable du dataset est un facteur
    olddata <- eval(x$call$data)
    for(v in setdiff(vars,"intercept"))
    {
@@ -38,7 +38,7 @@ VarExpl.hlme <- function(x,values)
     }
    }
 
-   #cas où on a factor() dans l'appel
+   #cas ou on a factor() dans l'appel
    call_random <- x$call$random
    z <- all.names(call_random)
    ind_factor <- which(z=="factor")
@@ -54,12 +54,12 @@ VarExpl.hlme <- function(x,values)
    }
    call_random <- gsub("factor","",call_random)
 
-   if(!is.null(name.cor)) values1 <- model.matrix(formula(paste(call_random[2],name.cor,sep="")),data=values)
+   if (!is.null(name.cor)) values1 <- model.matrix(formula(paste("~",paste(call_random[2],name.cor,sep="+"))),data=values)
    else values1 <- model.matrix(formula(call_random),data=values)
    
    if(colnames(values1)[1]=="(Intercept)") colnames(values1)[1] <- "intercept"
 
-   if(nrow(values1)>1) warning("only the first line of values will be used")
+   if(nrow(values1)>1) warning("only the first line of values is used")
    var.random <- values1[1,names.random]
    var.cor <- values1[1,name.cor]
 
@@ -87,19 +87,18 @@ VarExpl.hlme <- function(x,values)
    Corr <- 0
    if(length(x$N)>4 & x$N[5]>0)
    {
-    var.cor <- values[name.cor]
     if(x$N[5]==1)
     {
-     Corr <- (x$best[x$N[1]+x$N[2]+x$N[3]+x$N[4]+x$N[5]])^2 * var.cor
+     Corr <- (x$best[x$N[1]+x$N[2]+x$N[3]+x$N[4]+x$N[5]+1])^2 * var.cor
     }
     if(x$N[5]==2)
     {
-     Corr <- (x$best[x$N[1]+x$N[2]+x$N[3]+x$N[4]+x$N[5]])^2
+     Corr <- (x$best[x$N[1]+x$N[2]+x$N[3]+x$N[4]+x$N[5]+2])^2
     }
    }
    denom <- numer + Corr + (x$best[length(x$best)])^2
 
-   res[1,] <- numer/denom *100
+   res[1,] <- as.numeric(numer/denom *100)
   }
   
   rownames(res) <- "%Var"

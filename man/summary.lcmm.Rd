@@ -41,7 +41,8 @@ a matrix containing the fixed effect estimates in the longitudinal model, their 
 Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
 }
 \seealso{
-\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{multlcmm}}, \code{\link{Jointlcmm}}, \code{epoce}, \code{Diffepoce}
+\code{\link{hlme}}, \code{\link{lcmm}}, \code{\link{multlcmm}},
+\code{\link{Jointlcmm}}, \code{epoce}, \code{Diffepoce}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

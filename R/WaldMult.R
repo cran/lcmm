@@ -1,26 +1,13 @@
-# Purpose : Wald test statistic
-# Program : WaldMult fonction (fonction2.R)
-# Author : Lionelle Nkam
-# Date : 07 June 2013
-# Reviewer : Cécile Proust-Lima
 
-WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
+WaldMult <- function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
 { 
-  # Le paramètre Mod doit être du type hlme du package lcmm
-  if (class(Mod)%in%c("hlme","lcmm","multlcmm","Jointlcmm")) {}
-  else  {stop("applies to \"hlme\" or \"lcmm\" or \"multlcmm\" or \"Jointlcmm\" objects only")}
+  if (!(class(Mod) %in% c("hlme","lcmm","multlcmm","Jointlcmm"))) stop("applies to \"hlme\" or \"lcmm\" or \"multlcmm\" or \"Jointlcmm\" objects only")
     
-  
-#  nea<-sum(Mod$idea) # Nombre d'effets aléatoires
-#  nef<-Mod$N[2]      # Nombre d'effets fixes
-#  nvc<-Mod$N[3]      # Nombre de paramètres de la partie triangulaire inférieure de la matrice B de variance-covariance des effets aléatoires
-#  nprob<-Mod$N[1]
-
   if(inherits(Mod,"hlme") | inherits(Mod,"lcmm"))
   {
-   nea<-sum(Mod$idea) # Nombre d'effets aléatoires
+   nea<-sum(Mod$idea) # Nombre d'effets aleatoires
    nef<-Mod$N[2]      # Nombre d'effets fixes
-   nvc<-Mod$N[3]      # Nombre de paramètres de la partie triangulaire inférieure de la matrice B de variance-covariance des effets aléatoires
+   nvc<-Mod$N[3]      # Nombre de parametres de la partie triangulaire inferieure de la matrice B de variance-covariance des effets aleatoires
    nprob<-Mod$N[1]
    idiag <- ifelse(Mod$idiag==1,TRUE,FALSE)
   }
@@ -35,16 +22,15 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
   
   if(inherits(Mod,"Jointlcmm"))
   {
-   N <- Mod$specif[[1]]
-   nea <- sum(Mod$specif[[4]])
-   nef <- N[4]
-   nvc <- N[5]
-   nprob <- 0 #nef contient deja nprob
-   idiag <- ifelse(Mod$specif[[8]]==1,TRUE,FALSE)
+   nea <- sum(Mod$idea)
+   nef <- Mod$N[4]
+   nvc <- Mod$N[5]
+   nprob <- sum(Mod$N[1:3]) #nprob+nvarxevt+nristot
+   idiag <- ifelse(Mod$idiag==1,TRUE,FALSE)
   }
 
   
-  # On remplace les varcov de $best par les paramètres de cholesky
+  # On remplace les varcov de $best par les parametres de cholesky
   if(nvc>0)
   {   
    debut <- nprob+nef+1
@@ -57,7 +43,7 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
    Mod$best[debut:fin] <- na.omit(cholesky)
   }
   
-  # On rend symétrique la matrice des varcov des paramètres estimés par le modèle
+  # On rend symetrique la matrice des varcov des parametres estimes par le modele
   l <- length(Mod$best)
   V <- matrix(0,nrow=l,ncol=l)
   V[upper.tri(V,diag=TRUE)] <- Mod$V  
@@ -68,13 +54,13 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
   if (is.null(pos)==T) {stop("pos must be specified")}
   else {
     
-    # On cree la matrice qui recevra les varcov des paramètres de pos
+    # On cree la matrice qui recevra les varcov des parametres de pos
     Mat <- matrix(0,nrow=length(pos),ncol=length(pos))
     
     # Remplissage de Mat sans boucles
     Mat <- V[pos,pos]
             
-    # Wald Multivarié, sans le vecteur contrasts
+    # Wald Multivarie, sans le vecteur contrasts
     Vect <- Mod$best[pos]
     
     
@@ -90,7 +76,7 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
       
       Wald <- t(Vect)%*%solve(Mat)%*%Vect
       
-      # Nombre de degré de liberté
+      # Nombre de degre de liberte
       ddl <- length(pos)
       # Pvalue
       p_value <- 1-pchisq(Wald,df=ddl)
@@ -110,7 +96,7 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
       Results[,2] <- round(p_value,5)
     }
     
-    # Wald Univarié avec le vecteur contrasts
+    # Wald Univarie avec le vecteur contrasts
     else {
       # Conditions d'application
       if (length(contrasts)!=length(pos))
@@ -135,7 +121,7 @@ WaldMult<-function(Mod,pos=NULL,contrasts=NULL,name=NULL,value=NULL)
       # Calcul de la variance de scalaire sans boucle
       Var <- t(contrasts)%*%Mat%*%contrasts
       
-      
+
       Wald <- Scalaire/sqrt(Var)
       p_value <- 2*(1-pnorm(abs(Wald)))
       

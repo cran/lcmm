@@ -1,6 +1,6 @@
 
 
-predictY.lcmm <- function(x,newdata,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...){
+predictY.lcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...){
 
 
 if(missing(newdata)) stop("The argument newdata should be specified")
@@ -14,6 +14,8 @@ if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) stop("see above")
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
 if (!(methInteg %in% c(0,1))) stop("The integration method must be either 0 for Gauss-Hermite or 1 for Monte-Carlo")
 if ((methInteg==0)&(!(nsim %in% c(5,7,9,15,20,30,40,50)))) stop("For Gauss-Hermite integration method, 'nsim' should be either 5,7,9,15,20,30,40 or 50")
+if(missing(var.time)) stop("missing argument 'var.time'")
+if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 
 call_fixed <- x$call$fixed[3]
@@ -37,6 +39,15 @@ if(x$Xnames2[1]!="intercept"){
 }
 
 
+            if(x$conv==2 & draws==TRUE)
+                {
+                    cat("No confidence interval will be provided since the program did not converge properly \n")
+                    draws <- FALSE
+                }
+
+
+
+
 X1 <- NULL                                                              
 X2 <- NULL
 b1 <- NULL
@@ -53,7 +64,7 @@ if(na.action==1){
 
 ### pour les facteurs
 
- #cas où une variable du dataset est un facteur
+ #cas ou une variable du dataset est un facteur
  olddata <- eval(x$call$data)
   for(v in x$Xnames2[-1])
  {
@@ -65,7 +76,7 @@ if(na.action==1){
   }
  }
  
- #cas où on a factor() dans l'appel
+ #cas ou on a factor() dans l'appel
  z <- all.names(call_fixed)
  ind_factor <- which(z=="factor")
  if(length(ind_factor))
@@ -181,14 +192,24 @@ if(length(x$N)>5)
  }
 }
 
+#var.time
+if(var.time %in% colnames(newdata1))
+    {
+        times <- newdata1[,var.time,drop=FALSE]
+    }
+else
+    {
+        times <- newdata[,var.time,drop=FALSE]
+    }
+
 ## Table sans donnees manquante: newdata
 na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
 if(length(na.action)){
 	newdata1 <- newdata1[-na.action,]
+        times <- times[-na.action]
 }
 
-# nouvelle table sans donnees manquantes
-#X <- newdata1[,var.time]
+
 
 
 
@@ -243,25 +264,32 @@ if(length(x$N)>5)
 
 ## Construction des var expli
 newdata1 <- X_fixed
+colX <- colnames(X_fixed)
 
 if(id.X_mixture == 1){
 	for(i in 1:length(colnames(X_mixture))){
-		if((colnames(X_mixture)[i] %in% colnames(newdata1))==F){
-			newdata1 <- cbind(newdata1,X_mixture[,i])			
+		if((colnames(X_mixture)[i] %in% colnames(newdata1))==FALSE){
+			newdata1 <- cbind(newdata1,X_mixture[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_mixture)[i])
+                        colX <- colnames(newdata1)
 		}
 	}
 }
 if(id.X_random == 1){
 	for(i in 1:length(colnames(X_random))){
-		if((colnames(X_random)[i] %in% colnames(newdata1))==F){
+		if((colnames(X_random)[i] %in% colnames(newdata1))==FALSE){
 			newdata1 <- cbind(newdata1,X_random[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_random)[i])
+                        colX <- colnames(newdata1)
 		}	 
 	}
 }
 if(id.X_classmb == 1){
 	for(i in 1:length(colnames(X_classmb))){
-		if((colnames(X_classmb)[i] %in% colnames(newdata1))==F){
-			newdata1 <- cbind(newdata1,X_classmb[,i],deparse.level=0)	 
+		if((colnames(X_classmb)[i] %in% colnames(newdata1))==FALSE){
+			newdata1 <- cbind(newdata1,X_classmb[,i])
+                        colnames(newdata1) <- c(colX,colnames(X_classmb)[i])
+                        colX <- colnames(newdata1)
 		}	
 	}
 }
@@ -269,7 +297,12 @@ if(length(x$N)>5)
 {
  if(x$N[6]>0)
  { 
-  if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0) newdata1 <- cbind(newdata1,var.cor)
+  if( x$idg0[z]==0 & x$idea0[z]==0 & x$idprob0[z]==0)
+      {
+          newdata1 <- cbind(newdata1,var.cor)
+          colnames(newdata1) <- c(colX,x$Xnames[z])
+          colX <- colnames(newdata1)
+      }
  }
 }
 
@@ -357,7 +390,7 @@ ndraws <- as.integer(ndraws)
 ydraws <- NULL
 
 Mat <- matrix(0,ncol=npm,nrow=npm)
-# que la partie sup utilisée donc OK si rien en bas
+# que la partie sup utilisee donc OK si rien en bas
 Mat[upper.tri(Mat,diag=TRUE)]<- x$V
 Chol <- chol(Mat)
 Chol <- t(Chol)
@@ -429,14 +462,14 @@ Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
 Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
 Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
 
-Ypred <- cbind(Ypred_2.5,Ypred_50,Ypred_97.5)
+Ypred <- cbind(Ypred_50,Ypred_2.5,Ypred_97.5)
 
 
 if (x$ng==1){
-colnames(Ypred) <- c("Ypred_2.5","Ypred_50","Ypred_97.5")
+colnames(Ypred) <- c("Ypred_50","Ypred_2.5","Ypred_97.5")
 }
 if (x$ng>1){
-colnames(Ypred) <- c(paste("Ypred_2.5_class",1:x$ng,sep=""),paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_97.5_class",1:x$ng,sep=""))
+colnames(Ypred) <- c(paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_2.5_class",1:x$ng,sep=""),paste("Ypred_97.5_class",1:x$ng,sep=""))
 }
 
 
@@ -556,7 +589,7 @@ ndraws <- as.integer(ndraws)
 ydraws <- NULL
 
 Mat <- matrix(0,ncol=npm,nrow=npm)
-# que la partie sup utilisée donc OK si rien en bas
+# que la partie sup utilisee donc OK si rien en bas
 Mat[upper.tri(Mat,diag=TRUE)]<- x$V
 Chol <- chol(Mat)
 Chol <- t(Chol)
@@ -668,13 +701,13 @@ Ypred_50 <- matrix(ydistr[2,],ncol=x$ng,byrow=F)
 Ypred_2.5 <- matrix(ydistr[1,],ncol=x$ng,byrow=F)
 Ypred_97.5 <- matrix(ydistr[3,],ncol=x$ng,byrow=F)
 
-Ypred <- cbind(Ypred_2.5,Ypred_50,Ypred_97.5)
+Ypred <- cbind(Ypred_50,Ypred_2.5,Ypred_97.5)
 
 if (x$ng==1){
-colnames(Ypred) <- c("Ypred_2.5","Ypred_50","Ypred_97.5")
+colnames(Ypred) <- c("Ypred_50","Ypred_2.5","Ypred_97.5")
 }
 if (x$ng>1){
-colnames(Ypred) <- c(paste("Ypred_2.5_class",1:x$ng,sep=""),paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_97.5_class",1:x$ng,sep=""))
+colnames(Ypred) <- c(paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_2.5_class",1:x$ng,sep=""),paste("Ypred_97.5_class",1:x$ng,sep=""))
 }
 }
 }
@@ -715,7 +748,7 @@ ndraws <- as.integer(ndraws)
 ydraws <- NULL
 
 Mat <- matrix(0,ncol=npm,nrow=npm)
-# que la partie sup utilisée donc OK si rien en bas
+# que la partie sup utilisee donc OK si rien en bas
 Mat[upper.tri(Mat,diag=TRUE)]<- x$V
 Chol <- chol(Mat)
 Chol <- t(Chol)
@@ -751,18 +784,20 @@ colnames(Ypred) <- c(paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_2.5_clas
 }
 
 
-#res <-list(Ypred)
-res <- Ypred
+res.list <- NULL
+res.list$pred <- Ypred
+res.list$times <- times
 }
 
 else  #cas xconv != 1 ou 2
 { 
  cat("Predictions can not be computed since the program stopped abnormally. \n")
- res <- NA 
+ res.list <- list(pred=NA,times=NA)
 }
 
-res
+class(res.list) <- "predictY"
+return(res.list)
 }
 
 
-predictY <- function(x,newdata,...) UseMethod("predictY")
+predictY <- function(x,newdata,var.time,...) UseMethod("predictY")

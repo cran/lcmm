@@ -7,19 +7,22 @@ Plot of individual dynamic predictions
 This function provides a graphical representation of individual dynamic predictions obtained from a joint latent class model and plots simultaneously the observed outcome.
 }
 \usage{
-\method{plot}{dynpred}(x,subject=NULL,landmark=NULL,horizon=NULL,add=FALSE,\dots)
+\method{plot}{dynpred}(x,subject=NULL,landmark=NULL,horizon=NULL,
+add=FALSE,\dots)
 }
 \arguments{
   \item{x}{a dynpred object, containing the predicted probabilities of event in a time window, obtained from a joint latent class model.}
-  \item{subject}{a vector containing the identifiers of the subjects the user wants to represent. If NULL (the default), all subjects are plotted.}
+  \item{subject}{a vector containing the identifiers of the subjects the user wants to display. If NULL (the default), all subjects are plotted.}
   \item{landmark}{a vector containing the landmark times from which the probabilities are to be plotted. If NULL (the default), all landmarks are used. If several horizon are specified, only one landmark should be selected.}
-  \item{horizon}{a vector containing the horizon times from which the probabilities are to be plotted. If NULL (the default), all horizons are used. If several landmarks are specified, only one horizon should be selected.}
+  \item{horizon}{a vector containing the horizon times from which the
+    probabilities are to be plotted. If NULL (the default), all horizons
+    are used. If several landmarks are specified, only one horizon
+    should be selected.}
   \item{add}{logical indicating if the plot should be added to an existing plot. By default (add=FALSE), a new plot is created.}
   % legend ? 
   \item{\dots}{optional graphical parameters.}
 }
 \details{
-% ???
 
 Two types of plot are provided for the moment : 
 
@@ -40,6 +43,7 @@ Cecile Proust-Lima, Viviane Philipps
 }
 \examples{
 
+\dontrun{
 data(data_Jointlcmm)
 
 ## Joint latent class model with 2 classes :
@@ -51,11 +55,12 @@ hazard="3-quant-splines",hazardtype="PH",data=data_Jointlcmm,B = c(0.64, -0.62,
 
 ## Predictions at landmark 10 and 12 for horizon 3, 5 and 10 for two subjects :
 dynpred.m32 <- dynpred(m32,landmark=c(10,12),horizon=c(3,5,10),var.time="Time",
-fun.time=function(x){10*x},newdata=data_Jointlcmm[1:8,],draws=TRUE)
+fun.time=function(x){10*x},newdata=data_Jointlcmm[4:8,],draws=TRUE,ndraws=2000)
 
 ## Plot of the predictions at landmark 10 for horizon 3,5,10 :
-plot.dynpred(dynpred.m32,landmark=10)
+plot(dynpred.m32,landmark=10)
 
 ## Plot of the predictions at landmark 10 and 12 for horizon 3 :
-plot.dynpred(dynpred.m32,horizon=3)
+plot(dynpred.m32,horizon=3)
+}
 }

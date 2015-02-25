@@ -144,18 +144,25 @@ if(classmb[[2]] != "-1")X0.names2 <- unique(c(X0.names2,colnames(get_all_vars(fo
 	na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
     # dans na.action, on a les indices des NA dans le subset de data
 
+#prendre le subset :
 newdata <- data  
-#prendre le subset :  
-
-if(!(is.null(subset))) 
-newdata <- data[subset,]
+if(!isTRUE(all.equal(as.character(cl$subset),character(0))))
+    {
+        cc <- cl
+        cc <- cc[c(1,which(names(cl)=="subset"))]
+        cc[[1]] <- as.name("model.frame")
+        cc$formula <- formula(paste("~",paste(colnames(data),collapse="+")))
+        cc$data <- data
+        cc$na.action <- na.pass
+        newdata <- eval(cc)
+    }
 
 #enlever les NA
 	if(!is.null(na.action)){
 		newdata <- newdata[-na.action,]
 	}
 
-
+attributes(newdata)$terms <- NULL
 
 ## Construction de nouvelles var explicatives sur la nouvelle table
 ## fixed
@@ -479,7 +486,7 @@ b1[(NEF+1):(NEF+NVC)]<-bidiag
 if(ncor0==1)
 {b1[NEF+NVC+1] <- 1 }
 if(ncor0==2)
-{b1[(NEF+NVC+1):(NEF+NVC+ncor0)] <- c(1,0) }
+{b1[(NEF+NVC+1):(NEF+NVC+ncor0)] <- c(0,1) }
 b1[NEF+NVC+ncor0+1]<-1
 NPM<-length(b1)
 NW<-0
@@ -672,7 +679,7 @@ names(btest) <-inddepvar.fixed.nom
 ### ad 2/04/2012
 if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
-res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,na.action=na.action)
+res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=out$V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,na.action=na.action,AIC=2*(length(out$best)-out$loglik),BIC=length(out$best)*log(ns0)-2*out$loglik)
 class(res) <-c("hlme") 
 cost<-proc.time()-ptm
 cat("The program took", round(cost[3],2), "seconds \n")

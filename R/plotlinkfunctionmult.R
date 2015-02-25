@@ -1,5 +1,5 @@
 
-plot.linkfunction.multlcmm <- function(x,legend.loc="topleft",legend=x$Ynames,add=FALSE,...)
+.plotlinkfunctionmult <- function(x,legend.loc="topleft",legend=x$Ynames,add=FALSE,...)
 {
   if(missing(x)) stop("The argument x should be specified")
   if (!inherits(x, "multlcmm")) stop("use only with \"multlcmm\" objects")
@@ -137,7 +137,7 @@ plot.linkfunction.multlcmm <- function(x,legend.loc="topleft",legend=x$Ynames,ad
     "xlim","xpd","yaxp","yaxs","yaxt","ylab","ylbias","ylim") 
     dots.plot <- dots[intersect(names(dots),names.plot)]
 
-    loc.y <- x$estimlink[,2*(1:ny)-1]
+    loc.y <- x$estimlink[,2*(1:ny)-1,drop=FALSE]
     for(yk in 1:ny)
     {
      loc.y[,yk] <- loc.grad(x$estimlink[,2*yk-1],yk) 
@@ -192,4 +192,3 @@ plot.linkfunction.multlcmm <- function(x,legend.loc="topleft",legend=x$Ynames,ad
    cat("Output can not be produced since the program stopped abnormally. \n")
   }
 }
-plot.linkfunction <- plot.link <- function(x,legend.loc="topleft",legend,add=FALSE,...) UseMethod("plot.linkfunction")

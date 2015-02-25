@@ -1,4 +1,3 @@
-
 VarCov.Jointlcmm <- function(x)
 {
  if(missing(x)) stop("The argument x should be specified")
@@ -11,7 +10,7 @@ VarCov.Jointlcmm <- function(x)
   res <- t(res)
   res[upper.tri(res,diag=TRUE)] <- x$V
 
-  noms <- sub("Varcov","cholesky",names(x$best))
+  noms <- sub("varcov","cholesky",names(x$best))
   colnames(res) <- noms
   rownames(res) <- noms
  }

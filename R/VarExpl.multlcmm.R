@@ -26,7 +26,7 @@ VarExpl.multlcmm <- function(x,values)
 
    ### pour les facteurs
 
-   #cas où une variable du dataset est un facteur
+   #cas ou une variable du dataset est un facteur
    olddata <- eval(x$call$data)
    for(v in setdiff(vars,"intercept"))
    {
@@ -38,7 +38,7 @@ VarExpl.multlcmm <- function(x,values)
     }
    }
 
-   #cas où on a factor() dans l'appel
+   #cas ou on a factor() dans l'appel
    call_random <- x$call$random
    z <- all.names(call_random)
    ind_factor <- which(z=="factor")
@@ -54,12 +54,12 @@ VarExpl.multlcmm <- function(x,values)
    }
    call_random <- gsub("factor","",call_random)
 
-   if(!is.null(name.cor)) values1 <- model.matrix(formula(paste(call_random[2],name.cor,sep="")),data=values)
+   if(!is.null(name.cor)) values1 <- model.matrix(formula(paste("~",paste(call_random[2],name.cor,sep="+"))),data=values)
    else values1 <- model.matrix(formula(call_random),data=values)
 
    if(colnames(values1)[1]=="(Intercept)") colnames(values1)[1] <- "intercept"
 
-   if(nrow(values1)>1) warning("only the first line of values will be used")
+   if(nrow(values1)>1) warning("only the first line of values is used")
    var.random <- values1[1,names.random]
    var.cor <- values1[1,name.cor]
 
@@ -91,26 +91,25 @@ VarExpl.multlcmm <- function(x,values)
    }
 
    Corr <- 0
-   if(length(x$N)>5 & x$N[6]>0)
+   if(x$N[7]>0)
    {
-    var.cor <- values[name.cor]
-    if(x$N[6]==1)
+    if(x$N[7]==1)
     {
-     Corr <- (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[6]])^2 * var.cor
+     Corr <- (x$best[sum(x$N[3:7])])^2 * var.cor
     }
-    if(x$N[6]==2)
+    if(x$N[7]==2)
     {
-     Corr <- (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[6]])^2
+     Corr <- (x$best[sum(x$N[3:7])])^2
     }
    }
-   
+   numer<- numer + Corr
    for(k in 1:ny)
    {
-    denom <- numer + Corr
-    denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[6]+x$N[7]+k])^2  #erreur de mesure
-    if(x$N[6]>0) denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+k])^2  #intercept aleatoire specif
+    denom <- numer
+    denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[7]+k])^2  #erreur de mesure
+    if(x$N[6]>0) denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[6]+x$N[7]+k])^2  #intercept aleatoire specif
     
-    res[k,] <- numer/denom *100
+    res[k,] <- as.numeric(numer/denom *100)
    }
   }
 
