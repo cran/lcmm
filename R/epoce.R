@@ -3,14 +3,14 @@
 
 
 
-epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1)
+epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subset=NULL,na.action=1)
 {
     cl <- match.call()
     if(missing(var.time)) stop("The argument var.time should be specified")
     if (!inherits(var.time, "character")) stop("the class of var.time should be character")
     if(missing(model)) stop("The argument model must be specified")
     if(class(model)!="Jointlcmm") stop("The argument model must be a class 'Jointlcmm'")
-
+    if(!is.function(fun.time)) stop("'fun.time' should be a function")
 
     if(!missing(newdata))
         {
@@ -222,6 +222,60 @@ epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1
         }   
 
 
+
+    ##fun.time
+    if(length(match.call()$fun.time))
+        {   
+            if(!isTRUE(as.character(match.call()[[which(names(match.call())=="fun.time")]])=="identity"))
+                {
+                    z <- match.call()$fun.time 
+                    
+                    if(isTRUE(as.character(z) %in% ls(.GlobalEnv)))
+                        {
+                            bodyfun <- as.expression(body(get(as.character(z))))
+                        }
+                    else
+                        {
+                            bodyfun <- as.expression(z[[3]])
+                        }
+                    vars <- intersect(colnames(data),all.names(bodyfun))
+                    getvars <- paste("getElement(data,'",vars,"')",sep="")
+                            
+                    if(length(vars))
+                        {
+                            for(i in 1:length(vars))
+                                {
+                                    bodyfun <- sub(vars[i],getvars[i],bodyfun)
+                                    if(!is.null(newdata)) bodyfun <- sub(as.character(match.call()$newdata),"",bodyfun)
+                                    else bodyfun <- sub(as.character(model$call$data),"",bodyfun)
+                                    tmp <- strsplit(bodyfun,split="")[[1]]
+                                    dollard <- which(tmp=="$")
+                                    if(length(dollard))
+                                        {
+                                            tmp <- tmp[-dollard]
+                                        }
+                                    bodyfun <- paste(tmp,collapse="")
+                                }
+                        }
+                    
+                    headfun <- paste("function(",names(formals(fun.time)),")",collapse="")
+                    ff1 <- paste(headfun,bodyfun)
+                    ff2 <- parse(text=ff1)
+                    ff3 <- eval(ff2)
+                    
+                    Time <- do.call("ff3",list(data[,var.time]))
+                }
+            else
+                {
+                    Time <- data[,var.time]
+                } 
+        }
+    else
+        {
+            Time <- data[,var.time]
+        }
+
+
     
 ###subset de data avec les variables utilisees
 
@@ -265,6 +319,8 @@ epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1
     ##enlever les NA
     linesNA <- apply(newdata1,2,function(v) which(is.na(v)))
     linesNA <- unique(unlist(linesNA))  
+    na.fun <- which(is.na(Time))
+    if(length(na.fun)) linesNA <- unique(c(linesNA,na.fun))
     
     if(length(linesNA))
         {
@@ -273,7 +329,8 @@ epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1
             Tentry <- Tentry[-linesNA]  
             Tevent <- Tevent[-linesNA] 
             Event <- Event[-linesNA]
-            Tint <- Tint[-linesNA] 
+            Tint <- Tint[-linesNA]
+            Time <- Time[-linesNA]
         }
 
 
@@ -371,9 +428,6 @@ epoce <- function(model,pred.times,var.time,newdata=NULL,subset=NULL,na.action=1
     IND <- newdata1[,model$Names$ID]
     IDnum <- as.numeric(IND)
 
-
-    ## Time
-    Time<-newdata1[,var.time]
 
 
 

@@ -402,7 +402,7 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
         else
 
-           call gaussher(gauss,nsim)
+           call gausshermite(gauss,nsim)
 
 
            do j=1,maxmes
@@ -624,7 +624,7 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
            else
 
-              call gaussher(gauss,nsim)
+              call gausshermite(gauss,nsim)
               do j=1,maxmes
                  do l=1,nsim
                     ytemp=mu(j)+sqrt(VC(j,j))*gauss(1,l)
@@ -685,7 +685,7 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
            else
 
-              call gaussher(gauss,nsim)
+              call gausshermite(gauss,nsim)
 
 
               do j=1,maxmes

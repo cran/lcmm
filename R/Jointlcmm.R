@@ -930,7 +930,17 @@ attributes(data)$terms <- NULL
                             }
                         else
                             {
-                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(1/nprisq[i],ifelse(risqcom[i]==0,ng*nprisq[i],nprisq[i])),rep(1,(ng-1)*(risqcom[i]==2)))
+                              
+                              if(logspecif==1)
+                              {  
+                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(log(1/nprisq[i]),ifelse(risqcom[i]==0,ng*nprisq[i],nprisq[i])),rep(1,(ng-1)*(risqcom[i]==2)))
+                              }
+                              else
+                              {
+                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(sqrt(1/nprisq[i]),ifelse(risqcom[i]==0,ng*nprisq[i],nprisq[i])),rep(1,(ng-1)*(risqcom[i]==2)))
+                              }   
+                                                          
+                              
                             }
                     } 
                 if (nvc>0)

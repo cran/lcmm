@@ -10,14 +10,13 @@ $(SHLIB): $(OBJECTS)
 
 
 #Setup dependencies for parallel make
-hetmixCont.o: AOptim.o
-hetmixContMult.o: AOptim.o
+hetmixCont.o: AOptim.o hetmixOrd.o
+hetmixContMult.o: AOptim.o hetmixCont.o
 hetmixlin.o: AOptim.o
 hetmixOrd.o: AOptim.o
-Jointhet.o: AOptim.o
+Jointhet.o: AOptim.o hetmixCont.o
 predictCont.o: AOptim.o
-predictMult.o: AOptim.o
-postprob2.o:AOptim.o
+predictMult.o: AOptim.o predictCont.o
+postprob2.o: AOptim.o Jointhet.o hetmixCont.o
 cvpl.o: AOptim.o Jointhet.o
-
-
+calculusTransfo.o: hetmixCont.o

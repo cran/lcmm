@@ -157,7 +157,10 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
 
                 if(!is.null(lower))
                     {
-                        do.call("matlines",c(dots.plot[setdiff(names(dots.plot),"lty")],list(x=x$times,y=cbind(lower,upper),lty=2)))
+                        if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
+                        if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
+                        else dots.plot$lty <- 2
+                        do.call("matlines",c(dots.plot[names(dots.plot)],list(x=x$times,y=cbind(lower,upper))))
                     }
 
                 if(!is.null(legend))
@@ -180,6 +183,9 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
                 
                 if(!is.null(lower))
                     {
+                        if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
+                        if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
+                        else dots.plot$lty <- 2
                         do.call("matlines",c(dots.plot[setdiff(names(dots.plot),"lty")],list(x=x$times,y=cbind(lower,upper),lty=2)))
                     }            
             }

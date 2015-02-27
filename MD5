@@ -1,9 +1,9 @@
-abb990b45c451d0442d4c2421527e191 *DESCRIPTION
+03d7fdd5fb97255a8f1b8ceb83caea7e *DESCRIPTION
 65920a43b682a95752d88852fc943d84 *NAMESPACE
-f2df30fb83b609659829bd8e9602541f *NEWS
+72921d0633d291f363cea05444d75bc7 *NEWS
 6791581fecc3cf220513e2493a456e06 *R/Contlcmm.R
 46789ef1a82e8dc31b810692b51c4d2a *R/Diffepoce.R
-80ca8fd9633aba7007409fe6d3c53ade *R/Jointlcmm.R
+e306b2352c010e95498a2e23c12554f3 *R/Jointlcmm.R
 b4b5f9a33641340cac689e5c743f15af *R/Ordlcmm.R
 10f535131869b7b4c7562ecf4a4aeff4 *R/VarCov.Jointlcmm.R
 9380e67e1b2448ddfc8ed8a7f0abcf07 *R/VarCov.hlme.R
@@ -20,7 +20,7 @@ c8e8425f69b2b421f7292f53c6c34a30 *R/VarExpl.multlcmm.R
 3e83c9d8a147f1b86d9c1ea574442b11 *R/WaldMult.R
 56eedf208a563b1fed9fb87115966173 *R/cuminc.R
 74a5fd6e6cd52391c6cce9752e741814 *R/dynpred.R
-efd803b9351692b25ed7e5d621fe3f6b *R/epoce.R
+ed1c5dd8be540425a40f061f2f278dbc *R/epoce.R
 6265f7a49960dfbd8ea9ee869fbe6b60 *R/estimates.Jointlcmm.R
 769d7b242ea3bad7856525571d87ed4c *R/estimates.hlme.R
 dee8a346586adc051af6d6845719bc56 *R/estimates.lcmm.R
@@ -40,7 +40,7 @@ b3d28050bf0ba85136b581559ef6347d *R/plot.cuminc.R
 56ea0900b408fe7467e09cd727452651 *R/plot.dynpred.R
 b2f31ea98a69b4565be5473b2011fbb1 *R/plot.epoce.R
 c5677f0988d7e9c542fb3dfc7e1cb87d *R/plot.predictL.R
-799a31932cc5e046d99905243df13613 *R/plot.predictY.R
+9e31ab0371169695460035aa534057f7 *R/plot.predictY.R
 d56789d2e19c33f5d0f68b580494f59f *R/plot.predictlink.R
 4f903c6c517da25fdfcfee5f7afc141a *R/plotbaselinerisk.R
 8e8bc925d1ad9bad3318094a6f451483 *R/plotfit.R
@@ -78,7 +78,7 @@ f04276464165f0dd8a82f4698f975fa3 *R/summary.epoce.R
 a33936c5e3d6e75cd5382f0134b89c58 *R/summary.lcmm.R
 c13d5845d7816ef7b21b029540c62812 *R/summary.multlcmm.R
 7e30d7e298322c618d4a49d9189d4414 *R/summarytable.R
-d0e575c078474cd6656604bc59e45fd2 *THANKS
+af70066da65193a8d895aba3029f3155 *THANKS
 1ed0fdc848db91d6da725ea28dd26564 *data/data_Jointlcmm.rda
 fc03c84e4359dd357dc0f876c735038a *data/data_hlme.rda
 d6e4d7f6ad0c6cdca218b2ffa1096dba *data/paquid.rda
@@ -93,11 +93,11 @@ c846f0779157429dc39e593fd707e350 *man/VarCovRE.Rd
 f2192e9a94e42c2dd828aa66923c538a *man/data_Jointlcmm.Rd
 5f9bcf58a2ab51a475b4857cdb74a9c5 *man/data_hlme.Rd
 2728e9c66b4fcb4bf0c40d623f9dfdf0 *man/dynpred.Rd
-b4c3710c329e116c316d2d903d82e37b *man/epoce.Rd
+be05e3cff699485a7cf5cdbc3872a6d2 *man/epoce.Rd
 84f3c38610b29d5f16cd2e02fb8f1eb9 *man/estimates.Rd
 ece682714f2e4c823d0dfe6c94587fa3 *man/fitY.Rd
 31e720bb2dd0d6e570259ff6dec436be *man/hlme.Rd
-e0c0696d589ad7dd6cab3496a9a57b0f *man/lcmm-package.Rd
+7406c413b31791078925f039b6dfbf9e *man/lcmm-package.Rd
 7d5955895e2ad55bf0c9a690ab399647 *man/lcmm.Rd
 0a6b2742dd309074d1020f30fa47ae14 *man/multlcmm.Rd
 699563ab5a02ea21a63d2713c70abf03 *man/paquid.Rd
@@ -115,7 +115,7 @@ f94841e331802186354434fd61da176b *man/print.lcmm.Rd
 34f654eb6ecc502479a1e0ee18c0e257 *man/summarytable.Rd
 66c0faa6c0d215a6091cac322c0d8b8f *src/AOptim.f90
 43b0a0de9a419d9138195d2bf671ace0 *src/Jointhet.f90
-0e5a1ea6380e7eb60e29d72f50936518 *src/Makevars
+5ef4d7c93a19daa4c2f732b276ba03bd *src/Makevars
 e9471a2334389cf2ca0d9f9e364eb561 *src/calculusTransfo.f90
 680c1cad2de47e894604f0d254a76990 *src/cvpl.f90
 ed4cc04fd4f34001ff2fc77865f69a56 *src/hetmixCont.f90
@@ -123,5 +123,5 @@ ac2c742436c4019635e5ca606f18b527 *src/hetmixContMult.f90
 3b32bb97d5cd127dbedec27cf620a7e6 *src/hetmixOrd.f90
 30e744252532adbab9a7587786d6f9c4 *src/hetmixlin.f90
 5598cc77798d90c31169ea8dafff8522 *src/postprob2.f90
-ad0557dbfdaab2f2a218a706b7592b45 *src/predictCont.f90
+a46b5d81be2c67ca47f85f353e689722 *src/predictCont.f90
 58895187f11976c4d327bf929f077b50 *src/predictMult.f90

@@ -9,7 +9,7 @@ This function computes estimators of the Expected Prognostic Observed Cross-Entr
 This function does not apply for the moment with multiple causes of event (competing risks).
 }
 \usage{
-epoce(model,pred.times,var.time,newdata = NULL,subset=NULL,na.action=1)
+epoce(model,pred.times,var.time,fun.time=identity,newdata = NULL,subset=NULL,na.action=1)
 }
 \arguments{
   \item{model}{an object inheriting from class \code{Jointlcmm}
@@ -20,6 +20,7 @@ Vector of times of prediction, from which predictive accuracy is evaluated (only
   \item{var.time}{
 Name of the variable indicating time in the dataset
 }
+  \item{fun.time}{an optional function. This is only required if the time scales in the longitudinal part of the model and the survival part are different. In that case, \code{fun.time} is the function that translates the times from the longitudinal part into the time scale of the survival part. The default is the identity function which means that the two time scales are the same.}
   \item{newdata}{
 optional. When missing, the data used for estimating the \code{Jointlcmm} object are used, and CVPOL and MPOL are computed (internal validation). When newdata is specified, only MPOL is computed on this newdataset (external validation).
 }

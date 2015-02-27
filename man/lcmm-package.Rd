@@ -10,8 +10,8 @@ Functions for the estimation of latent class mixed models (LCMM), joint latent c
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.7.1 \cr
-Date: \tab 2015-02-25\cr
+Version: \tab 1.7.2 \cr
+Date: \tab 2015-02-26\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
