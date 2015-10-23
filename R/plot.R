@@ -4,7 +4,7 @@ plot.hlme <- function(x,which="residuals",var.time,break.times,marg,...)
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"hlme")) stop("Use with 'hlme' objects only")
 
-        if(!(which %in% c("residuals","postprob","fit"))) stop(paste("Argument 'which' should be one of:",c("residuals","postprob","fit")))
+        if(!(which %in% c("residuals","postprob","fit"))) stop(paste("Argument 'which' should be one of:",paste(c("residuals","postprob","fit"),collapse=" ")))
 
         if(which=="residuals") .plotresid(x,...)
 
@@ -30,7 +30,7 @@ plot.lcmm <- function(x,which="residuals",var.time,break.times,marg,...)
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"lcmm")) stop("Use with 'lcmm' objects only")
         
-        if(!(which %in% c("residuals","postprob","link","linkfunction","fit"))) stop(paste("Argument 'which' should be one of:",c("residuals","postprob","link","linkfunction","fit")))
+        if(!(which %in% c("residuals","postprob","link","linkfunction","fit"))) stop(paste("Argument 'which' should be one of:",paste(c("residuals","postprob","link","linkfunction","fit"),collapse=" ")))
 
         if(which=="residuals") .plotresid(x,...)
 
@@ -57,7 +57,7 @@ plot.multlcmm <- function(x,which="residuals",var.time,break.times,marg,outcome,
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"multlcmm")) stop("Use with 'multlcmm' objects only")
         
-        if(!(which %in% c("residuals","postprob","link","linkfunction","fit"))) stop(paste("Argument 'which' should be one of:",c("residuals","postprob","link","linkfunction","fit")))
+        if(!(which %in% c("residuals","postprob","link","linkfunction","fit"))) stop(paste("Argument 'which' should be one of:",paste(c("residuals","postprob","link","linkfunction","fit"),collapse=" ")))
 
         if(which=="residuals") .plotresid(x,...)
 
@@ -85,7 +85,7 @@ plot.Jointlcmm <- function(x,which="residuals",var.time,break.times,marg,event,.
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"Jointlcmm")) stop("Use with 'Jointlcmm' objects only")
         
-        if(!(which %in% c("residuals","postprob","link","linkfunction","fit","hazard","baselinerisk","survival"))) stop(paste("Argument 'which' should be one of:",c("residuals","postprob","link","linkfunction","fit","hazard","baselinerisk","survival")))
+        if(!(which %in% c("residuals","postprob","link","linkfunction","fit","hazard","baselinerisk","survival"))) stop(paste("Argument 'which' should be one of:",paste(c("residuals","postprob","link","linkfunction","fit","hazard","baselinerisk","survival"),collapse=" ")))
 
         if(which=="residuals") .plotresid(x,...)
 

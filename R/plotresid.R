@@ -7,7 +7,7 @@
   }
   else
   {
-   if(x$conv==1|x$conv==2)
+   if(x$conv==1|x$conv==2|x$conv==3)
    {
     dots <- list(...)
     

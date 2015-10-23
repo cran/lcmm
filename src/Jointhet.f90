@@ -39,7 +39,7 @@
       implicit none
       integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,ncor  &
       ,nprob,nvarprob,maxmes,nobs,ntrtot,nvarxevt,nef &
-      ,idlink,nbevt,logspecif,nmes_curr,idtrunc,nvdepsurv,nrisqtot,nxevt
+      ,idlink,nbevt,logspecif,nmes_curr,idtrunc,nvdepsurv,nrisqtot,nxevt,npmtot
       integer,dimension(:),allocatable,save::risqcom,typrisq,nz,nprisq,nrisq,nxevtspec,nevtparx,nxcurr
       double precision,dimension(:),allocatable,save::Y,uniqueY
       integer,dimension(:),allocatable,save::indiceY
@@ -60,7 +60,9 @@
       double precision,dimension(:),allocatable,save::Tmm_est,Tmm1_est &
           ,Tmm2_est,Tmm3_est,Tim_est,Tim1_est,Tim2_est,Tim3_est
       double precision,dimension(:),allocatable,save::brisq_est
-double precision,save::vrais_surv
+      double precision,save::vrais_surv
+      integer,dimension(:),allocatable,save::fix
+      double precision,dimension(:),allocatable,save::bfix
     end module commun_comp
 
 
@@ -70,9 +72,10 @@ double precision,save::vrais_surv
        ,epsY0,nbzitr0,zitr0,uniqueY0,nvalSPL0,indiceY0 &
        ,typrisq0,risqcom0,nz0,zi0 &
        ,ns0,ng0,nv0,nobs0,nmes0,nbevt0,nea0,int6 &
-       ,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,ppitest0,resid_m &
-       ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convB,convL,convG &
-       ,time,risq_est,risqcum_est,marker,transfY,nsim,Yobs,statglob,statevt)
+       ,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,ppitest0,resid_m &
+       ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convBLG &
+       ,time,risq_est,risqcum_est,marker,transfY,nsim,Yobs,statglob,statevt &
+       ,pbH0,fix0)
 
 
 !,Ydiscret ,vraisdiscret,UACV,rlindiv) 
@@ -84,13 +87,13 @@ double precision,save::vrais_surv
       IMPLICIT NONE
 
       !Declaration des variables en entree
-      integer,intent(in)::ns0,ng0,nv0,nobs0,nea0,npm0,nsim
+      integer,intent(in)::ns0,ng0,nv0,nobs0,nea0,npmtot0,nsim
       integer,dimension(6),intent(in)::int6
       double precision,dimension(nobs0),intent(in)::Y0
       integer,dimension(nobs0),intent(in)::indiceY0
       double precision,dimension(nobs0*nv0),intent(in)::X0
-      double precision, dimension(ns0),intent(in)::prior0,Tentr0,Tevt0
-      integer, dimension(ns0),intent(in)::ind_survint0,nmes0,Devt0
+      double precision, dimension(ns0),intent(in)::Tentr0,Tevt0
+      integer, dimension(ns0),intent(in)::ind_survint0,nmes0,Devt0,prior0
       integer,dimension(nv0),intent(in)::idprob0,idea0,idg0,idcor0 
       integer,intent(in)::idlink0,nbzitr0,nvalSPL0,nbevt0
       integer, dimension(nv0),intent(in)::idcom0,idtdv0
@@ -99,10 +102,12 @@ double precision,save::vrais_surv
       double precision,dimension(nvalSPL0),intent(in)::uniqueY0 
       integer,dimension(nbevt0),intent(in)::typrisq0,risqcom0,nz0
       double precision,dimension(maxval(nz0),nbevt0),intent(in)::zi0    
-      double precision,intent(in)::epsY0,convB,convL,convG
+      double precision,intent(in)::epsY0
+      double precision,dimension(3),intent(in)::convBLG
+      integer,dimension(npmtot0),intent(in)::pbH0,fix0
 
       !Declaration des variable en entree et sortie
-      double precision,dimension(npm0), intent(inout) :: b
+      double precision,dimension(npmtot0), intent(inout) :: btot
 
       !Declaration des variables en sortie
       double precision,intent(out)::vrais  !,vraisdiscret,UACV
@@ -115,17 +120,17 @@ double precision,save::vrais_surv
       double precision,dimension(ns0*nea0),intent(out)::pred_RE
       double precision,dimension(nsim),intent(out)::marker,transfY,time
       double precision,dimension(nsim*ng0,nbevt0),intent(out)::risq_est,risqcum_est
-      double precision,dimension(npm0*(npm0+1)/2),intent(out)::Vopt
+      double precision,dimension(npmtot0*(npmtot0+1)/2),intent(out)::Vopt
       integer,intent(out)::ni,istop
       double precision,intent(out)::statglob
       double precision,dimension(nbevt0),intent(out)::statevt
 
       !Variables locales
-      integer::jtemp,i,g,j,npm,ier,k,ktemp,ig,it,ke,sumnrisq,dejaspl
+      integer::jtemp,i,g,j,npm,ier,k,ktemp,ig,it,ke,sumnrisq,dejaspl,nbfix
       double precision::eps,ca,cb,dd
       double precision,dimension(ns0,ng0)::PPI,ppiy
-      double precision,dimension(npm0)::mvc
-      double precision,dimension(npm0*(npm0+3)/2)::V
+      double precision,dimension(npmtot0)::mvc,b
+      double precision,dimension(npmtot0*(npmtot0+3)/2)::V
       double precision,external::vrais_comp
 
 
@@ -159,9 +164,9 @@ double precision,save::vrais_surv
 
 
       ! prm pour algo estimation
-      epsa=convB
-      epsb=convL
-      epsd=convG
+      epsa=convBLG(1)
+      epsb=convBLG(2)
+      epsd=convBLG(3)
       maxiter=int6(6)
 
       ! alloc pour partie modele mixte
@@ -246,6 +251,20 @@ double precision,save::vrais_surv
       else
          allocate(zi(maxval(nz0),nbevt))
       end if
+
+
+
+! prm fixes
+      allocate(fix(npmtot0))
+      fix=0
+      fix(1:npmtot0)=fix0(1:npmtot0)
+      nbfix=sum(fix)
+      if(nbfix.eq.0) then
+         allocate(bfix(1))
+      else
+         allocate(bfix(nbfix))
+      end if
+      bfix=0.d0
 
 
       ! recopier le reste des parametres dans module commun_comp
@@ -441,9 +460,9 @@ double precision,save::vrais_surv
 
       nef=ncssg+ncg*ng
       if(idlink.ne.-1) nef=nef-1
-      npm=nprob+nrisqtot+nvarxevt+nef+nvc+nwg+ncor+ntrtot
+      npmtot=nprob+nrisqtot+nvarxevt+nef+nvc+nwg+ncor+ntrtot
 
-      if (npm.ne.npm0) then
+      if (npmtot.ne.npmtot0) then
 !print*,"npm",npm,"npm0",npm0
 !print*,nprob,nrisqtot,nvarxevt,nef,nvc,nwg,ncor,ntrtot
         istop=4
@@ -453,29 +472,29 @@ double precision,save::vrais_surv
       ! changer prm de B par prm a estimer
       if (idiag.eq.1) then
          DO j=1,nvc
-            B(nprob+nrisqtot+nvarxevt+nef+j)=dsqrt(abs(B(nprob+nrisqtot+nvarxevt+nef+j)))
+            btot(nprob+nrisqtot+nvarxevt+nef+j)=dsqrt(abs(btot(nprob+nrisqtot+nvarxevt+nef+j)))
          END DO
       end if
 
       if (idiag.eq.0) then
         DO j=1,nvc
-            mvc(j)=B(nprob+nrisqtot+nvarxevt+nef+j)
+            mvc(j)=btot(nprob+nrisqtot+nvarxevt+nef+j)
          END DO
          CALL DMFSD(mvc,nea,EPS,IER)
          DO j=1,nvc
-            B(nprob+nrisqtot+nvarxevt+nef+j)=mvc(j)
+            btot(nprob+nrisqtot+nvarxevt+nef+j)=mvc(j)
          END DO
       end if
 
 
       if (nwg.gt.0) then
          do i=1,nwg
-            B(nprob+nrisqtot+nvarxevt+nef+nvc+i)=abs(B(nprob+nrisqtot+nvarxevt+nef+nvc+i))
+            btot(nprob+nrisqtot+nvarxevt+nef+nvc+i)=abs(btot(nprob+nrisqtot+nvarxevt+nef+nvc+i))
          end do
       end if
 
       ! creer base de splines si transfo splines
-      if (idlink==2) then 
+      if (idlink.eq.2) then 
          call design_splines_comp(ier)
          if (ier.eq.-1) then          
             istop=9
@@ -501,6 +520,30 @@ double precision,save::vrais_surv
 
       end if
 
+      ! creation du vecteur b avec slt les prm a estimer
+      b=0.d0
+      npm=0
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           npm=npm+1
+           b(npm)=btot(j)
+        end if
+        if(fix0(j).eq.1) then
+           k=k+1
+           bfix(k)=btot(j)
+        end if
+      end do
+
+
+      allocate(pbH(npm))
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           k=k+1
+           pbH(k)=pbH0(j)
+        end if
+     end do
 
 
       ! optimisation
@@ -522,25 +565,35 @@ double precision,save::vrais_surv
       
       ! variance des parametres
       vopt=0.d0
-      vopt(1:npm0*(npm0+1)/2)=v(1:npm0*(npm0+1)/2)
+      vopt(1:npm*(npm+1)/2)=v(1:npm*(npm+1)/2)
 
-      if(istop==4 .or. istop==12) then
+      !  injecter le b estime dans btot
+      k=0
+      do j=1,npmtot
+         if(fix0(j).eq.0) then
+            k=k+1
+            btot(j)=b(k)
+         end if
+      end do
+
+
+      if(istop.eq.4 .or. istop.eq.12) then
          goto 1589
       end if
 
       ! calculs post-estimation
 
-      if(istop==1 .or. istop==2) then 
+      if(istop.eq.1 .or. istop.eq.2 .or. istop.eq.3) then 
 
       ! proba d'appartenance aux classes
          ppi=0.d0
          ppiy=0.d0
          if(ng>1) then
-            call postprob_comp(b,npm,ppi,ppiy)
+            call postprob_comp(btot,npmtot,ppi,ppiy)
          end if
 !print*,"fin postprob"
       ! residus et predictions des effets aleatoires
-         call residuals_comp(b,npm,ppi,resid_m,pred_m_g,resid_ss,pred_ss_g,pred_RE,Yobs)
+         call residuals_comp(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss,pred_ss_g,pred_RE,Yobs)
 
 !print*,"fin residuals"
       ! recopier pour sortie
@@ -556,7 +609,7 @@ double precision,save::vrais_surv
 
       ! test independance conditionnelle
          if(nea.gt.0) then
-            call scoretest_comp(b,npm,statglob,statevt)
+            call scoretest_comp(btot,npmtot,statglob,statevt)
          else
             statglob=9999.d0
             statevt=9999.d0
@@ -590,17 +643,17 @@ double precision,save::vrais_surv
               if (logspecif.eq.1) then
                  if (risqcom(ke).eq.0) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=exp(b(nprob+sumnrisq+nprisq(ke)*(g-1)+k))
+                       brisq_est(k)=exp(btot(nprob+sumnrisq+nprisq(ke)*(g-1)+k))
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  elseif(risqcom(ke).eq.1) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=exp(b(nprob+sumnrisq+k))
+                       brisq_est(k)=exp(btot(nprob+sumnrisq+k))
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  elseif (risqcom(ke).eq.2) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=exp(b(nprob+sumnrisq+k))
+                       brisq_est(k)=exp(btot(nprob+sumnrisq+k))
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  end if
@@ -608,18 +661,18 @@ double precision,save::vrais_surv
               else
                  if (risqcom(ke).eq.0) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=b(nprob+sumnrisq+nprisq(ke)*(g-1)+k) &
-                            *b(nprob+sumnrisq+nprisq(ke)*(g-1)+k)
+                       brisq_est(k)=btot(nprob+sumnrisq+nprisq(ke)*(g-1)+k) &
+                            *btot(nprob+sumnrisq+nprisq(ke)*(g-1)+k)
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  elseif(risqcom(ke).eq.1) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=b(nprob+sumnrisq+k)*b(nprob+sumnrisq+k)
+                       brisq_est(k)=btot(nprob+sumnrisq+k)*btot(nprob+sumnrisq+k)
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  elseif (risqcom(ke).eq.2) then
                     do k=1,nprisq(ke)
-                       brisq_est(k)=b(nprob+sumnrisq+k)*b(nprob+sumnrisq+k)
+                       brisq_est(k)=btot(nprob+sumnrisq+k)*btot(nprob+sumnrisq+k)
                        if(g.eq.ng.and.k.eq.nprisq(ke))  sumnrisq = sumnrisq+nrisq(ke)
                     end do
                  end if
@@ -630,9 +683,9 @@ double precision,save::vrais_surv
               if (risqcom(ke).eq.2.and.ng.gt.1.and.g.lt.ng) then
                  do i=1,nsim
                     risq_est((g-1)*nsim+i,ke)=risq_est((g-1)*nsim+i,ke)* &
-                         exp(b(nprob+sumnrisq+nprisq(ke)+g))
+                         exp(btot(nprob+sumnrisq+nprisq(ke)+g))
                     risqcum_est((g-1)*nsim+i,ke)=risqcum_est((g-1)*nsim+i,ke)* & 
-                         exp(b(nprob+sumnrisq+nprisq(ke)+g))
+                         exp(btot(nprob+sumnrisq+nprisq(ke)+g))
                  end do
               end if
               
@@ -641,7 +694,7 @@ double precision,save::vrais_surv
         end do
 
         deallocate(brisq_est)
-        if(any(typrisq==3)) then 
+        if(any(typrisq.eq.3)) then 
            deallocate(Tmm_est,Tmm1_est,Tmm2_est,Tmm3_est,Tim_est &
                 ,Tim1_est,Tim2_est,Tim3_est)
         end if
@@ -649,7 +702,7 @@ double precision,save::vrais_surv
 !print*,"fin risq"
 
         ! grille de valeurs pour la transfo
-        call transfo_estimee_comp(b,npm,nsim,marker,transfY)
+        call transfo_estimee_comp(btot,npmtot,nsim,marker,transfY)
 
 !print*,"fin transfo"
       ! vraisemblance discrete
@@ -678,6 +731,7 @@ double precision,save::vrais_surv
 
 !--------------- liberation de la memoire ------------------------
 
+
       if (any(typrisq.eq.3)) then
          deallocate(Tmm,Tmm1,Tmm2,Tmm3,Tim,Tim1,Tim2,Tim3,Tmm0,    &
               Tmm01,Tmm02,Tmm03,Tim0,Tim01,Tim02,Tim03,Tmmt,Tmmt1,     &
@@ -691,6 +745,8 @@ double precision,save::vrais_surv
      ,indiceY,uniqueY,risqcom,typrisq,nz,nprisq,nrisq,idcom,idspecif,idtdv &
      ,nxevtspec,nevtparx,nxcurr)
 
+
+      deallocate(pbH,bfix,fix)
 
       return
 
@@ -721,7 +777,8 @@ end subroutine competinghet
       double precision,dimension(nvarprob) ::Xprob,bprob 
       double precision,dimension(nea,nea) ::Ut,Ut1
       double precision,dimension(maxmes,maxmes) ::VC,Corr
-      double precision,dimension(npm) :: b,b1
+      double precision,dimension(npm) :: b
+      double precision,dimension(npmtot) :: b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2
       double precision,dimension(nxevt)::Xevt,bevt
@@ -741,12 +798,20 @@ end subroutine competinghet
 
       b1=0.d0
       eps=1.D-20
-      do k=1,npm
-         b1(k)=b(k)
+      l=0
+      m=0
+      do k=1,npmtot
+         if(fix(k).eq.0) then
+            l=l+1
+            b1(k)=b(l)
+            if(id.eq.l) b1(k)=b1(k)+thi
+            if(jd.eq.l) b1(k)=b1(k)+thj
+         end if
+         if(fix(k).eq.1) then
+            m=m+1
+            b1(k)=bfix(m)
+         end if
       end do
-
-      if (id.ne.0) b1(id)=b1(id)+thi
-      if (jd.ne.0) b1(jd)=b1(jd)+thj
 
 
 !----------- rappel des parametres utilises ---------
@@ -1462,8 +1527,6 @@ end subroutine competinghet
 
 
         use commun_comp,only:ns,nmes,nmes_curr,vrais_surv
-        !use donnees_indivm,only:nmescur
-        use parameters, only:verbose
 
         implicit none
 

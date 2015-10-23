@@ -5,16 +5,22 @@ if(missing(x)) stop("The argument x should be specified")
 if (!inherits(x, "multlcmm")) stop("use only with \"lcmm\" or \"multlcmm\" objects")
 if (!all(x$Xnames2 %in% colnames(newdata))) stop(paste(c("newdata should at least include the following covariates: ","\n",x$Xnames2),collapse=" "))
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
-if(missing(var.time)) stop("missing argument 'var.time'")
-if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+#if(missing(var.time)) stop("missing argument 'var.time'")
+#if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
-if(x$conv==1|x$conv==2) 
+if(x$conv==1 | x$conv==2 | x$conv==3) 
 {
   if(x$conv==2 & draws==TRUE)
   {
    cat("No confidence interval will be provided since the program did not converge properly \n")
    draws <- FALSE
   }
+  if(x$conv==3 & draws==TRUE)
+  {
+   cat("No confidence interval will be provided since the program did not converge properly \n")
+   draws <- FALSE
+  }
+  
   if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
   
 
@@ -62,7 +68,16 @@ if(x$conv==1|x$conv==2)
   
   
   ## var.time
-  times <- newdata[,var.time,drop=FALSE]
+  if(!missing( var.time))
+      {
+          if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+          times <- newdata[,var.time,drop=FALSE]         
+      }
+  else
+      {
+          times <- newdata[,1,drop=FALSE]
+      }
+
   
   ### Traitement des donnees manquantes
   newdata <- newdata[,x$Xnames2]
@@ -92,7 +107,7 @@ if(x$conv==1|x$conv==2)
     Xnames <- gsub("factor\\(","",Xnames)
     Xnames[z] <- gsub("\\)","",Xnames[z])
    }
-   newdata1 <- newdata1[,c("(Intercept)",Xnames)]
+   newdata1 <- newdata1[,c("(Intercept)",Xnames),drop=FALSE]
   
   
   #newdata1 <- model.matrix(as.formula(paste("~",paste(x$Xnames[-1],collapse="+"))),data=newdata)
@@ -135,39 +150,36 @@ if(x$conv==1|x$conv==2)
   
    if (x$ng==1) colnames(Ypred) <- c("Yname","Ypred")
    if (x$ng>1) colnames(Ypred) <- c("Yname",paste("Ypred_class",1:x$ng,sep=""))
-    
-#   if(plot==TRUE)
-#   {
-#    if(missing(file)) {dev.new()}
-#    if(!missing(file)) {postscript(file,width=6,height=6,paper="special",horizontal=FALSE)}
-#    par(mfrow=mfrow, oma=c(0,0,2,0))
-#    npred <- dim(newdata)[1]
-#    for (i in 1:length(x$Ynames))
-#    { plot(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,1],type="l",col=1,xlab=x.plot,ylab=x$Ynames[i],ylim=c(min(Ypred[1:npred+(i-1)*npred,]),max(Ypred[1:npred+(i-1)*npred,])))
-#      if(x$ng>1)
-#      {
-#       for (j in 2:x$ng)
-#       {
-#        lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,j],col=j)
-#       }
-#       legend("bottomleft",legend=paste("class",1:x$ng),col=1:x$ng,lty=1,bty="n")
-#      }
-#    }
-#    title("Marginal predictions in the outcome scale", outer=TRUE)
-#    if(!missing(file)) {dev.off()}  
-#   }
   
   }
   else  #draws
   { 
    ndraws <- as.integer(ndraws)
    ydraws <- NULL
+
+   posfix <- eval(x$call$posfix)
+   
+   if(ndraws>0)
+       {
+           Mat <- matrix(0,ncol=npm,nrow=npm)
+           Mat[upper.tri(Mat,diag=TRUE)]<- x$V
+           if(length(posfix))
+               {
+                   Mat2 <- Mat[-posfix,-posfix]
+                   Chol2 <- chol(Mat2)
+                   Chol <- matrix(0,npm,npm)
+                   Chol[setdiff(1:npm,posfix),setdiff(1:npm,posfix)] <- Chol2
+                   Chol <- t(Chol)
+               }
+           else
+               {
+                   Chol <- chol(Mat)
+                   Chol <- t(Chol)
+               }
+       }
    
   
-   Mat <- matrix(0,ncol=npm,nrow=npm)
-   Mat[upper.tri(Mat,diag=TRUE)]<- x$V
-   Chol <- chol(Mat)
-   Chol <- t(Chol)
+
     
    for (j in 1:ndraws)
    {   #cat("boucle sur ndraws j=",j,"\n")
@@ -197,32 +209,7 @@ if(x$conv==1|x$conv==2)
    
    if (x$ng==1) colnames(Ypred) <- c("Yname","Ypred_50","Ypred_2.5","Ypred_97.5")
    if (x$ng>1) colnames(Ypred) <- c("Yname",c(paste("Ypred_50_class",1:x$ng,sep=""),paste("Ypred_2.5_class",1:x$ng,sep=""),paste("Ypred_97.5_class",1:x$ng,sep="")))
-    
-#   if(plot==TRUE)
-#   {
-#    if(missing(file)) {dev.new()}
-#    if(!missing(file)) {postscript(file,width=6,height=6,paper="special",horizontal=FALSE)}
-#    par(mfrow=mfrow, oma=c(0,0,2,0))
-#    npred <- dim(newdata)[1]
-#    for (i in 1:length(x$Ynames))
-#    { 
-#     plot(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,1],type="l",lty=1,col=1,xlab=x.plot,ylab=x$Ynames[i],ylim=c(min(Ypred[1:npred+(i-1)*npred,1:x$ng]),max(Ypred[1:npred+(i-1)*npred,(2*x$ng+1):(3*x$ng)])))
-#     lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,x$ng+1],lty=2,col=1)
-#     lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,2*x$ng+1],lty=2,col=1)   
-#      if(x$ng>1)
-#      {
-#       for (j in 2:x$ng)
-#       {
-#        lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,j],col=j,lty=1)
-#        lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,x$ng+j],col=j,lty=2)
-#        lines(newdata[,x.plot], Ypred[1:npred+(i-1)*npred,2*x$ng+j],col=j,lty=2)
-#       }
-#       legend("bottomleft",legend=paste("class",1:x$ng),col=1:x$ng,lty=1,bty="n")
-#      }
-#    }
-#    title("Marginal predictions in the outcome scale", outer=TRUE)  
-#    if(!missing(file)) {dev.off()}  
-#   }
+
   }
 
   res.list <- NULL

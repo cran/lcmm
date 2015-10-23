@@ -8,7 +8,7 @@ predictlink.Jointlcmm <- function(x,ndraws=2000,Yvalues,...)
     if(x$linktype==-1) stop("The model does not define any link function.")
     if(x$conv!=1 & ndraws!=0) stop("No confidence intervals can be produced since the program did not converge properly")
     
-    if(x$conv %in% c(1,2)) 
+    if(x$conv %in% c(1,2,3)) 
         {
             if(missing(Yvalues))
                 {
@@ -55,11 +55,29 @@ predictlink.Jointlcmm <- function(x,ndraws=2000,Yvalues,...)
                 }
             
             ndraws <- as.integer(ndraws)
+
+            posfix <- eval(x$call$posfix)
+
+            if(ndraws>0)
+                {
+                    Mat <- matrix(0,ncol=npm,nrow=npm)
+                    Mat[upper.tri(Mat,diag=TRUE)]<- x$V
+                    if(length(posfix))
+                        {
+                            Mat2 <- Mat[-posfix,-posfix]
+                            Chol2 <- chol(Mat2)
+                            Chol <- matrix(0,npm,npm)
+                            Chol[setdiff(1:npm,posfix),setdiff(1:npm,posfix)] <- Chol2
+                            Chol <- t(Chol)
+                        }
+                    else
+                        {
+                            Chol <- chol(Mat)
+                            Chol <- t(Chol)
+                        }
+                }
             
-            Mat <- matrix(0,ncol=npm,nrow=npm)
-            Mat[upper.tri(Mat,diag=TRUE)]<- x$V
-            Chol <- chol(Mat)
-            Chol <- t(Chol)
+
             
             
             
@@ -115,7 +133,7 @@ predictlink.Jointlcmm <- function(x,ndraws=2000,Yvalues,...)
                             res <- data.frame(Yvalues=Yvalues,transfY_50=mediane,transfY_2.5=borne_inf,transfY_97.5=borne_sup)
                         }
                     
-                    if(x$conv==2)
+                    if(x$conv==2 | x$conv==3)
                         {
                             borne_inf <- rep(NA,length(Yvalues))
                             borne_sup <- rep(NA,length(Yvalues))

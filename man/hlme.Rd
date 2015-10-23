@@ -14,7 +14,7 @@ This function is limited to a mixture of Gaussian outcomes. For other types of o
 hlme(fixed, mixture, random, subject, classmb, ng = 1,
  idiag = FALSE, nwg = FALSE, cor=NULL, data, B,
  convB=0.0001,convL=0.0001,convG=0.0001,prior,
- maxiter=500, subset=NULL, na.action=1)
+ maxiter=500, subset=NULL, na.action=1, posfix=NULL)
 }
 
 
@@ -57,9 +57,11 @@ If \code{TRUE} a class-specific proportional parameter multiplies the variance-c
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
 }
   \item{B}{
-optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
-If no vector is specified, a preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
-Due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
+optional specification for the initial values for the parameters. Three options are allowed: 
+(1) a vector of initial values is entered (the order in which the parameters are included is detailed in \code{details} section). 
+(2) nothing is specified. A preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
+(3) when ng>1, a hlme object is entered. It should correspond to the exact same structure of model but with ng=1. The program will automatically generate initial values from this model. This specification avoids the preliminary analysis indicated in (2).
+Note that due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
 \item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001.
 }
@@ -73,7 +75,13 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
   \item{subset}{
 a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
   \item{na.action}{
-Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
+Integer indicating how NAs are managed. The default is 1 for
+  'na.omit'. The alternative is 2 for 'na.fail'. Other options such as
+  'na.pass' or 'na.exclude' are not implemented in the current version.}
+\item{posfix}{
+  Optional vector specifying the indices in vector B of the parameters that
+  should not be estimated. Default to NULL, all parameters are estimated.
+}
 }
 
 
@@ -120,7 +128,7 @@ This is a reason why the specification of initial values in \code{B} should be s
 (4) Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter stability and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 100. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
-If the parameters are on the boundaries of the parameter space, the identifiability of the model should be assessed. 
+If the parameters are on the boundaries of the parameter space, the identifiability of the model is critical. This may happen especially with splines parameters that may be too close to 0 (lower boundary) or classmb parameters that are too high or low (perfect classification). When identifiability of some parameters is suspected, the program can be run again from the former estimates by fixing the suspected parameters to their value with option posfix. This usually solves the problem. An alternative is to remove the parameters of the Beta of Splines link function from the inverse of the Hessian with option partialH. 
 If not, the program should be run again with other initial values, with a higher maximum number of iterations or less strict convergence tolerances.
 }
 \value{

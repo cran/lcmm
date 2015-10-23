@@ -1,0 +1,17 @@
+year <- sub("-.*", "", meta$Date)
+vers <- sprintf("R package version: %s",meta$Version)
+
+bibentry(bibtype="Manual",
+         title="lcmm: Extended Mixed Models Using Latent Classes and Latent Processes",
+         author=c(person("Cecile","Proust-Lima",email="cecile.proust-lima@inserm.fr",role=c("aut","cre")),person("Viviane","Philipps",role="aut"),person("Amadou","Diakite",role="aut"),person("Benoit","Liquet",role="aut")),
+         year=year,
+         note=vers,
+         url="http://CRAN.R-project.org/package=lcmm"
+    )
+
+bibentry(bibtype="Unpublished",
+         title="Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm",
+         author=c(person("Cecile","Proust-Lima"),person("Viviane","Philipps"),person("Benoit","Liquet")),
+         year={2015},
+         note="Available on arXiv at http://arxiv.org/abs/1503.00890"
+         )

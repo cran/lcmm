@@ -6,7 +6,7 @@
  nbevt <- length(x$N)-9
  if(nbevt>1) stop("Survival functions are not provided in a competing risks setting. Please see 'cuminc' function.")
  if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")
- if((x$conv %in% c(1,2)) & (sum(is.na(x$predSurv)==0)))
+ if((x$conv %in% c(1,2,3)) & (sum(is.na(x$predSurv)==0)))
  {
    ng <- x$ng
 

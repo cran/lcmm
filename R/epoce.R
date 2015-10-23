@@ -476,6 +476,11 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
 
     contribt <- rep(0,length=ns0*nT)
 
+    fix0 <- rep(0,NPM)
+    posfix <- eval(model$call$posfix)
+    if(length(posfix)) fix0[posfix] <- 1
+    npmssfix <- NPM-length(posfix)
+
 ################ FORTRAN FUNCTION CALL #####################
     
     ptm<-proc.time()
@@ -496,7 +501,7 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
                     epoir=as.double(epoir),rl_cond=as.double(rl_cond),
                     ns_vect=as.integer(ns_vect),nevt_vect=as.integer(nevt_vect),
                     contribt=as.double(contribt),as.integer(logspecif),
-                    PACKAGE="lcmm")
+                    as.integer(fix0),as.integer(npmssfix),PACKAGE="lcmm")
 
 
     ## construction de la matrice contribt

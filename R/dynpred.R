@@ -18,13 +18,19 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
 
 
     
-    if(model$conv==1|model$conv==2)
+    if(model$conv==1 | model$conv==2 | model$conv==3)
         {
             if(model$conv==2 & draws==TRUE)
                 {
                     cat("No confidence interval will be provided since the program did not converge properly \n")
                     draws <- FALSE
                 }
+            if(model$conv==3 & draws==TRUE)
+                {
+                    cat("No confidence interval will be provided since the program did not converge properly \n")
+                    draws <- FALSE
+                }
+            
             
             nbland <- length(landmark)
             nbhoriz <- length(horizon) 
@@ -129,7 +135,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
 
             Xnames2 <- model$Names$Xnames2
 
-            ##cas o? une variable du dataset est un facteur
+            ##cas ou une variable du dataset est un facteur
             olddata <- eval(model$call$data)
             for(v in Xnames2[-1])
                 {
@@ -141,7 +147,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                         }
                 }
 
-            ##cas o? on a factor() dans l'appel
+            ##cas ou on a factor() dans l'appel
             z <- all.names(call_fixed)
             ind_factor <- which(z=="factor")
             if(length(ind_factor))
@@ -847,9 +853,8 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                                                     if(nvdepsurv!=0 & tint>landmark[ks]) bevtint2 <- rep(0,nbevt)
 
                                                     surv_s <- exp(-risqcum0(t=landmark[ks],evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1])))
-                                                    surv_tint <- exp(-risqcum0(t=tint,evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1])))
-                                                    
-                                                    
+                                                    surv_tint <- exp(-risqcum0(t=tint,evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1])))                                     
+
                                                     if(nvdepsurv!=0 & tint<landmark[ks])
                                                         {
                                                             incid[ns*(ks-1)+i,g,] <- sapply(landmark[ks]+horizon,function(h) (surv_tint * (surv_s-surv_tint)*exp(bevtint[1])) - surv_tint*(exp(-risqcum0(t=h,evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1]))*exp(bevtint[1]))-surv_tint*exp(bevtint[1])))
@@ -917,16 +922,29 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                 }
             else   # ie avec draws
                 {
-                    Mat <- matrix(0,ncol=length(best),nrow=length(best))
+                    posfix <- eval(model$call$posfix)
+
+                    Mat <- matrix(0,ncol=npm,nrow=npm)
                     Mat[upper.tri(Mat,diag=TRUE)]<- model$V
-                    Chol <- chol(Mat)
-                    Chol <- t(Chol) 	
+                    if(length(posfix))
+                        {
+                            Mat2 <- Mat[-posfix,-posfix]
+                            Chol2 <- chol(Mat2)
+                            Chol <- matrix(0,npm,npm)
+                            Chol[setdiff(1:npm,posfix),setdiff(1:npm,posfix)] <- Chol2
+                            Chol <- t(Chol)
+                        }
+                    else
+                        {
+                            Chol <- chol(Mat)
+                            Chol <- t(Chol)
+                        }
+                	
                     
                     doOneDraw <- function()
                         {
                             bdraw <- rnorm(npm)
                             bdraw <- best + Chol %*% bdraw
-                            
                             
                             ## calcul des proba a posteriori pour tous les temps s   
                             ppi <- rep(0,ns*nbland*ng)
@@ -1007,6 +1025,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                                                                             l <- l+1
                                                                             bevt[l,1:nbevt] <- bvarxevt[kcurr+1]
                                                                         }
+                                                                    kcurr <- kcurr+1
                                                                 }
                                                             
                                                             if(idcom[k]==1 & idspecif[1,k]==2)
@@ -1020,6 +1039,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                                                                             l <- l+1
                                                                             bevt[l,1:nbevt] <- bvarxevt[kcurr+g]
                                                                         }
+                                                                    kcurr <- kcurr+ng
                                                                 }
 
                                                             if(idcom[k]==0)
@@ -1130,7 +1150,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                                                             
                                                             surv_s <- exp(-risqcum0(t=landmark[ks],evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1])))
                                                             surv_tint <- exp(-risqcum0(t=tint,evt=1,typrisq=typrisq,brisq=brisq,zi=zi,nz=nz,bPH=bPH,logspecif=logspecif)*exp(sum(Xevt*bevt[,1])))
-                                                    
+               
                                                     
                                                             if(nvdepsurv!=0 & tint<landmark[ks])
                                                                 {
@@ -1226,7 +1246,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                     colnames(res) <- c(model$Names$ID,"landmark","horizon","pred_50","pred_2.5","pred_97.5")                   
                 }
         }
-    else  # ie conv != 1 ou 2
+    else  # ie conv != 1 ou 2 ou 3
         {
             cat("Output can not be produced since the program stopped abnormally. \n")
             res <- NA

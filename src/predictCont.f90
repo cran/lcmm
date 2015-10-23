@@ -1084,7 +1084,6 @@ end subroutine predict_cont
       iter=1
       X0=1.d10
       call eval_splines(X0,fx0,f1x0,splaa,bb,nztr,zi_eval)
-
       if (fx0.eq.1.d9.and.f1x0.eq.1.d9) then
          INV_ISPLINES=fx0
          istop=3
@@ -1185,8 +1184,8 @@ end subroutine predict_cont
          endif
       end do
 
-
-      if (X0.eq.zi_eval(nztr)) then
+      !if (X0.eq.zi_eval(nztr)) then
+      if (abs(X0-zi_eval(nztr)).lt.1.d-10) then
          l=nztr-1
       end if
 
@@ -1202,18 +1201,22 @@ end subroutine predict_cont
       h2= zi_eval(l+2)-zi_eval(l)
       h3= zi_eval(l+3)-zi_eval(l)
 
+
       if (h.eq.0.or.hh.eq.0.or.hn.eq.0.or.h2n.eq.0.or.h2.eq.0.or.h3.eq.0)  then
          Mspl=1.d9
          Ispl=1.d9
          go to 587
       end if
 
-      if (X0.ne.zi_eval(nztr)) then
+      !if (X0.ne.zi_eval(nztr)) then 
+      if (abs(X0-zi_eval(nztr)).ge.1.d-10) then
          mm2eval = (3.d0*ht2*ht2)/(hh*h*hn)
          mm1eval = (3.d0*htm*ht2)/(h2n*hh*h)+(3.d0*ht*ht3)/(h2*h*h2n)
          mmeval  = (3.d0*ht*ht)/(h3*h2*h)
       end if
-      if (X0.eq.zi_eval(nztr)) then
+      !if (X0.eq.zi_eval(nztr)) then
+      if (abs(X0-zi_eval(nztr)).lt.1.d-10) then
+
 
          mm2eval = 0.d0
          mm1eval = 0.d0
@@ -1242,6 +1245,8 @@ end subroutine predict_cont
 
       Mspl= (splaa(l-2)*mm2eval+splaa(l-1)*mm1eval+splaa(l)*mmeval)*      &
             (1.d0-1.d0/((1.d0+exp(X00))**2))*(zi_eval(nztr)-zi_eval(1))
+
+
 
  587   continue
 

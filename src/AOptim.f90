@@ -116,7 +116,8 @@
 
       module parameters
           double precision,save::epsa,epsb,epsd
-          integer,save::maxiter,verbose
+          integer,save::maxiter,verbose,Hr
+          integer,dimension(:),allocatable,save::pbH
       end module parameters
 
 !-------------------------------------------------------------
@@ -174,6 +175,12 @@
       z,rl1,th,ep
       double precision,external::namefunc
 
+! pour Hr
+      integer::ir,mr
+      double precision,dimension(m-1)::vr
+      double precision,dimension(m*(m-1)/2)::fur 
+
+
  !     verbose=1 !** 
     !  if (verbose==1) write(*,*)'Marquardt begins - npm=',m    !**
       id=0
@@ -193,8 +200,27 @@
       m1=m*(m+1)/2
       ep=1.d-20
 
+      vr=0.d0
+      fur=0.d0
+      ir=0
+      mr=m-sum(pbH(1:m))
+
+      Hr=1
+      if(sum(pbH(1:m)).eq.0) Hr=0
+
+
+      if(maxiter.eq.0) then
+         rl=namefunc(b,m,id,z,id,z)
+         istop=2
+         dd=epsd+1.d0
+         v=0.d0
+         goto 110
+      end if
+
+
+
       Main:Do
-  !    if (verbose==1) write(*,*)'iteration',ni   !**
+!      if (verbose==1) write(*,*)'iteration',ni   !**
         call deriva(b,m,v,rl,namefunc)
  !     if (verbose==1)  write(*,*)'loglik=',rl     !**
   !    if (verbose==1) write(*,*)'parms',b        !**    
@@ -230,6 +256,63 @@
  !           if(verbose==1) print *,"ca=",ca,"cb=",cb,"dd=",dd   !**
 
         if(ca.lt.epsa.and.cb.lt.epsb.and.dd.lt.epsd) exit main
+
+        if(ca.lt.epsa.and.cb.lt.epsb.and.dd.eq.epsd+1.d0.and.Hr.eq.1) then
+          
+           fur=0.d0
+           ir=0
+           do i=1,m
+              if(pbH(i).eq.0) then
+                 do j=i,m
+                    if(pbH(j).eq.0) then
+                       ij=(j-1)*j/2+i
+                       ir=ir+1
+                       fur(ir)=v(ij)
+                    end if
+                 end do
+              end if
+           end do
+
+           call dsinv(fur,mr,ep,ier,det)  
+
+           if(ier.eq.-1) then  !Hr pas inversible non plus
+              dd=epsd+1.d0
+
+           else  !on arrive a inverser Hr
+ 
+              !vecteur des derivees premieres sans les prm a pb
+              ir=0
+              do i=1,m
+                 if(pbH(i).eq.0) then
+                    ir=ir+1 
+                    vr(ir)=v(m1+i)
+                 end if
+              end do
+
+              GHG = 0.d0
+              do i=1,mr
+                 do j=1,mr
+                    if(j.ge.i) then
+                       ij=(j-1)*j/2+i
+                    else
+                       ij=(i-1)*i/2+j
+                    end if
+                    GHG = GHG + vr(i)*fur(ij)*vr(j)
+                 end do
+              end do
+              dd=GHG/dble(mr)  
+   
+           end if
+
+           if(dd.lt.epsd) then
+              istop=3
+              v=0.D0
+              v(1:mr*(mr+1)/2)=fur(1:mr*(mr+1)/2)
+              goto 110
+           end if
+
+        end if
+
         tr=0.d0
         do i=1,m
            ii=i*(i+1)/2
@@ -252,7 +335,7 @@
         end do
 
          call dchole(fu,m,nql,idpos)
-      
+
          if (idpos.ne.0) then
            ncount=ncount+1
            if (ncount.gt.3000) then 
@@ -283,7 +366,7 @@
                goto 800
             endif
          endif
-!      write(6,*) 'loglikelihood not improved '
+  !    write(6,*) 'loglikelihood not improved '
          call dmaxt(maxt,delta,m)
          if(maxt.eq.0.D0) then
             vw=th
@@ -298,7 +381,7 @@
          rl=-fi
          if(rl.eq.-1.D9) then
                istop=4
-  !            write(*,*)'searpas problem' ,ni  !**
+ !             write(*,*)'searpas problem' ,ni  !**
                goto 110
           end if
 
@@ -312,7 +395,7 @@
          do i=1,m
             ca=ca+delta(i)*delta(i)
          end do
-    !     write(6,*) 'ca =',ca,' cb =',cb,' dd =',dd     !**
+!         write(6,*) 'ca =',ca,' cb =',cb,' dd =',dd     !**
          do i=1,m
             b(i)=b(i)+delta(i)
          end do

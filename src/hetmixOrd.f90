@@ -48,13 +48,15 @@
       module communo
 
       implicit none
-      integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,npmtot &
+      integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,npmtot2 &
       ,nprob,nvarprob,maxmes,nobs,ntrtot,nrisq,nvarxevt,nef
       double precision,dimension(:),allocatable,save::Y
       double precision,dimension(:,:),allocatable,save ::X
       integer,dimension(:),allocatable,save ::idea,idg,idprob,ide
       integer,dimension(:),allocatable,save :: nmes,prior
       integer,save :: minY,maxY
+      integer,dimension(:),allocatable,save::fix
+      double precision,dimension(:),allocatable,save::bfix
 
       end module communo
 
@@ -1559,9 +1561,9 @@
 
 
       subroutine hetmixOrd(Y0,X0,Prior0,idprob0,idea0,idg0,ns0,ng0,nv0,nobs0 &
-          ,nea0,nmes0,idiag0,nwg0,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
+          ,nea0,nmes0,idiag0,nwg0,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convB,convL,convG,maxiter0 &
-          ,minY0,maxY0,ide0,marker,transfY,UACV,rlindiv)
+          ,minY0,maxY0,ide0,marker,transfY,UACV,rlindiv,fix0)
 
 
       use parameters
@@ -1576,14 +1578,15 @@
       integer,intent(in)::minY0,maxY0
       integer,dimension(maxY0-minY0),intent(in)::ide0
 
-      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0,nea0
+      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,nea0
       integer, dimension(nv0),intent(in)::idea0,idg0,idprob0
       integer, dimension(ns0),intent(in)::nmes0,prior0
       double precision,dimension(nobs0),intent(in)::Y0
       double precision,dimension(nobs0*nv0),intent(in)::X0
       double precision,intent(in)::convB,convL,convG
+      integer,dimension(npmtot0),intent(in)::fix0
         !D�claration des variable en entr�e et sortie
-      double precision, dimension(npm0), intent(inout) :: b
+      double precision, dimension(npmtot0), intent(inout) :: btot
         !D�claration des variables en sortie
       double precision,intent(out)::vrais
       double precision,dimension(3),intent(out)::gconv
@@ -1594,14 +1597,14 @@
       double precision,dimension(ns0),intent(out)::rlindiv
       double precision,dimension(ns0*nea0),intent(out)::pred_RE
       double precision,dimension(2*(maxY0-minY0+1)),intent(out)::marker,transfY
-      double precision,dimension(npm0*(npm0+1)/2),intent(out)::Vopt
+      double precision,dimension(npmtot0*(npmtot0+1)/2),intent(out)::Vopt
       integer, intent(out)::ni,istop
         !Variables locales
-      integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it
+      integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it,npmtot,nbfix
       double precision::eps,ca,cb,dd,UACV
       double precision,dimension(ns0,ng0)::PPI
-      double precision,dimension(npm0)::mvc
-      double precision,dimension(npm0*(npm0+3)/2)::V
+      double precision,dimension(npmtot0)::mvc,b
+      double precision,dimension(npmtot0*(npmtot0+3)/2)::V
       double precision,external::funcpao
 
 
@@ -1700,6 +1703,18 @@
          end do
       end do
 
+! prm fixes
+      allocate(fix(npmtot0))
+      fix=0
+      fix(1:npmtot0)=fix0(1:npmtot0)
+      nbfix=sum(fix)
+      if(nbfix.eq.0) then
+         allocate(bfix(1))
+      else
+         allocate(bfix(nbfix))
+      end if
+      bfix=0.d0
+      
 ! creation des parametres
 
       nea=0
@@ -1751,13 +1766,13 @@
 
 
       nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1
-      npm=nef+nvc+nwg+ntrtot
-      npmtot=nef+nvc+nwg+maxY-minY
+      npmtot=nef+nvc+nwg+ntrtot
+      npmtot2=nef+nvc+nwg+maxY-minY
 
 
       if (idiag.eq.1) then
          DO j=1,nvc
-            B(nef+j)=dsqrt(abs(B(nef+j)))
+            btot(nef+j)=dsqrt(abs(btot(nef+j)))
          END DO
       end if
 
@@ -1767,19 +1782,38 @@
       if (idiag.eq.0) then
 
          DO j=1,nvc
-            mvc(j)=B(nef+j)
+            mvc(j)=btot(nef+j)
          END DO
 
          CALL dmfsd(mvc,nea,EPS,IER)
          DO j=1,nvc
-            B(nef+j)=mvc(j)
+            btot(nef+j)=mvc(j)
          END DO
       end if
       if (nwg.gt.0) then
          do i=1,nwg
-            B(nef+nvc+i)=abs(B(nef+nvc+i))
+            btot(nef+nvc+i)=abs(btot(nef+nvc+i))
          end do
       end if
+
+
+! creation du vecteur b avec slt les prm a estimer
+      b=0.d0
+      npm=0
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           npm=npm+1
+           b(npm)=btot(j)
+        end if
+        if(fix0(j).eq.1) then
+           k=k+1
+           bfix(k)=btot(j)
+        end if
+      end do
+
+      allocate(pbH(1:npm))
+      pbH(1:npm)=0 ! pas de H restreint en ordinal
 
 
 ! lancement de l'optimisation
@@ -1806,6 +1840,15 @@
          gconv(3)=dd
          vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
 
+!  injecter le b estime dans btot
+         k=0
+         do j=1,npmtot
+            if(fix0(j).eq.0) then
+               k=k+1
+               btot(j)=b(k)
+            end if
+         end do
+
          !do k=1,nwg
             !b(nef+nvc+k)=abs(b(nef+nvc+k))
          !end do
@@ -1814,7 +1857,7 @@
          if(istop.eq.1.or.istop.eq.2) then 
          !            write(*,*)'avant transfo'
 
-            call transfo_estimee_ord(b,npm,marker,transfY)
+            call transfo_estimee_ord(btot,npmtot,marker,transfY)
          
         end if 
 
@@ -1833,7 +1876,7 @@
 !           end do      
          if (istop.eq.1) then
             if (ng.gt.1) then
-               call postprobo(B,npm,PPI)
+               call postprobo(btot,npmtot,PPI)
             end if
 
 !            write(*,*)'avant residuals'
@@ -1877,6 +1920,8 @@
 
       deallocate(Y,X,idprob,idea,idg,nmes,prior,ide)
 
+      deallocate(pbH,fix,bfix)
+
       return
       end subroutine hetmixOrd
 
@@ -1896,7 +1941,7 @@
 
 
       IMPLICIT NONE
-      integer ::i,j,k,l,m,g,l2,m2,id,jd,npm,it
+      integer ::i,j,k,l,m,g,l2,m2,id,jd,npm,it,kk
       integer ::nmoins
       double precision,dimension(maxmes,nv) ::X00,X2
       double precision,dimension(nv) ::Xprob
@@ -1909,38 +1954,51 @@
       double precision,dimension(ng) :: pi
 
 
-      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot))
+      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot2))
 
 
-
+      m=0
+      l=0
       b1=0.d0
-
       do k=1,nef+nvc+nwg
-         b1(k)=b(k)
-         if (id.eq.k) then
-            b1(k)=b1(k)+thi
-         end if
-         if (jd.eq.k) then
-            b1(k)=b1(k)+thj
+         if (fix(k).eq.0) then 
+            l=l+1
+            b1(k)=b(l)
+            if (id.eq.l) then
+               b1(k)=b1(k)+thi
+            end if
+            if (jd.eq.l) then
+               b1(k)=b1(k)+thj
+            end if
+         else
+            m=m+1
+            b1(k)=bfix(m)
          end if
       end do
 
-      l=nef+nwg+nvc
+
+! changement Cecile
+      kk=nef+nwg+nvc
       do k=1,maxY-minY
          if (ide(k).eq.1) then
-            l=l+1
-            b1(nef+nwg+nvc+k)=b(l)
-            if (id.eq.l) then
-               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thi
-            end if
-            if (jd.eq.l) then
-               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thj
+            kk=kk+1
+            if (fix(kk).eq.0) then
+               l=l+1
+               b1(nef+nwg+nvc+k)=b(l)
+               if (id.eq.l) then
+                  b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thi
+               end if
+               if (jd.eq.l) then
+                  b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thj
+               end if
+            else 
+               m=m+1
+               b1(nef+nwg+nvc+k)=bfix(m)
             end if
          else
             b1(nef+nwg+nvc+k)=0.d0
          end if
       end do
-
 
 
 
@@ -2026,12 +2084,12 @@
 
                         
                         
-                        if (nea.gt.0) then 
-                           temp=vraisobs()      
-                        else
-              Xea=0.d0
-              call vraistot(nea,Xea,nf,temp)
-            end if    
+            if (nea.gt.0) then 
+               temp=vraisobs()      
+            else
+               Xea=0.d0
+               call vraistot(nea,Xea,nf,temp)
+            end if
 
 
             if(temp.lt.1.d-300) then
@@ -2223,7 +2281,7 @@
 
 
       IMPLICIT NONE
-      integer ::i,j,k,l,m,g,l2,m2,id,jd,npm
+      integer ::i,j,k,l,m,g,l2,m2,id,jd,npm,kk
       integer ::nmoins
       double precision,dimension(maxmes,nv) ::X00,X2
       double precision,dimension(nv) ::Xprob
@@ -2235,34 +2293,71 @@
       double precision :: expo,temp,vraisobs
       double precision,dimension(ng) :: pi
 
-      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot))
+      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot2))
 
+
+      m=0
+      l=0
       b1=0.d0
       do k=1,nef+nvc+nwg
-         b1(k)=b(k)
-         if (id.eq.k) then
-            b1(k)=b1(k)+thi
-         end if
-         if (jd.eq.k) then
-            b1(k)=b1(k)+thj
+         if (fix(k).eq.0) then 
+            l=l+1
+            b1(k)=b(l)
+            if (id.eq.l) then
+               b1(k)=b1(k)+thi
+            end if
+            if (jd.eq.l) then
+               b1(k)=b1(k)+thj
+            end if
+         else
+            m=m+1
+            b1(k)=bfix(m)
          end if
       end do
 
-      l=nef+nwg+nvc
+
+! changement Cecile
+      kk=nef+nwg+nvc
       do k=1,maxY-minY
          if (ide(k).eq.1) then
-            l=l+1
-            b1(nef+nwg+nvc+k)=b(l)
-            if (id.eq.l) then
-               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thi
-            end if
-            if (jd.eq.l) then
-               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thj
+            kk=kk+1
+            if (fix(kk).eq.0) then
+               l=l+1
+               b1(nef+nwg+nvc+k)=b(l)
+               if (id.eq.l) then
+                  b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thi
+               end if
+               if (jd.eq.l) then
+                  b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thj
+               end if
+            else 
+               m=m+1
+               b1(nef+nwg+nvc+k)=bfix(m)
             end if
          else
             b1(nef+nwg+nvc+k)=0.d0
          end if
       end do
+
+
+
+
+!      l=nef+nwg+nvc
+!      do k=1,maxY-minY
+!         if (ide(k).eq.1) then
+!            l=l+1
+!            b1(nef+nwg+nvc+k)=b(l)
+!            if (id.eq.l) then
+!               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thi
+!            end if
+!            if (jd.eq.l) then
+!               b1(nef+nwg+nvc+k)=b1(nef+nwg+nvc+k)+thj
+!            end if
+!         else
+!            b1(nef+nwg+nvc+k)=0.d0
+!         end if
+!      end do
+
 
 
 
@@ -2769,7 +2864,7 @@
 
 
 
-      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot))
+      allocate(Ut1(nea,nea),mu(maxmes),Z(maxmes,nea),b1(npmtot2))
 
 
       PPI=0.D0
@@ -3008,7 +3103,7 @@
 
       double precision,dimension(2*(maxY-minY+1))::marker,transfY
       double precision, dimension(npm)::b
-      double precision, dimension(npmtot)::b1
+      double precision, dimension(npmtot2)::b1
       integer::npm,k,l
       double precision::inf,sup
 

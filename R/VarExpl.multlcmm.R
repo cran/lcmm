@@ -8,7 +8,7 @@ VarExpl.multlcmm <- function(x,values)
  if(any(is.na(values))) stop("values should not contain any missing values")
 
 
- if(x$conv==1 | x$conv==2)
+ if(x$conv==1 | x$conv==2 | x$conv==3)
  {
   ny <- length(x$Ynames)
   res <- matrix(0,nrow=ny,ncol=x$ng)
@@ -95,11 +95,11 @@ VarExpl.multlcmm <- function(x,values)
    {
     if(x$N[7]==1)
     {
-     Corr <- (x$best[sum(x$N[3:7])])^2 * var.cor
+     Corr <- (x$best[sum(x$N[3:5])+1])^2 * var.cor
     }
     if(x$N[7]==2)
     {
-     Corr <- (x$best[sum(x$N[3:7])])^2
+     Corr <- (x$best[sum(x$N[3:5])+2])^2
     }
    }
    numer<- numer + Corr
@@ -108,6 +108,7 @@ VarExpl.multlcmm <- function(x,values)
     denom <- numer
     denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[7]+k])^2  #erreur de mesure
     if(x$N[6]>0) denom <- denom + (x$best[x$N[3]+x$N[4]+x$N[5]+x$N[6]+x$N[7]+k])^2  #intercept aleatoire specif
+   
     
     res[k,] <- as.numeric(numer/denom *100)
    }

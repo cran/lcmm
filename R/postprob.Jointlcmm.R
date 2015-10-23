@@ -10,7 +10,7 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
  } 
  else 
  {
-  if(x$conv==1|x$conv==2) 
+  if(x$conv==1|x$conv==2|x$conv==3) 
   {  
     classif <- NULL
     classifY <- NULL

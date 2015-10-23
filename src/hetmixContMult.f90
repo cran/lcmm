@@ -3,8 +3,8 @@
 
       implicit none
       integer,save ::ny,ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,ncor &
-          ,nprob,nvarprob,maxmes,nobs,nrisq,nvarxevt,nef,ncontr,nalea &
-          ,nySPL,ntotvalSPL
+          ,nprob,nvarprob,maxmes,nobs,nef,ncontr,nalea &
+          ,nySPL,ntotvalSPL,npmtot
       double precision,dimension(:),allocatable,save::Y,uniqueY,minY,maxY,rangeY
       double precision,dimension(:,:),allocatable,save ::X
       integer,dimension(:),allocatable,save ::idea,idg,idprob,idcor,idcontr,indiceY
@@ -15,6 +15,8 @@
       double precision,dimension(:),allocatable,save :: epsY
       double precision,dimension(:,:),allocatable,save::zitr
       double precision,dimension(:),allocatable,save::mm,mm1,mm2,im,im1,im2
+      integer,dimension(:),allocatable,save::fix
+      double precision,dimension(:),allocatable,save::bfix
       end module communm
           
 
@@ -33,10 +35,11 @@
                                           
       subroutine hetmixContMult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
            ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
-           ,npm0,b,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
+           ,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
            ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG &
            ,maxiter0,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
-           ,nvalSPL0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv)
+           ,nvalSPL0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv &
+           ,pbH0,fix0)
 
       use parameters
       use communm
@@ -51,16 +54,17 @@
       double precision,dimension(maxval(nbzitr0),ny0),intent(in)::zitr0
       integer,dimension(nobs0),intent(in)::indiceY0
       double precision,dimension(sum(nvalSPL0(:))),intent(in)::uniqueY0
-      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0,nea0,nsim0,ncor0,nalea0
+      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,nea0,nsim0,ncor0,nalea0
       integer, dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0,idcontr0
       integer, dimension(ns0),intent(in)::prior0
       integer,dimension(ns0,ny0)::nmes0   
       double precision,dimension(nobs0),intent(in)::Y0
       double precision,dimension(nobs0*nv0),intent(in)::X0
       double precision,intent(in)::convB,convL,convG
+      integer,dimension(npmtot0),intent(in)::pbH0,fix0
           
         !Declaration des variable en entree et sortie
-      double precision, dimension(npm0), intent(inout) :: b
+      double precision, dimension(npmtot0), intent(inout) :: btot
           
         !Declaration des variables en sortie
       double precision,intent(out)::vrais,vraisdiscret,UACV
@@ -74,15 +78,15 @@
       double precision,dimension(ns0*nalea0),intent(out)::pred_RE_Y 
  ! effets specifiques
       double precision,dimension(nsim0*ny0),intent(out)::marker,transfY 
-      double precision,dimension(npm0*(npm0+1)/2),intent(out)::Vopt
+      double precision,dimension(npmtot0*(npmtot0+1)/2),intent(out)::Vopt
       integer, intent(out)::ni,istop
           
         !Variables locales
-      integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,id,yk,k1,mi  ! it correspond au nombre de mesures courant
+      integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,id,yk,k1,mi,nbfix  
       double precision::eps,ca,cb,dd,thi
       double precision,dimension(ns0,ng0)::PPI
-      double precision,dimension(npm0)::mvc
-      double precision,dimension(npm0*(npm0+3)/2)::V
+      double precision,dimension(npmtot0)::mvc,b
+      double precision,dimension(npmtot0*(npmtot0+3)/2)::V
       double precision,external::vrais_mult
 
 
@@ -113,9 +117,7 @@
        rlindiv=0.d0
 
 
-! en prevision de l'extension au conjoint
-      nrisq=0
-      nvarxevt=0
+
 ! fin en prevision
 
       maxmes=0
@@ -137,6 +139,8 @@
 
       allocate(rangeY(ny0),minY(ny0),maxY(ny0),idlink(ny0),ntrtot(ny0),epsY(ny0))
 
+
+
       !nvalSPL=0
       nySPL=0 
       rangeY=0
@@ -146,7 +150,7 @@
        minY(k)=zitr0(1,k)
        maxY(k)=zitr0(nbzitr0(k),k)
        if (Ydiscret.eq.1) rangeY(k)=maxY(k)-minY(k)
-       if (idlink(k)==2) then
+       if (idlink(k).eq.2) then
           nySPL=nySPL+1
           !nvalSPL(nySPL)=nvalSPL0(k)
        end if
@@ -272,8 +276,18 @@
       !         write(*,*)'X k:',X(1:50,k)
       
 
-
-
+! prm fixes
+      allocate(fix(npmtot0))
+      fix=0
+      fix(1:npmtot0)=fix0(1:npmtot0)
+      nbfix=sum(fix)
+      if(nbfix.eq.0) then
+         allocate(bfix(1))
+      else
+         allocate(bfix(nbfix))
+      end if
+      bfix=0.d0
+      
 
 
 ! creation des parametres
@@ -315,8 +329,8 @@
          nvc=(nea+1)*nea/2-1
       end if
 
-      nef=nprob+ncssg+ncg*ng+nvarxevt+nrisq-1+ncontr
-      npm=nef+nvc+nwg+ncor+ny+nalea+sum(ntrtot(:))
+      nef=nprob+ncssg+ncg*ng-1+ncontr
+      npmtot=nef+nvc+nwg+ncor+ny+nalea+sum(ntrtot(:))
 
 ! if (verbose==1 ) write(*,*)"npm0=",npm0,"npm=",npm
 
@@ -327,7 +341,7 @@
 
       if (idiag.eq.1) then
          DO j=1,nvc
-            B(nef+j)=dsqrt(abs(B(nef+j)))
+            btot(nef+j)=dsqrt(abs(btot(nef+j)))
          END DO
       end if
 
@@ -336,29 +350,55 @@
 
       if (idiag.eq.0) then
 
+         mvc(1)=1.d0
          DO j=1,nvc
-            mvc(j)=B(nef+j)
+            mvc(1+j)=btot(nef+j)
          END DO
 
          CALL dmfsd(mvc,nea,EPS,IER)
          DO j=1,nvc
-            B(nef+j)=mvc(j)
+            btot(nef+j)=mvc(1+j)
          END DO
       end if
       if (nwg.gt.0) then
          do i=1,nwg
-            B(nef+nvc+i)=abs(B(nef+nvc+i))
+            btot(nef+nvc+i)=abs(btot(nef+nvc+i))
          end do
       end if
 
 
-      if (any(idlink==2)) then 
+      if (any(idlink.eq.2)) then 
          call design_splines_mult(ier)
          if (ier.eq.-1) then
             istop=9
             go to 1589
          end if
       end if
+
+! creation du vecteur b avec slt les prm a estimer
+      b=0.d0
+      npm=0
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           npm=npm+1
+           b(npm)=btot(j)
+        end if
+        if(fix0(j).eq.1) then
+           k=k+1
+           bfix(k)=btot(j)
+        end if
+      end do
+
+      allocate(pbH(npm))
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           k=k+1
+           pbH(k)=pbH0(j)
+        end if
+     end do
+
 
 ! lancement de l'optimisation
 
@@ -384,22 +424,32 @@
          gconv(3)=dd
          vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
 
-         if (istop.eq.1.or.istop.eq.2) then  
-           !if (verbose==1) write(*,*)'avant transfo'
-           call transfos_estimees(b,npm,nsim0,marker,transfY)
-         end if  
+!  injecter le b estime dans btot
+         k=0
+         do j=1,npmtot
+            if(fix0(j).eq.0) then
+               k=k+1
+               btot(j)=b(k)
+            end if
+         end do
 
-         if (istop.eq.1) then
+
+         if (istop.eq.1.or.istop.eq.2.or.istop.eq.3) then  
+           !if (verbose==1) write(*,*)'avant transfo'
+           call transfos_estimees(btot,npmtot,nsim0,marker,transfY)
+        ! end if  
+
+         !if (istop.eq.1) then
             if (ng.gt.1) then
 !                if(verbose==1)  write(*,*)'avant postprob'
-               call postprobm(B,npm,PPI)
+               call postprobm(btot,npmtot,PPI)
             end if
 
 
 
 !            if(verbose==1) write(*,*)'avant residuals'
 
-            call residualsm(b,npm,ppi,resid_m,pred_m_g,resid_ss &
+            call residualsm(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss &
           ,pred_ss_g,pred_RE,pred_RE_Y,Yobs)
           
 
@@ -441,7 +491,7 @@
 
       deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL,epsY)
 
-
+      deallocate(pbH,fix,bfix)
 
 
      !write(*,*)'fin'
@@ -449,7 +499,6 @@
       end subroutine hetmixContMult
           
           
-        
 
 
         
@@ -477,9 +526,10 @@
       double precision,dimension(nprob) ::Xprob,bprob  !dim=nprob+1 si idprob[1]=0
       double precision,dimension(nea,nea) ::Ut,Ut1
       double precision,dimension(maxmes,maxmes) ::VC,Corr
-      double precision,dimension(npm) :: b,b1
+      double precision,dimension(npm) :: b
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2
+      double precision,dimension(npmtot)::b1
 
       double precision :: vrais,eps,det,som,thi,thj,temp,eta0
       double precision ::Y4,expo,jacobien,beta_densite,ytemp
@@ -500,12 +550,20 @@
 
       b1=0.d0
       eps=1.D-20
-      do k=1,npm
-         b1(k)=b(k)
+      l=0
+      m=0
+      do k=1,npmtot
+         if(fix(k).eq.0) then
+            l=l+1
+            b1(k)=b(l)
+            if(id.eq.l) b1(k)=b1(k)+thi
+            if(jd.eq.l) b1(k)=b1(k)+thj
+         end if
+         if(fix(k).eq.1) then
+            m=m+1
+            b1(k)=bfix(m)
+         end if
       end do
-
-      if (id.ne.0) b1(id)=b1(id)+thi
-      if (jd.ne.0) b1(jd)=b1(jd)+thj
 
 
 !----------- rappel des parametres utilises ---------
@@ -586,112 +644,112 @@
          Y1=0.d0
          splaa=0.d0
 
-  sumMesYk = 0
-  sumntrtot=0
-  numSPL=0
-  do yk=1,ny
-         do j1=1,nmes(i,yk)
-            Corr(sumMesYk+j1,sumMesYk+j1) =  Corr(sumMesYk+j1,sumMesYk+j1)+b1(nef+nvc+nwg+ncor+yk)**2 !variance de l'erreur k
-            if (nalea.eq.ny) then
-               do j2=1,nmes(i,yk)
-                 Corr(sumMesYk+j1,sumMesYk+j2) = Corr(sumMesYk+j1,sumMesYk+j2)+b1(nef+nvc+nwg+ncor+ny+yk)**2
-                end do
-            end if
-         end do
-
-         if (idlink(yk).eq.0) then  ! Linear link
-
-            do j=1,nmes(i,yk)
-               Y1(sumMesYk+j)=(dble(Y(nmescur+sumMesYk+j))-b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)) &
-                        /abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
-                        
-               jacobien = jacobien - log(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
-            end do
-
-         else if (idlink(yk).eq.1) then  ! Beta link
-
-
-            aa1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
-            bb1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
-            bb1=aa1*(1.d0-aa1)*bb1
-
-            cc1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+3))
-
-            dd1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
-
-            aa=aa1*aa1*(1-aa1)/bb1-aa1
-            bb=aa*(1-aa1)/aa1
-
-            do j=1,nmes(i,yk)
-
-               ytemp=(dble(Y(nmescur+sumMesYk+j))-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
-               Y1(sumMesYk+j)=(betai(aa,bb,ytemp)-cc1)/dd1
-
-
-               if (Y1(sumMesYk+j).eq.999.d0) then
-                  vrais_mult_i=-1.d9
-                  !print*,"-1.d9 Y1=999"
-                  goto 654
-               end if
-
-               jacobien = jacobien + log(abs(beta_densite(ytemp,aa,bb))/dd1)
-               jacobien=jacobien-log(abs(maxY(yk)-minY(yk)+2*epsY(yk)))
-            end do
-
-         else if (idlink(yk).eq.2) then ! Splines link
-            numSPL=numSPL+1
-            
-            splaa=0.d0
-            eta0=0.d0
-            eta0=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
-            
-            do kk=2,ntrtot(yk)
-                 splaa(kk-3)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
-            end do
-             !if(i==1 .and. id==0 .and. jd==0) print*,"eta0=",eta0,"splaa=",sqrt(splaa)
-            do j=1,nmes(i,yk)
-               ll=0
-               !if(i==1 .and. id==0 .and. jd==0) print*,"Y=",Y(nmescur+sumMesYk+j)
-               if (Y(nmescur+sumMesYk+j).eq.zitr(ntrtot(yk)-2,numSPL)) then
-                  ll=ntrtot(yk)-3
-               end if
-
-               som=0.d0
-               do kk = 2,ntrtot(yk)-2
-                  if ((Y(nmescur+sumMesYk+j).ge.zitr(kk-1,numSPL)).and. &
-                      (Y(nmescur+sumMesYk+j).lt.zitr(kk,numSPL))) then
-                     ll=kk-1
-                  end if
-               end do
-
-               if (ll.lt.1.or.ll.gt.ntrtot(yk)-3) then          
-                vrais_mult_i=-1.d9
-                !print*,"-1.d9 ll<1 ou ll>ntrtot-3"
-                goto 654
-               end if
-               if (ll.gt.1) then
-                  do ii=2,ll
-                     som=som+splaa(ii-3)
+         sumMesYk = 0
+         sumntrtot=0
+         numSPL=0
+         do yk=1,ny
+            do j1=1,nmes(i,yk)
+               Corr(sumMesYk+j1,sumMesYk+j1) =  Corr(sumMesYk+j1,sumMesYk+j1)+b1(nef+nvc+nwg+ncor+yk)**2 !variance de l'erreur k
+               if (nalea.eq.ny) then
+                  do j2=1,nmes(i,yk)
+                     Corr(sumMesYk+j1,sumMesYk+j2) = Corr(sumMesYk+j1,sumMesYk+j2)+b1(nef+nvc+nwg+ncor+ny+yk)**2
                   end do
                end if
+            end do
+
+            if (idlink(yk).eq.0) then  ! Linear link
+
+               do j=1,nmes(i,yk)
+                  Y1(sumMesYk+j)=(dble(Y(nmescur+sumMesYk+j))-b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)) &
+                       /abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
+                        
+                  jacobien = jacobien - log(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
+               end do
+
+            else if (idlink(yk).eq.1) then  ! Beta link
+
+
+               aa1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
+                    (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
+               bb1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
+                    (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
+               bb1=aa1*(1.d0-aa1)*bb1
+               
+               cc1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+3))
+               
+               dd1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
+
+               aa=aa1*aa1*(1-aa1)/bb1-aa1
+               bb=aa*(1-aa1)/aa1
+
+               do j=1,nmes(i,yk)
+                  
+                  ytemp=(dble(Y(nmescur+sumMesYk+j))-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
+                  Y1(sumMesYk+j)=(betai(aa,bb,ytemp)-cc1)/dd1
+
+
+                  if (Y1(sumMesYk+j).eq.999.d0) then
+                     vrais_mult_i=-1.d9
+                     !print*,"-1.d9 Y1=999"
+                     goto 654
+                  end if
+
+                  jacobien = jacobien + log(abs(beta_densite(ytemp,aa,bb))/dd1)
+                  jacobien=jacobien-log(abs(maxY(yk)-minY(yk)+2*epsY(yk)))
+               end do
+
+            else if (idlink(yk).eq.2) then ! Splines link
+               numSPL=numSPL+1
+            
+               splaa=0.d0
+               eta0=0.d0
+               eta0=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
+            
+               do kk=2,ntrtot(yk)
+                  splaa(kk-3)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
+               end do
+               !if(i==1 .and. id==0 .and. jd==0) print*,"eta0=",eta0,"splaa=",sqrt(splaa)
+               do j=1,nmes(i,yk)
+                  ll=0
+                  !if(i==1 .and. id==0 .and. jd==0) print*,"Y=",Y(nmescur+sumMesYk+j)
+                  if (Y(nmescur+sumMesYk+j).eq.zitr(ntrtot(yk)-2,numSPL)) then
+                     ll=ntrtot(yk)-3
+                  end if
+
+                  som=0.d0
+                  do kk = 2,ntrtot(yk)-2
+                     if ((Y(nmescur+sumMesYk+j).ge.zitr(kk-1,numSPL)).and. &
+                          (Y(nmescur+sumMesYk+j).lt.zitr(kk,numSPL))) then
+                        ll=kk-1
+                     end if
+                  end do
+
+                  if (ll.lt.1.or.ll.gt.ntrtot(yk)-3) then          
+                     vrais_mult_i=-1.d9
+                     !print*,"-1.d9 ll<1 ou ll>ntrtot-3"
+                     goto 654
+                  end if
+                  if (ll.gt.1) then
+                     do ii=2,ll
+                        som=som+splaa(ii-3)
+                     end do
+                  end if
 
 
 
-               Y1(sumMesYk+j)=eta0+som +splaa(ll-2)*im2(indiceY(nmescur+sumMesYk+j)) &
-                +splaa(ll-1)*im1(indiceY(nmescur+sumMesYk+j))&
-                + splaa(ll)*im(indiceY(nmescur+sumMesYk+j))
+                  Y1(sumMesYk+j)=eta0+som +splaa(ll-2)*im2(indiceY(nmescur+sumMesYk+j)) &
+                       +splaa(ll-1)*im1(indiceY(nmescur+sumMesYk+j))&
+                       + splaa(ll)*im(indiceY(nmescur+sumMesYk+j))
                 
-               jacobien = jacobien + log(splaa(ll-2)*mm2(indiceY(nmescur+sumMesYk+j)) &
-                 +splaa(ll-1)*mm1(indiceY(nmescur+sumMesYk+j))&
-                 +splaa(ll)*mm(indiceY(nmescur+sumMesYk+j)))
+                  jacobien = jacobien + log(splaa(ll-2)*mm2(indiceY(nmescur+sumMesYk+j)) &
+                       +splaa(ll-1)*mm1(indiceY(nmescur+sumMesYk+j))&
+                       +splaa(ll)*mm(indiceY(nmescur+sumMesYk+j)))
                  
  
-!                write(*,*)'Y',Y1(sumMesYk+j),sumMesYk,yk,j,jacobien
-            end do   
-         end if
-         sumMesYk=sumMesYk+nmes(i,yk)
+                  !                write(*,*)'Y',Y1(sumMesYk+j),sumMesYk,yk,j,jacobien
+               end do
+            end if
+            sumMesYk=sumMesYk+nmes(i,yk)
          sumntrtot=sumntrtot+ntrtot(yk)
       end do !fin boucle yk
       
@@ -724,6 +782,11 @@
             if (ier.eq.-1) then
                vrais_mult_i=-1.d9
                !print*,"-1.d9 dsinv"
+               !print*,"b=",b
+               !print*,"bfix=",bfix
+               !print*,"id=",id,"thi=",thi
+               !print*,"jd=",jd,"thj=",thj
+               !print*,"fix=",fix
                goto 654
             end if
 
@@ -1014,6 +1077,7 @@
 ! FIN BOUCLE SUJET
 
       vrais_mult_i=vrais/2.D0+jacobien
+
      ! if (verbose==1) write(*,*)'Vrais and Jacobian',vrais,jacobien
 
  654  continue
@@ -1446,7 +1510,7 @@
 
            !pred_RE_Y 
            err3=0.d0
-           if (nalea==ny) then
+           if (nalea.eq.ny) then
            do yk=1,ny
             err3(yk,:) = Valea(sum(nmes(i,1:yk)),:)
            end do
@@ -1743,7 +1807,7 @@
       q=0
       sumnval=0
       do yk=1,ny
-         if (idlink(yk)==2) then 
+         if (idlink(yk).eq.2) then 
             q=q+1
             do jj=1,nvalSPL(q)      !     ou se trouve la valeur de zi
 

@@ -8,8 +8,8 @@ if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) {
 stop(paste(c("newdata should at least include the following covariates: ","\n",x$Xnames2[-1]),collapse=" "))}
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
-if(missing(var.time)) stop("missing argument 'var.time'")
-if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+#if(missing(var.time)) stop("missing argument 'var.time'")
+#if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 #if(is.null(x$call$random)) x$call$random <- ~-1
 #if(is.null(x$call$classmb)) x$call$classmb <- ~-1
@@ -21,7 +21,7 @@ if(is.null(x$call$classmb)) {call_classmb <- ~-1} else call_classmb <- x$call$cl
 if(is.null(x$call$mixture)) {call_mixture <- ~-1} else call_mixture <- x$call$mixture
 
 
-if(x$conv==1|x$conv==2) {
+if(x$conv==1|x$conv==2|x$conv==3) {
 
 #------------> changement Cecile 10/04/2012
 ## add 12/04/2012
@@ -171,13 +171,21 @@ if(!is.null(x$call$classmb)){
 
 
 #var.time
-if(var.time %in% colnames(newdata1))
+if(!missing( var.time))
     {
-        times <- newdata1[,var.time,drop=FALSE]
+        if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+        if(var.time %in% colnames(newdata1))
+            {
+                times <- newdata1[,var.time,drop=FALSE]
+            }
+        else
+            {
+                times <- newdata[,var.time,drop=FALSE]
+            }
     }
 else
     {
-        times <- newdata[,var.time,drop=FALSE]
+        times <- newdata[,1,drop=FALSE]
     }
 
 ## Table sans donnees manquante: newdata

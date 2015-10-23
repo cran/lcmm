@@ -8,11 +8,11 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
     if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
     if (!(methInteg %in% c(0,1))) stop("The integration method must be either 0 for Gauss-Hermite or 1 for Monte-Carlo")
     if ((methInteg==0)&(!(nsim %in% c(5,7,9,15,20,30,40,50)))) stop("For Gauss-Hermite integration method, 'nsim' should be either 5,7,9,15,20,30,40 or 50")
-    if(missing(var.time)) stop("missing argument 'var.time'")
-    if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+#    if(missing(var.time)) stop("missing argument 'var.time'")
+#    if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 
-    if(x$conv==1 | x$conv==2)
+    if(x$conv==1 | x$conv==2 | x$conv==3)
         {
 
             if(x$conv==2 & draws==TRUE)
@@ -20,6 +20,13 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                     cat("No confidence interval will be provided since the program did not converge properly \n")
                     draws <- FALSE
                 }
+ 
+            if(x$conv==3 & draws==TRUE)
+                {
+                    cat("No confidence interval will be provided since the program did not converge properly \n")
+                    draws <- FALSE
+                }
+
             
             if (x$Names$Xnames2[1]!="intercept")
                 {
@@ -237,13 +244,21 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                 }
 
             ##var.time
-            if(var.time %in% colnames(newdata1))
+            if(!missing( var.time))
                 {
-                    times <- newdata1[,var.time,drop=FALSE]
+                    if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+                    if(var.time %in% colnames(newdata1))
+                        {
+                            times <- newdata1[,var.time,drop=FALSE]
+                        }
+                    else
+                        {
+                            times <- newdata[,var.time,drop=FALSE]
+                        }
                 }
             else
                 {
-                    times <- newdata[,var.time,drop=FALSE]
+                    times <- newdata[,1,drop=FALSE]
                 }
 
             
@@ -738,10 +753,26 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                         }
                     else
                         {
-                            Mat <- matrix(0,ncol=npm,nrow=npm)
-                            Mat[upper.tri(Mat,diag=TRUE)]<- x$V
-                            Chol <- chol(Mat)
-                            Chol <- t(Chol)
+                            posfix <- eval(x$call$posfix)
+
+                            if(ndraws>0)
+                                {
+                                    Mat <- matrix(0,ncol=npm,nrow=npm)
+                                    Mat[upper.tri(Mat,diag=TRUE)]<- x$V
+                                    if(length(posfix))
+                                        {
+                                            Mat2 <- Mat[-posfix,-posfix]
+                                            Chol2 <- chol(Mat2)
+                                            Chol <- matrix(0,npm,npm)
+                                            Chol[setdiff(1:npm,posfix),setdiff(1:npm,posfix)] <- Chol2
+                                            Chol <- t(Chol)
+                                        }
+                                    else
+                                        {
+                                            Chol <- chol(Mat)
+                                            Chol <- t(Chol)
+                                        }
+                                }
                             
                             doOneDraw <- function()
                                 {

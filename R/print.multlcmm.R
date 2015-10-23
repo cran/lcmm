@@ -1,5 +1,4 @@
-print.multlcmm <-
-function(x,...){
+print.multlcmm <- function(x,...){
 if (!inherits(x, "multlcmm")) stop("use only with \"multlcmm\" objects")
 
 cat("General latent class mixed model", "\n")
@@ -7,9 +6,16 @@ cat("     fitted by maximum likelihood method", "\n")
 
 cl <- x$call
 cl$B <- NULL
+ if(is.data.frame(cl$data))
+     {
+         cl$data <- NULL
+         x$call$data <- NULL    
+     }
 cat(" \n")
 dput(cl)
 cat(" \n")
+
+ posfix <- eval(cl$posfix)
 
 cat("Statistical Model:", "\n")
 cat(paste("     Dataset:", x$call$data),"\n")
@@ -19,6 +25,7 @@ cat(paste("     Number of observations:", x$N[9]),"\n")
 #if(length(x$linesNA))cat(paste("     Number of observations deleted:",length(x$linesNA)),"\n")
 cat(paste("     Number of latent classes:", x$ng), "\n")
 cat(paste("     Number of parameters:", length(x$best))," \n")
+ if(length(posfix)) cat(paste("     Number of estimated parameters:", length(x$best)-length(posfix))," \n")
 
 ntrtot <- rep(NA,x$N[8])
 numSPL <- 0
@@ -49,6 +56,7 @@ cat("Iteration process:", "\n")
 
 if(x$conv==1) cat("     Convergence criteria satisfied")
 if(x$conv==2) cat("     Maximum number of iteration reached without convergence")
+if(x$conv==3) cat("     Convergence with restrained Hessian matrix")
 if(x$conv==4|x$conv==12) {
 cat("     The program stopped abnormally. No results can be displayed.\n")
 }
@@ -62,8 +70,8 @@ cat("                         : second derivatives=", signif(x$gconv[3],2), "\n"
 cat(" \n")
 cat("Goodness-of-fit statistics:", "\n")
 cat(paste("     maximum log-likelihood:", round(x$loglik,2))," \n")
-cat(paste("     AIC:", round(-2*x$loglik+2*length(x$best),2))," \n")
-cat(paste("     BIC:", round(-2*x$loglik+length(x$best)*log(x$ns),2))," \n")
+cat(paste("     AIC:", round(x$AIC,2))," \n")
+cat(paste("     BIC:", round(x$BIC,2))," \n")
 cat(" \n")
 }
 

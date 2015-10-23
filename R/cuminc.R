@@ -62,11 +62,25 @@ cuminc <- function(x,time,draws=FALSE,ndraws=2000,...)
                 ## sous-vecteur de best avec que les prm des risques/covariables
                 if(idraw>0)
                     {
-                        Mat <- matrix(0,ncol=length(x$best),nrow=length(x$best))
-                        
+                        posfix <- eval(x$call$posfix)
+
+                        npm <- length(x$best)
+                        Mat <- matrix(0,ncol=npm,nrow=npm)
                         Mat[upper.tri(Mat,diag=TRUE)]<- x$V
-                        Chol <- chol(Mat)
-                        Chol <- t(Chol)
+                        if(length(posfix))
+                            {
+                                Mat2 <- Mat[-posfix,-posfix]
+                                Chol2 <- chol(Mat2)
+                                Chol <- matrix(0,npm,npm)
+                                Chol[setdiff(1:npm,posfix),setdiff(1:npm,posfix)] <- Chol2
+                                Chol <- t(Chol)
+                            }
+                        else
+                            {
+                                Chol <- chol(Mat)
+                                Chol <- t(Chol)
+                            }
+ 
 
                         bdraw <- rnorm(length(x$best))
                         bdraw <- x$best + Chol %*% bdraw

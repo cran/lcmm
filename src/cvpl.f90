@@ -31,12 +31,12 @@ end module commun_cvpl
 
 subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
      ,idcom0,idspecif0,idtdv0 &
-     ,ns0,ng0,ncor0,nv0,nobs0,nmes0,idiag0,nwg0,npm0,time0,typrisq0 &
+     ,ns0,ng0,ncor0,nv0,nobs0,nmes0,idiag0,nwg0,npmtot0,time0,typrisq0 &
      ,idtrunc0,risqcom0,nz0,zi0,Tentr0,Tevt0 &
      ,devt0,ind_survint0,vopt &
-     ,nT,valT,b,epoir,rl_cond,ns_vect,nevt_vect &
+     ,nT,valT,btot,epoir,rl_cond,ns_vect,nevt_vect &
      ,contribt,logspecif0 &
-     )
+     ,fix0,npm0)
 
 
   use commun_cvpl
@@ -48,8 +48,8 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
 
 
   !        Declaration des variables en entree
-  integer,intent(in)::nv0,logspecif0
-  integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npm0,ncor0
+  integer,intent(in)::nv0,logspecif0,npm0
+  integer,intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,ncor0
   integer,dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0
   integer,dimension(nv0),intent(in)::idcom0,idspecif0,idtdv0
   integer,dimension(ns0),intent(in)::nmes0,prior0
@@ -58,12 +58,12 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   double precision,dimension(nobs0*nv0),intent(in)::X0
   integer,intent(in)::risqcom0,typrisq0,nz0,idtrunc0
   integer,dimension(ns0)::Devt0,ind_survint0
-
+  integer,dimension(npmtot0),intent(in)::fix0
   double precision,dimension(nz0),intent(in)::zi0
 
 
   !        Declaration des variable en entree et sortie
-  double precision, dimension(npm0), intent(inout) :: b
+  double precision, dimension(npmtot0), intent(inout) :: btot
 
 
   !-------------------> argument propres a epoir
@@ -72,7 +72,7 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   double precision,dimension(nt),intent(in)::valT
   integer,dimension(nt)::ns_vect,nevt_vect
   double precision,dimension(ns0*nt)::contribt
-  double precision, dimension(npm0*(npm0+1)/2),intent(in)::vopt
+  double precision, dimension(npmtot0*(npmtot0+1)/2),intent(in)::vopt
   !-------------------> variables locales joint
   integer :: i,j,k,ktemp,nmestot
   double precision::eps
@@ -83,8 +83,8 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   integer::t,nbevt_s,nmescur,nmescur_s,jtemp
   double precision,dimension(npm0,npm0)::J_cond,mat3
   double precision,dimension(npm0,npm0)::H_1
-  double precision, dimension(npm0) :: mvc
-  integer::ier,ke,it
+  double precision, dimension(npmtot0) :: mvc,b
+  integer::ier,ke,it,jj,kk,nbfix
   !-------------> initialisation des sorties
 
   ! verification des donnees en entree
@@ -103,7 +103,7 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0)   &
        ,idea(nv0),idg(nv0),idcor(nv0),nmes(ns0),Tsurv0(ns0),Tsurv(ns0)    &
        ,Tsurvint(ns0),ind_survint(ns0),idcom(nv0),idspecif(nv0)   &
-       ,idtdv(ns0),devt(ns0),prior(ns0),time_cvpl(nobs0))
+       ,idtdv(nv0),devt(ns0),prior(ns0),time_cvpl(nobs0))
 
 
   nbevt=1 !pas de competitif!
@@ -153,6 +153,20 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
         zi(i,1)=zi0(i)
      end do
   end select
+
+
+
+  ! prm fixes
+  allocate(fix(npmtot0))
+  fix=0
+  fix(1:npmtot0)=fix0(1:npmtot0)
+  nbfix=sum(fix)
+  if(nbfix.eq.0) then
+     allocate(bfix(1))
+  else
+     allocate(bfix(nbfix))
+  end if
+  bfix=0.d0
 
   ns=ns0
   ng=ng0
@@ -331,13 +345,13 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   end if
 
   nef=ncssg+ncg*ng !
-  npm=nprob+nvarxevt+nrisqtot+nef+nvc+nwg+ncor+1
+  npmtot=nprob+nvarxevt+nrisqtot+nef+nvc+nwg+ncor+1
 
   ntrtot=1
 
   if (idiag.eq.1.and.nvc.gt.0) then
      DO j=1,nvc
-        B(nprob+nvarxevt+nrisqtot+nef+j)=dsqrt(abs(B(nprob+nvarxevt+nrisqtot+nef+j)))
+        btot(nprob+nvarxevt+nrisqtot+nef+j)=dsqrt(abs(btot(nprob+nvarxevt+nrisqtot+nef+j)))
      END DO
   end if
   ! si idiag=0, on met dans le vecteur des parms, les parms
@@ -346,17 +360,17 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   if (idiag.eq.0.and.nvc.gt.0) then
 
      DO j=1,nvc
-        mvc(j)=B(nprob+nvarxevt+nrisqtot+nef+j)
+        mvc(j)=btot(nprob+nvarxevt+nrisqtot+nef+j)
      END DO
      CALL DMFSD(mvc,nea,EPS,IER)
      DO j=1,nvc
-        B(nprob+nvarxevt+nrisqtot+nef+j)=mvc(j)
+        btot(nprob+nvarxevt+nrisqtot+nef+j)=mvc(j)
      END DO
   end if
 
   if (nwg.gt.0) then
      do i=1,nwg
-        B(nprob+nvarxevt+nrisqtot+nef+nvc+i)=abs(B(nprob+nvarxevt+nrisqtot+nef+nvc+i))
+        btot(nprob+nvarxevt+nrisqtot+nef+nvc+i)=abs(btot(nprob+nvarxevt+nrisqtot+nef+nvc+i))
      end do
   end if
 
@@ -382,14 +396,35 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   !        write(*,*)'debut CVPL nt:',nt
   !        write(*,*)'debut CVPL nt*ns:',nt*ns
 
-
+  ! creation du vecteur b avec slt les prm a estimer
+  b=0.d0
+  npm=0
+  k=0
+  do j=1,npmtot
+     if(fix0(j).eq.0) then
+        npm=npm+1
+        b(npm)=btot(j)
+     end if
+     if(fix0(j).eq.1) then
+        k=k+1
+        bfix(k)=btot(j)
+     end if
+  end do
 
   H_1 = 0.d0
-  do j = 1,npm
-     do k =j,npm
-        H_1(j,k) = vopt(j+k*(k-1)/2)
-        H_1(k,j) = vopt(j+k*(k-1)/2)
-     end do
+  jj=0
+  do j = 1,npmtot
+     if(fix(j).eq.0) then
+        jj=jj+1
+        kk=jj-1
+        do k =j,npmtot
+           if(fix(k).eq.0) then
+              kk=kk+1
+              H_1(jj,kk) = vopt(j+k*(k-1)/2)
+              H_1(kk,jj) = vopt(j+k*(k-1)/2)
+           end if
+        end do
+     end if
   end do
 
   eps=1.d-20
@@ -410,7 +445,7 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
      !--------> initialisation
 
 
-     !           write(*,*)' boucle', t
+    !            write(*,*)' boucle', t
 
 
      ns_s = 0
@@ -467,7 +502,7 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
         nmescur=nmescur+nmes(i)
      end do
 
-     !write(*,*)'apres boucle sujets',ns_s
+    ! write(*,*)'apres boucle sujets',ns_s," ",ns
 
      ns_vect(t)=ns_s
      nevt_vect(t)=nbevt_s
@@ -477,7 +512,8 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
 
      !          write(*,*)'avant derivc'
      !         write(*,*)'parms=',(b(j),j=1,npm)
-     !          write(*,*)
+     !         write(*,*) 'bfix=',bfix
+
      call derivc_condT(b,npm,J_cond,rlindiv,t,valT(t))
 
      !           write(*,*)'apres derivc'
@@ -514,20 +550,20 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
 
   end do
 
-  !write(*,*)'avant deallocate 1'
+!  write(*,*)'avant deallocate 1'
 
   deallocate(Y,idprob,X,idea,idg,idcor,nmes,Tsurv0,Tsurv,Tsurvint, &
        ind_survint,idcom,idspecif,idtdv,devt,prior,zi,time_cvpl)
 
 
 
-  !write(*,*)'avant deallocate 2'
+!  write(*,*)'avant deallocate 2'
 
   deallocate(ind_survint_s,nmes_s,Y_s,X_s,Tsurv0_s,Tsurv_s,Tsurvint_s,Devt_s,indT)
 
 
 
-  !write(*,*)'avant deallocate 3'
+!  write(*,*)'avant deallocate 3'
 
   if (typrisq(1).eq.3) then
      deallocate(Tmm,Tmm1,Tmm2,Tmm3,Tim,Tim1,Tim2,Tim3,Tmm0,    &
@@ -539,13 +575,22 @@ subroutine cvpl(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0 &
   endif
 
 
+!  write(*,*)'avant deallocate 4'
   deallocate(risqcom,typrisq,nz,nprisq,nrisq,nxevtspec,nevtparx,nxcurr)
+
+!  write(*,*)'avant deallocate 5'
+
+
+  deallocate(fix,bfix)
 
   !       write(*,*)"dans CVPL : valeur de la vraisemblance"
   !       do t=1,nT
   !          write(*,*)valt(t),epoir(t),rl_cond(t),ns_vect(t),nevt_vect(t)
   !       end do
   !        write(*,*)"fin du programme"
+
+!  write(*,*)'avant return'
+
 
 
   return
@@ -604,13 +649,13 @@ subroutine derivc_condt(b,m,v,rlindiv,t1,valt)
   ii=0
   nmes_curr=0
   nmes_curr_s=0
+
   DO i=1,ns
      Uscore=0.d0
      Uscore2=0.d0
-     !           rlindiv(i)=funcpij(b,m,id,z,id,z,i)
+      !          rlindiv(i)=funcpij(b,m,id,z,id,z,i)
      if (indT(i).eq.1) then
         ii=ii+1
-
         rlindiv(i)=funcpi_condt(b,m,id,z,id,z,ii,t1,valt)
         if (rlindiv(i).eq.-1.d9) then 
            V=0.d0
@@ -640,7 +685,8 @@ subroutine derivc_condt(b,m,v,rlindiv,t1,valt)
         END DO
         nmes_curr_s = nmes_curr_s + nmes_s(ii)
      end if
-     V=V+MATMUL(Uscore,transpose(Uscore2))
+      V=V+MATMUL(Uscore,transpose(Uscore2))
+
      nmes_curr = nmes_curr + nmes(i)
   end do
 
@@ -696,7 +742,8 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
   double precision,dimension(nvarprob) ::Xprob,bprob
   double precision,dimension(nv,nv) ::Ut,Ut1
   double precision,dimension(maxmes,maxmes) ::VC,Se
-  double precision,dimension(npm) :: b,b1
+  double precision,dimension(npm) :: b
+  double precision,dimension(npmtot) :: b1
   double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
   double precision,dimension(nv) :: b0,b2
   double precision :: vrais,eps,det
@@ -714,16 +761,23 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
   logical::is_nan
   integer::nevtxcurr,sumnrisq,ke
 
-
-
   b1=0.d0
   eps=1.D-20
-
-  do k=1,npm
-     b1(k)=b(k)
+  l=0
+  m=0
+  do k=1,npmtot
+     if(fix(k).eq.0) then
+        l=l+1
+        b1(k)=b(l)
+        if(id.eq.l) b1(k)=b1(k)+thi
+        if(jd.eq.l) b1(k)=b1(k)+thj
+     end if
+     if(fix(k).eq.1) then
+        m=m+1
+        b1(k)=bfix(m)
+     end if
   end do
-  if (id.ne.0) b1(id)=b1(id)+thi
-  if (jd.ne.0) b1(jd)=b1(jd)+thj
+
 
   !----------- rappel des parametres utilises ---------
 
@@ -814,8 +868,6 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
 
 
 
-
-
   ! do g=1,ng
 
   !    brisq=0.d0
@@ -901,11 +953,14 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
   end if
   do j1=1,nmes_s(i)
      do j2=1,nmes_s(i)
-        if (j1.eq.j2) Se(j1,j2) = b1(npm)*b1(npm)
+        if (j1.eq.j2) Se(j1,j2) = b1(nprob+nrisqtot+nvarxevt+nef+nvc+nwg+ncor+1)**2
         if (ncor.eq.1) then
-           Se(j1,j2) = Se(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+           Se(j1,j2) = Se(j1,j2)+b1(nprob+nrisqtot+nvarxevt &
+                       +nef+nvc+nwg+ncor)**2*min(tcor(j1),tcor(j2))
         else if (ncor.eq.2) then
-           Se(j1,j2) = Se(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+           Se(j1,j2) = Se(j1,j2)+b1(nprob+nrisqtot+nvarxevt &
+                       +nef+nvc+nwg+ncor)**2*exp(-b1(nprob+nrisqtot+nvarxevt &
+                       +nef+nvc+nwg+1)*abs(tcor(j1)-tcor(j2)))
         end if
      end do
   end do
@@ -970,7 +1025,6 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
   vrais=vrais-nmes_s(i)*dlog(dble(2*3.14159265))
   vrais_long=vrais_long-nmes_s(i)*dlog(dble(2*3.14159265))
 
-
   ! Cas 1 : ng=1
   IF (ng.eq.1) then
 
@@ -1011,7 +1065,6 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
               nevtxcurr=nevtxcurr+nevtparx(k)
            end do
         end do
-
      end if
 
 
@@ -1111,8 +1164,6 @@ double precision function funcpi_condt(b,npm,id,thi,jd,thj,i,t1,valt)
 
      end if
      entretard=entretard-surv0(1)*exp(DOT_PRODUCT(Xevt,bevt))
-
-
 
 
   ELSE

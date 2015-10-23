@@ -5,7 +5,7 @@
   if (!inherits(x, "multlcmm")) stop("use only with \"multlcmm\" objects")
   if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")  
   
-  if(x$conv %in% c(1,2))
+  if(x$conv %in% c(1,2,3))
   {
    ny <- length(x$Ynames) 
    
@@ -13,19 +13,19 @@
    plot.axes <- list(axes=TRUE,yaxt="s",xaxt="s")
    plot.axes[names(dots[c("axes","yaxt","xaxt")])] <- dots[c("axes","yaxt","xaxt")]
    if(plot.axes$axes==FALSE) plot.axes[c("yaxt","xaxt")] <- "n"
-   
+  
    dots <- dots[setdiff(names(dots),c("ylim","ylab","yaxt","x","y","log","xaxt","axes"))]
 
    if(length(list(...)$main)) 
    {
-    title1 <- as.character(eval(match.call()$main))
+    title1 <- as.character(list(...)$main)
     dots <- dots[setdiff(names(dots),"main")]
    }
    else title1 <- "Estimated link functions"
 
    if(length(list(...)$col)) 
    {
-    color <- as.vector(eval(match.call()$col))
+    color <- as.vector(list(...)$col)
     dots <- dots[-which(names(dots)=="col")]
    }
    else  color <- rainbow(ny)
@@ -33,66 +33,65 @@
 
    if(length(list(...)$type))    
    {
-    type1 <- eval(match.call()$type)
+    type1 <- list(...)$type
     dots <- dots[-which(names(dots)=="type")]
    }
    else  type1 <- "l" 
 
    if(length(list(...)$lty))    
    {
-    lty1 <- eval(match.call()$lty)
+    lty1 <- dots$lty
     dots <- dots[-which(names(dots)=="lty")]
    }
    else  lty1 <- 1 
    
    if(length(list(...)$xlab)) 
    {
-    xlab1 <- as.character(eval(match.call()$xlab))
+    xlab1 <- as.character(list(...)$xlab)
     dots <- dots[setdiff(names(dots),"xlab")]
    }
    else xlab1 <- "Latent process"
    
    if(length(list(...)$frame.plot)) 
    {
-    frame.plot1 <- eval(match.call()$frame.plot)
+    frame.plot1 <- list(...)$frame.plot
     dots <- dots[setdiff(names(dots),"frame.plot")]
    }
    else frame.plot1 <- FALSE   
-    
-#   if("legend" %in% names(match.call())) 
-#   {   
-#    nomsleg <- eval(match.call()$legend)
-#    dots <- dots[setdiff(names(dots),"legend")]
-#   }
-#   else nomsleg <- x$Ynames
    
    if(length(list(...)$box.lty)) 
    {
-    box.lty1 <- as.integer(eval(match.call()$box.lty))
+    box.lty1 <- as.integer(list(...)$box.lty)
     dots <- dots[setdiff(names(dots),"box.lty")]
    }
    else box.lty1 <- 0
    
    if(length(list(...)$inset)) 
    {
-    inset1 <- eval(match.call()$inset)
+    inset1 <- list(...)$inset
     dots <- dots[setdiff(names(dots),"inset")]
    }
    else inset1 <- c(0.05,0.05)
 
    if(length(list(...)$cex.axis)) 
    {
-    cex.axis1 <- eval(match.call()$cex.axis)
+    cex.axis1 <- list(...)$cex.axis
     dots <- dots[setdiff(names(dots),"cex.axis")]
    }
    else cex.axis1 <- 0.8   
-      
+
    if(length(list(...)$mar))
    {
-    mar1 <- eval(match.call()$mar)
+    mar1 <- list(...)$mar
     dots <- dots[setdiff(names(dots),"mar")]
    }
-   else mar1 <- c(5,ny+1,2,ny+1)+0.2 
+   else
+       {
+           if(plot.axes$yaxt!="n" )#| isTRUE(add))
+               mar1 <- c(5,ny+1,2,ny+1)+0.2 
+           else
+               mar1 <- c(5,4,2,4)+0.2
+       }
    
    if(!isTRUE(add))
    {
@@ -126,7 +125,7 @@
     oldmar <- par("mar")
     on.exit(par(mar=oldmar))
     par(mar=mar1)
-  
+
 #    list.arg <- list(x=x$estimlink[,2],y=1:nsim,type=type1,pch=pch1[1],bg=bg1[1],lty=lty1[1],lwd=lwd1[1],xlim=xlim1,ylim=c(1,nsim),xlab=xlab1,ylab="",main=title1,xaxt="n",yaxt="n",col=color[1],frame.plot=frame.plot1,mgp=mgp1)
 #    do.call("plot",list.arg)
     

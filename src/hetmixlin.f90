@@ -74,11 +74,13 @@
 
       implicit none
       integer,save ::ns,ng,nv,idiag,ncssg,nvc,nea,ncg,nwg,ncor
-      integer,save ::nprob,nvarprob,maxmes,nobs
+      integer,save ::nprob,nvarprob,maxmes,nobs,npmtot
       double precision,dimension(:),allocatable,save::Y
       double precision,dimension(:,:),allocatable,save ::X
       integer,dimension(:),allocatable,save ::idea,idg,idprob,idcor
       integer,dimension(:),allocatable,save :: nmes,prior
+      integer,dimension(:),allocatable,save::fix
+      double precision,dimension(:),allocatable,save::bfix
       end module commun
 
 
@@ -90,8 +92,8 @@
 
       subroutine hetmixlin(Y0,X0,Prior0, idprob0,idea0,idg0,idcor0  &
           ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0   &
-          ,npm0,b,vopt,vrais,ni,istop,gconv,ppi0,resid_m0,resid_ss0 &
-          ,pred_m_g0,pred_ss_g0,pred_RE,convB,convL,convG,maxiter0)
+          ,npmtot0,btot,vopt,vrais,ni,istop,gconv,ppi0,resid_m0,resid_ss0 &
+          ,pred_m_g0,pred_ss_g0,pred_RE,convB,convL,convG,maxiter0,fix0)
 
       use commun
       use parameters
@@ -102,15 +104,16 @@
 
         !D claration des variables en entree
       integer,intent(in):: nv0,maxiter0,nea0
-      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npm0,ncor0
+      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npmtot0,ncor0
       integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0
       integer, dimension(ns0), intent(in) :: nmes0,Prior0,idcor0
       double precision, dimension(nobs0), intent(in) :: Y0
       double precision, dimension(nobs0*nv0), intent(in) :: X0
       double precision, intent(in) :: convB, convL, convG
+      integer,dimension(npmtot0),intent(in)::fix0
 
         !D claration des variable en entr e et sortie
-      double precision, dimension(npm0), intent(inout) :: b
+      double precision, dimension(npmtot0), intent(inout) :: btot
 
         !D claration des variables en sortie
       double precision, intent(out) :: vrais
@@ -120,15 +123,15 @@
       double precision, dimension(nobs0), intent(out) :: resid_ss0
       double precision, dimension(nobs0*ng0), intent(out) :: pred_m_g0
       double precision, dimension(nobs0*ng0), intent(out) :: pred_ss_g0
-      double precision, dimension(npm0*(npm0+1)/2),intent(out) :: vopt
-      double precision, dimension(npm0*(npm0+3)/2) :: v
+      double precision, dimension(npmtot0*(npmtot0+1)/2),intent(out) :: vopt
+      double precision, dimension(npmtot0*(npmtot0+3)/2) :: v
       integer, intent(out) :: ni, istop
 
         !Variables locales
-      integer :: jtemp,nef,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it
+      integer :: jtemp,nef,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it,nbfix
       double precision :: eps, ca, cb, dd
       double precision, dimension(ns0,ng0) :: PPI
-      double precision, dimension(npm0) :: mvc
+      double precision, dimension(npmtot0) :: mvc,b
       double precision, dimension(ns0*nea0), intent(out)::pred_RE
       double precision, dimension(nobs0) :: resid_m, resid_ss
       double precision, dimension(nobs0,ng0):: pred_m_g, pred_ss_g
@@ -151,6 +154,7 @@
       epsd=convG
       maxiter=maxiter0
 
+      ! pas de H restreint pr hlme
          
       allocate(Y(ns0*maxmes),idprob(nv0),X(ns0*maxmes,nv0)    &
      ,idea(nv0),idg(nv0),nmes(ns0),prior(ns0),idcor(nv0))
@@ -214,6 +218,19 @@
          end do
       end do
 
+! prm fixes
+      allocate(fix(npmtot0))
+      fix=0
+      fix(1:npmtot0)=fix0(1:npmtot0)
+      nbfix=sum(fix)
+      if(nbfix.eq.0) then
+         allocate(bfix(1))
+      else
+         allocate(bfix(nbfix))
+      end if
+      bfix=0.d0
+      
+
 !creation des parametres
 
       nea=nea0
@@ -248,11 +265,11 @@
       end if
 
       nef=nprob+ncssg+ncg*ng
-      npm=nef+nvc+nwg+ncor+1
+      npmtot=nef+nvc+nwg+ncor+1
 
       if (idiag.eq.1) then
          DO j=1,nvc
-            B(nef+j)=dsqrt(abs(B(nef+j)))
+            btot(nef+j)=dsqrt(abs(btot(nef+j)))
          END DO
       end if
 
@@ -263,19 +280,38 @@
 
 
          DO j=1,nvc
-            mvc(j)=B(nef+j)
+            mvc(j)=btot(nef+j)
          END DO
 
          CALL DMFSD(mvc,nea,EPS,IER)
          DO j=1,nvc
-            B(nef+j)=mvc(j)
+            btot(nef+j)=mvc(j)
          END DO
       end if
       if (nwg.gt.0) then
          do i=1,nwg
-            B(nef+nvc+i)=abs(B(nef+nvc+i))
+            btot(nef+nvc+i)=abs(btot(nef+nvc+i))
          end do
       end if
+
+! creation du vecteur b avec slt les prm a estimer
+      b=0.d0
+      npm=0
+      k=0
+      do j=1,npmtot
+        if(fix0(j).eq.0) then
+           npm=npm+1
+           b(npm)=btot(j)
+        end if
+        if(fix0(j).eq.1) then
+           k=k+1
+           bfix(k)=btot(j)
+        end if
+      end do
+
+
+      allocate(pbH(npm))
+      pbH(1:npm)=0 
 
 !lancement de l'optimisation
 
@@ -303,17 +339,26 @@
 
 
          vopt=0.d0
-         vopt(1:npm0*(npm0+1)/2)=v(1:npm0*(npm0+1)/2)
+         vopt(1:npm*(npm+1)/2)=v(1:npm*(npm+1)/2)
+
+!  injecter le b estime dans btot
+         k=0
+         do j=1,npmtot
+            if(fix0(j).eq.0) then
+               k=k+1
+               btot(j)=b(k)
+            end if
+         end do
                  
 
 !probas posteriori
 
          if (istop.eq.1) then
             if (ng.gt.1) then
-               call postprob(B,npm,PPI)
+               call postprob(btot,npmtot,PPI)
             end if
                         
-            call residuals(b,npm,ppi,resid_m,pred_m_g,resid_ss  &
+            call residuals(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss  &
                 ,pred_ss_g,pred_RE)
 
             ig=0
@@ -362,6 +407,7 @@
  1589 continue
 
       deallocate(Y,X,idprob,idea,idg,nmes,prior,idcor)
+      deallocate(pbH,fix,bfix)
 
       return
       end subroutine hetmixlin
@@ -387,7 +433,8 @@
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea,nea) ::Ut,Ut1
       double precision,dimension(maxmes,maxmes) ::VC,Corr
-      double precision,dimension(npm) :: b,b1
+      double precision,dimension(npm) :: b
+      double precision,dimension(npmtot) :: b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob
       double precision :: vrais,eps,det
@@ -398,12 +445,21 @@
 
       b1=0.d0
       eps=1.D-20
-      do k=1,npm
-         b1(k)=b(k)
+      l=0
+      m=0
+      do k=1,npmtot
+         if(fix(k).eq.0) then
+            l=l+1
+            b1(k)=b(l)
+            if(id.eq.l) b1(k)=b1(k)+thi
+            if(jd.eq.l) b1(k)=b1(k)+thj
+         end if
+         if(fix(k).eq.1) then
+            m=m+1
+            b1(k)=bfix(m)
+         end if
       end do
 
-      if (id.ne.0) b1(id)=b1(id)+thi
-      if (jd.ne.0) b1(jd)=b1(jd)+thj
 
       
      ! write(*,*)'npm',npm,ncor
@@ -472,11 +528,11 @@
          end if
          do j1=1,nmes(i)
             do j2=1,nmes(i)
-               if (j1.eq.j2) Corr(j1,j2) = b1(npm)*b1(npm)
+               if (j1.eq.j2) Corr(j1,j2) = b1(npmtot)*b1(npmtot)
                if (ncor.eq.1) then 
-                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*min(tcor(j1),tcor(j2))
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npmtot-1)*b1(npmtot-1)*min(tcor(j1),tcor(j2))
                else if (ncor.eq.2) then
-                  Corr(j1,j2) = Corr(j1,j2)+b1(npm-1)*b1(npm-1)*exp(-b1(npm-2)*abs(tcor(j1)-tcor(j2)))
+                  Corr(j1,j2) = Corr(j1,j2)+b1(npmtot-1)*b1(npmtot-1)*exp(-b1(npmtot-2)*abs(tcor(j1)-tcor(j2)))
                end if
             end do
          end do        

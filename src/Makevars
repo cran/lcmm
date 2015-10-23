@@ -20,3 +20,4 @@ predictMult.o: AOptim.o predictCont.o
 postprob2.o: AOptim.o Jointhet.o hetmixCont.o
 cvpl.o: AOptim.o Jointhet.o
 calculusTransfo.o: hetmixCont.o
+

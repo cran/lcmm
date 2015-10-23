@@ -1,6 +1,13 @@
 exportPattern("^[[:alpha:]]+")
 useDynLib(lcmm)
 import(survival)
+importFrom("grDevices", "rainbow")
+importFrom("graphics", "axis", "hist", "lines", "matlines", "matplot",
+           "mtext", "par", "plot", "points", "segments")
+importFrom("stats", "as.formula", "formula", "get_all_vars",
+     "integrate", "median", "model.frame", "model.matrix",
+     "na.fail", "na.omit", "na.pass", "pchisq", "pnorm", "qnorm",
+     "quantile", "rnorm", "sd", "terms")
 
 S3method(print,hlme)
 S3method(summary,hlme)

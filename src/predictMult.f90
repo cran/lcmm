@@ -228,10 +228,10 @@ subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
                   exp(-b1(nef+nvc+nwg+1)*abs(tcor(j1)-tcor(j2)))
                end if
                
-               if(nalea==ny) Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) = Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) +&
+               if(nalea.eq.ny) Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) = Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) +&
                b1(nef+nvc+nwg+ncor+ny+yk)**2 !variance de alpha_k
               
-               if(j1==j2) Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) = Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2)+&
+               if(j1.eq.j2) Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2) = Corr(maxmes*(yk-1)+j1,maxmes*(yk-1)+j2)+&
                b1(nef+nvc+nwg+ncor+yk) **2 ! variance de l'erreur
 
             end do
@@ -330,7 +330,7 @@ subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
 !        print*,"mu ok"
 !    if (verbose==1) print*,"mu=",mu
     
-    if(methInteg==1) then !MC
+    if(methInteg.eq.1) then !MC
 !         print*,"debut MC"
       do l=1,nsim
          
@@ -505,14 +505,15 @@ subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
          ier=0
          niter=0
          diff=0.d0
-         ytemp = mu(maxmes*(yk-1)+j)+sqrt(VC(maxmes*(yk-1)+j,maxmes*(yk-1)+j))*gauss(1,l)
+         ytemp = mu(maxmes*(yk-1)+j)+sqrt(VC(maxmes*(yk-1)+j,maxmes*(yk-1)+j))*gauss(1,l) 
          ytemp2=INV_ISPLINES(ytemp,splaa,bb,nbzitr(yk),zitr,ier,niter,diff)
          
         if ((ier.eq.3).or.(ier.ne.1 .and. diff.gt.1.d-3).or.ymarg(maxmes*(yk-1)+j,1).eq.9999.d0) then
                 ymarg(maxmes*(yk-1)+j,1)=9999.d0
    !             if (verbose==1 .and. k==0) print*,"pb splines :","ier=",ier,"diff=",diff,"ymarg=",&
    !             ymarg(maxmes*(yk-1)+j,1),"ytemp=",ytemp,"VC=",VC(maxmes*(yk-1)+j,maxmes*(yk-1)+j)
-                k=k+1
+ !               k=k+1
+!print*,"ymarg",ymarg(maxmes*(yk-1)+j,1)
         else
                 ymarg(maxmes*(yk-1)+j,1)=ymarg(maxmes*(yk-1)+j,1)+ytemp2*gauss(2,l)
         end if
@@ -694,7 +695,7 @@ end if
         !if (verbose==1) print*,"mu=",mu        
 !        write(*,*)'mu'
 
-    if(methInteg==1) then !MC
+    if(methInteg.eq.1) then !MC
 !    print*,"debut MC"
       do l=1,nsim
          

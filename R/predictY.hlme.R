@@ -10,8 +10,8 @@ cat("newdata should at least include the following covariates: ", "\n")
 cat(x$Xnames2[-1], "\n")}
 if (!all(x$Xnames2 %in% c(colnames(newdata),"intercept"))) stop("see above")
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
-if(missing(var.time)) stop("missing argument 'var.time'")
-if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+#if(missing(var.time)) stop("missing argument 'var.time'")
+#if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 
 
@@ -181,13 +181,21 @@ if(length(x$N)>4)
 }
 
 #var.time
-if(var.time %in% colnames(newdata1))
+if(!missing( var.time))
     {
-        times <- newdata1[,var.time,drop=FALSE]
+        if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+        if(var.time %in% colnames(newdata1))
+            {
+                times <- newdata1[,var.time,drop=FALSE]
+            }
+        else
+            {
+                times <- newdata[,var.time,drop=FALSE]
+            }
     }
 else
     {
-        times <- newdata[,var.time,drop=FALSE]
+        times <- newdata[,1,drop=FALSE]
     }
 
 ## Table sans donnees manquante: newdata

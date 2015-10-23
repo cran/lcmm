@@ -9,8 +9,8 @@ if(x$linktype==-1) stop("The model does not define any latent process.")
 if (!all(x$Names$Xnames2 %in% c(colnames(newdata),"intercept"))) {
 stop(paste(c("newdata should at least include the following covariates: ","\n",x$Names$Xnames2),collapse=" "))}
 if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
-if(missing(var.time)) stop("missing argument 'var.time'")
-if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+#if(missing(var.time)) stop("missing argument 'var.time'")
+#if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
 call_fixed <- x$call$fixed[3]
 if(is.null(x$call$random)) {call_random <- ~-1} else call_random <- x$call$random
@@ -18,7 +18,7 @@ if(is.null(x$call$classmb)) {call_classmb <- ~-1} else call_classmb <- x$call$cl
 if(is.null(x$call$mixture)) {call_mixture <- ~-1} else call_mixture <- x$call$mixture
 
 
-if (x$conv==1|x$conv==2)
+if (x$conv==1|x$conv==2|x$conv==3)
     {
         if (x$Names$Xnames2[1]!="intercept")
             {
@@ -167,14 +167,22 @@ if(!is.null(x$call$classmb)){
 
         
 #var.time
-if(var.time %in% colnames(newdata1))
-    {
-        times <- newdata1[,var.time,drop=FALSE]
-    }
-else
-    {
-        times <- newdata[,var.time,drop=FALSE]
-    }
+            if(!missing( var.time))
+                {
+                    if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+                    if(var.time %in% colnames(newdata1))
+                        {
+                            times <- newdata1[,var.time,drop=FALSE]
+                        }
+                    else
+                        {
+                            times <- newdata[,var.time,drop=FALSE]
+                        }
+                }
+            else
+                {
+                    times <- newdata[,1,drop=FALSE]
+                }
         
 ## Table sans donnees manquante: newdata
 na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb))

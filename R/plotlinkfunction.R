@@ -4,7 +4,7 @@
  if(x$linktype==-1) stop("The model does not define any link function")
  if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")
    
- if(x$conv %in% c(1,2))
+ if(x$conv %in% c(1,2,3))
  {
    dots <- list(...)
 

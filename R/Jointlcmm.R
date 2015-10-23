@@ -3,9 +3,8 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                       hazardnodes=NULL,TimeDepVar=NULL,link=NULL,intnodes=NULL,
                       epsY=0.5,range=NULL,cor=NULL,data,B,convB=0.0001,
                       convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,
-                      logscale=FALSE,subset=NULL,na.action=1)
+                      logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE)
     {
-        #dyn.load("Competinghet2.so")
         
         ptm<-proc.time()
         cat("Be patient, Jointlcmm is running ... \n")
@@ -57,6 +56,8 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         
         if(!(na.action %in% c(1,2))) stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
 
+        if(length(posfix) & missing(B)) stop("A set of initial parameters must be specified if some parameters are not estimated")
+
         if(!isTRUE(all.equal(as.character(cl$subset),character(0))))
             {
                 cc <- cl
@@ -66,7 +67,6 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 cc$data <- data
                 cc$na.action <- na.pass
                 data <- eval(cc)
-                #data <- model.frame(formula(paste("~",paste(colnames(data),collapse="+"))),data=data,subset=cl$subset,na.action=NULL)
             }
 
 attributes(data)$terms <- NULL
@@ -118,8 +118,8 @@ attributes(data)$terms <- NULL
             }  
         
         ## nombre d'evenement concurrents
-        nbevt <- length(unique(Event))-1   
-        if(nbevt<1) stop("All subjects have the same status.")
+        nbevt <- length(which(names(table(Event))>0))    #length(unique(Event))-1   
+        if(nbevt<1) stop("No observed event in the data")
        
         
         ##pour acces aux attributs des formules
@@ -537,13 +537,15 @@ attributes(data)$terms <- NULL
         ns0 <- length(unique(IND))  
         
 ### Tevent, Tentry et Event de dim ns  
-        data.surv <- unique(cbind(IND,matYX[,c(6,7,8,9)]))
-        if(nrow(data.surv) != ns0) stop("Subjects cannot have several times to event.")
-
-        tsurv0 <- data.surv[,2] 
-        tsurv <- data.surv[,3]
-        devt <- data.surv[,4]
-        tsurvint <- data.surv[,5]
+        #data.surv <- unique(cbind(IND,matYX[,c(6,7,8,9)]))
+        #if(nrow(data.surv) != ns0) stop("Subjects cannot have several times to event.")
+        nmes <- as.vector(table(IND))
+        data.surv <- matYX[cumsum(nmes),c(6,7,8,9)]
+        
+        tsurv0 <- data.surv[,1] 
+        tsurv <- data.surv[,2]
+        devt <- data.surv[,3]
+        tsurvint <- data.surv[,4]
         ind_survint <- (tsurvint<tsurv) + 0 
 
 
@@ -902,15 +904,198 @@ attributes(data)$terms <- NULL
             nrisqtot + nvarxevt +
                 nef + nvc + nw + ncor0 + ntrtot0
                      
-
         V <- rep(0, NPM*(NPM+1)/2)  #pr variance des parametres
+
+        ## prm fixes
+        fix0 <- rep(0,NPM)
+        if(length(posfix))
+            {
+                if(any(!(posfix %in% 1:NPM))) stop("Indexes in posfix are not correct")
+                
+                fix0[posfix] <- 1
+            }        
+        if(length(posfix)==NPM) stop("No parameters to estimate")
+
+        
+        ## pour H restreint
+        pbH0 <- rep(0,NPM)
+        if(any(typrisq %in% c(1,3)))
+            {
+                for(k in 1:nbevt)
+                    {
+                        if(typrisq[k] %in% c(1,3))
+                            {
+                                pbH0[nprob+sum(nrisq[1:k])-nrisq[k]+1:nrisq[k]] <- 1
+                                if(risqcom[k]==2)
+                                    {
+                                        pbH0[nprob+sum(nrisq[1:k])] <- 0
+                                    }
+                            }
+                    }
+            }
+        pbH0[posfix] <- 0
+        Hr0 <- as.numeric(partialH)
+        if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined in the absence of baseline risk function approximated by splines or piecewise linear function")
         
 
         ##valeurs initiales
         if(!(missing(B)))
             {
-                if (length(B)==NPM) b <- B
-                else stop(paste("Vector B should be of length",NPM))
+                if(is.vector(B))
+                    {
+                        if (length(B)==NPM) b <- B
+                        else stop(paste("Vector B should be of length",NPM))
+                    }
+                else
+                    {
+                        if(class(B)!="Jointlcmm") stop("B should be either a vector or an object of class Jointlcmm")
+
+                        b <- rep(0,NPM)
+
+                    if(ng>1 & B$ng==1)
+                            {
+                                nef2 <- sum(idg0!=0)
+                                NPM2 <- sum(nprisq)+nvarxevt2+nef2+nvc+ncor0+ntrtot0
+                                if(length(B$best)!=NPM2) stop("B is not correct")
+                                
+                                for(ke in 1:nbevt)
+                                    {
+                                        if(risqcom[ke]==0)
+                                            {
+                                                indb <- nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]
+                                                indinit <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
+                                                if(B$conv==1)
+                                                    {
+                                                        b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(sqrt(B$V[indinit*(indinit+1)/2]),ng0))
+                                                    }
+                                                else
+                                                    {
+                                                        b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(B$best[indinit],ng0))
+                                                    }
+                                            }
+
+                                        if(risqcom[ke]==1)
+                                            {
+                                                b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- B$best[sum(nrisq[1:ke])-nrisq[ke]+1:nprisq[ke]]
+                                            }
+
+                                        if(risqcom[ke]==2)
+                                            {
+                                                b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- c(B$best[sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]],0.5+(0:(ng0-2))*0.5)
+                                            }
+                                    }
+
+
+                                ## pr bevt
+                                avtj <- nprob+nrisqtot
+                                avtj2 <- sum(nprisq)
+                                for(j in 1:nv0)
+                                    {
+                                        if(idcom[j]==0 & all(idspecif[,j]==0)) next
+                                        
+                                        if(idcom[j]==1 & all(idspecif[,j]==1))
+                                            {
+                                                b[avtj+1] <- B$best[avtj2+1]
+                                                avtj <- avtj+1
+                                                avtj2 <- avtj2+1
+                                            }
+
+                                        if(idcom[j]==1 & all(idspecif[,j]==2))
+                                            {
+                                                if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
+                                                else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
+
+                                                avtj <- avtj+ng0
+                                                avtj2 <- avtj2+1
+                                            }
+
+                                        if(idcom[j]==0 & idcause[j]!=0)
+                                            {
+                                                for(k in 1:nbevt)
+                                                    {
+                                                        if(idspecif[k,j]==0) next
+
+                                                        if(idspecif[k,j]==1)
+                                                            {
+                                                                b[avtj+1] <- B$best[avtj2+1]
+                                                                avtj <- avtj+1
+                                                                avtj2 <- avtj2+1
+                                                            }
+
+                                                        if(idspecif[k,j]==2)
+                                                            {
+                                                                if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
+                                                                else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
+
+                                                                avtj <- avtj+ng0
+                                                                avtj2 <- avtj2+1 
+                                                            }
+                                                    }
+                                                
+                                            }
+                                    }
+
+
+                                
+                                ## pr nef
+                                avtj <- nprob+nrisqtot+nvarxevt
+                                avtj2 <- sum(nprisq)+nvarxevt2
+                                for(j in 1:nv0)
+                                    {
+                                        if(idg0[j]==1)
+                                            {
+                                                if(j==1 & idlink!=-1) next
+                                                else
+                                                    {
+                                                        if(B$conv==1) b[avtj+1] <- B$best[avtj2+1]
+                                                        avtj <- avtj+1
+                                                        avtj2 <- avtj2+1
+                                                    }
+                                            }
+
+                                        if(idg0[j]==2)
+                                            {
+                                                if(j==1)
+                                                    {
+                                                        if(idlink!=-1)
+                                                            {
+                                                                b[avtj+1:(ng0-1)] <- -0.5*(1:(ng0-1))
+
+                                                                avtj <- avtj+ng0-1
+                                                            }
+                                                        else
+                                                            {
+                                                                b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
+                                                                avtj <- avtj+ng0
+                                                                avtj2 <- avtj2+1
+                                                            }
+                                                    }
+                                                else
+                                                    {
+                                                        if(B$conv==1) b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*sqrt(B$V[(avtj2+1)*(avtj2+1+1)/2])
+                                                        else b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
+
+                                                        avtj <- avtj+ng0
+                                                        avtj2 <- avtj2+1
+                                                    }
+                                                
+                                            }
+                                    }
+
+
+                                ## pr nvc
+                                if(nvc>0)
+                                    {
+                                        b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- B$cholesky
+                                    }
+
+
+                                ## cor et transfo
+                                b[(nprob+nrisqtot+nvarxevt+nef+nvc+nw+1):NPM] <- B$best[(sum(nprisq)+nvarxevt2+nef2+nvc+1):NPM2]
+
+                            }
+                    }
+   
             }
         else
             {
@@ -1002,9 +1187,8 @@ attributes(data)$terms <- NULL
                         pred_m_g2 <- rep(0,nobs0)
                         pred_ss_g2 <- rep(0,nobs0)
                         maxiter2 <- min(75,maxiter)
-                        convB2 <- max(0.01,convB)
-                        convL2 <- max(0.01,convL)
-                        convG2 <- max(0.01,convG)            
+                        convBLG2 <- c(max(0.01,convB), max(0.01,convL),max(0.01,convG))
+                        Hr02 <- 0
                         risq_est2 <- matrix(0,nrow=nsim,ncol=nbevt)
                         risqcum_est2 <- matrix(0,nrow=nsim,ncol=nbevt)
 
@@ -1033,13 +1217,12 @@ attributes(data)$terms <- NULL
                         as.double(ppi02),as.double(ppitest02),
                         as.double(resid_m),as.double(resid_ss),
                         as.double(pred_m_g2), as.double(pred_ss_g2),
-                        as.double(predRE),as.double(convB2),as.double(convL2),
-                        as.double(convG2),as.double(time),
+                        as.double(predRE),as.double(convBLG2),as.double(time),
                         as.double(risq_est2),
                         as.double(risqcum_est2),as.double(marker),
                         as.double(transfY),as.integer(nsim),
                         as.double(Yobs),as.double(statglob),as.double(statevt),
-                        package="lcmm")
+                        as.integer(pbH0),as.integer(fix0),as.package="lcmm")
 
                         ## faire des valeurs initiales a partir de init
 #cat("B estime pour ng=1 ",init$best, "\n")
@@ -1467,6 +1650,7 @@ attributes(data)$terms <- NULL
 #return(b)
         ## pour reduire le nb d'arguments:
         int6 <- c(nw,ncor0,idiag0,idtrunc,logspecif,maxiter)
+        convBLG <- c(convB,convL,convG)
         
         out <- .Fortran("competinghet",as.double(Y0),as.double(X0),as.integer(prior0),
                         as.double(tsurv0),as.double(tsurv),
@@ -1488,20 +1672,67 @@ attributes(data)$terms <- NULL
                         ppi=as.double(ppi0),ppitest=as.double(ppitest0),
                         resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),
                         pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),
-                        predRE=as.double(predRE),as.double(convB),as.double(convL),
-                        as.double(convG),time=as.double(time),
+                        predRE=as.double(predRE),as.double(convBLG),time=as.double(time),
                         risq_est=as.double(risq_est),
                         risqcum_est=as.double(risqcum_est),marker=as.double(marker),
                         transfY=as.double(transfY),as.integer(nsim),
-                        Yobs=as.double(Yobs),statglob=as.double(statglob),statevt=as.double(statevt),package="lcmm")
+                        Yobs=as.double(Yobs),statglob=as.double(statglob),statevt=as.double(statevt),as.integer(pbH0),as.integer(fix0),package="lcmm")
           
                         #, as.integer(Ydiscret),
                         #vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),
                         #rlindiv=as.double(rlindiv))#,package="lcmm")
-#browser()
 
-#out <- list(best=b,V=V,loglik=loglik,niter=0,conv=0,gconv=c(0,0,0),ppi=0,ppitest=0,resid_m=0,resid_ss=0,pred_m_g=0,pred_ss_g=0,predRE=0,time=0,risq_est=0,risqcum_est=0,marker=0,transfY=0,Yobs=0,statglob=0,statevt=0)
 
+
+ ### mettre NA pour les variances et covariances non calculees et  0 pr les prm fixes
+        if(length(posfix))
+            {
+                if(out$conv==3)
+                    {
+                        mr <- NPM-sum(pbH0)-length(posfix)
+                        Vr <- matrix(0,mr,mr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        Vr <- t(Vr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        V <- matrix(NA,NPM,NPM)
+                        V[setdiff(1:NPM,c(which(pbH0==1),posfix)),setdiff(1:NPM,c(which(pbH0==1),posfix))] <- Vr
+                        V[,posfix] <- 0
+                        V[posfix,] <- 0
+                        V <- V[upper.tri(V,diag=TRUE)]
+                    }
+                else
+                    {
+                        mr <- NPM-length(posfix)
+                        Vr <- matrix(0,mr,mr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        Vr <- t(Vr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        V <- matrix(0,NPM,NPM)
+                        V[setdiff(1:NPM,posfix),setdiff(1:NPM,posfix)] <- Vr
+                        V <- V[upper.tri(V,diag=TRUE)]
+                    }
+            }
+        else
+            {
+                if(out$conv==3)
+                    {
+                        mr <- NPM-sum(pbH0)
+                        Vr <- matrix(0,mr,mr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        Vr <- t(Vr)
+                        Vr[upper.tri(Vr,diag=TRUE)] <- out$V[1:(mr*(mr+1)/2)]
+                        V <- matrix(NA,NPM,NPM)
+                        V[setdiff(1:NPM,which(pbH0==1)),setdiff(1:NPM,which(pbH0==1))] <- Vr
+                        V <- V[upper.tri(V,diag=TRUE)]
+                    }
+                else
+                    {
+                        V <- out$V
+                    }
+            }
+
+ 
+        
         
 ### remplacer cholesky par varcov dans best
         if(nvc>0)
@@ -1650,15 +1881,15 @@ attributes(data)$terms <- NULL
 
         res <-list(ns=ns0,ng=ng0,idprob=idprob0,idcom=idcom,
                    idspecif=idspecif,idtdv=idtdv,idg=idg0,idea=idea0,
-                   idcor=idcor0,loglik=out$loglik,best=out$best,V=out$V,
+                   idcor=idcor0,loglik=out$loglik,best=out$best,V=V,
                    gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,
                    N=N,idiag=idiag0,pred=pred,pprob=ppi,pprobY=ppitest,
                    predRE=predRE,Names=Names,cholesky=ch,logspecif=logspecif,
                    estimlink=estimlink,epsY=epsY,linktype=idlink,linknodes=zitr0,
                    predSurv=predSurv,hazard=list(typrisq,hazardtype,zi,nz),
                    scoretest=stats,na.action=linesNA,
-                   AIC=2*(length(out$best)-out$loglik),
-                   BIC=length(out$best)*log(ns0)-2*out$loglik)
+                   AIC=2*(length(out$best)-length(posfix)-out$loglik),
+                   BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik)
 
         class(res) <-c("Jointlcmm")
 

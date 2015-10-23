@@ -7,7 +7,7 @@ VarExpl.Jointlcmm <- function(x,values)
  if(any(is.na(values))) stop("values should not contain any missing values")
 
 
- if (x$conv==1 | x$conv==2)
+ if (x$conv==1 | x$conv==2 | x$conv==3)
  {
   res <- matrix(0,nrow=1,ncol=x$ng)
 

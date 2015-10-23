@@ -9,6 +9,20 @@ Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models 
 
 
 
+Changes in Version 1.7.3.0 (2015-10-23):
+
+
+* Functions 'hlme', 'lcmm', 'multlcmm', 'Jointlcmm' now include a posfix option to specify parameters that should not be estimated.
+
+* Functions 'lcmm', 'multlcmm', 'Jointlcmm' now include a partialH option to restrict the computation of the inverse of the Hessian matrix to a submatrix
+
+* Functions 'hlme', 'lcmm', 'multlcmm', 'Jointlcmm' now allow optional vector B to be an estimated model (with G=1) to reduce calculation time of initial values.
+
+* Bug identified and solved in calculation of subject-specific predictions in  'hlme', 'lcmm', 'multlcmm' and 'Jointlcmm' when cor is not NULL.
+
+* Bug identified and solved in the calculation of confidence bands for individual dynamic predictions in dynpred with draws=T.
+
+* Bug identified and solved in the calculation of the explained variance for multlcmm objects when cor is not NULL.
 
 
 
@@ -33,7 +47,7 @@ Changes in Version 1.7.0 (2015-02-13):
 
 * The new function 'fitY' computes the marginal predicted values of longitudinal outcomes in their natural scale for lcmm or multlcmm objects.
 
-* Bug identified and solved in 'dynpred' function when used with a joint model assuming proportional hasards between latent classes.
+* Bug identified and solved in 'dynpred' function when used with a joint model assuming proportional hazards between latent classes.
 
 * The Makevars file now allows compilation of the package with parallel make.
 
@@ -84,7 +98,7 @@ Changes in Version 1.6.2 (2013-03-06):
 
 * All the functions hlme, lcmm, Jointlcmm include a 'cor' option for including a brownian motion or a first-order autoregressive error process in addition to the independent errors of measurement
 
-* bug identified and solved in predictL,predictY and plot.predict when used with factor covariate
+* bug identified and solved in predictL, predictY and plot.predict when used with factor covariate
 
 
 Changes in Version 1.5.8 (2012-10-01):

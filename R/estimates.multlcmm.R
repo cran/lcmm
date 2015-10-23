@@ -5,7 +5,7 @@ estimates.multlcmm <- function(x,cholesky=TRUE)
  if (!inherits(x, "multlcmm")) stop("use only with \"multlcmm\" objects")
  if(is.na(as.logical(cholesky))) stop("cholesky should be TRUE or FALSE")
 
- if(x$conv==1 | x$conv==2)
+ if(x$conv==1 | x$conv==2 | x$conv==3)
  {
   res <- x$best
   cholesky <- as.logical(cholesky)

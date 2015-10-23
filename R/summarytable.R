@@ -36,7 +36,7 @@ summarytable <- function(m1,...)
             }
 
 
-        tmp <- c(m1$ng,m1$loglik,length(m1$best),m1$BIC)
+        tmp <- c(m1$ng,m1$loglik,length(m1$best)-length(eval(m1$call$posfix)),m1$BIC)
         for(g in 1:m1$ng)
             {
                 tmp <- c(tmp,length(which(m1$pprob[,2]==g))/m1$ns*100)
@@ -53,7 +53,7 @@ summarytable <- function(m1,...)
                     {
                         m <- get(paste("m",i,sep=""))
                         
-                        tmp <- c(m$ng,m$loglik,length(m$best),m$BIC)
+                        tmp <- c(m$ng,m$loglik,length(m$best)-length(eval(m$call$posfix)),m$BIC)
                         
                         for(g in 1:m$ng)
                             {

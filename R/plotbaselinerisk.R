@@ -9,7 +9,7 @@
   if(!(event %in% c(1:nbevt))) stop("Argument event is not correct")
   if(is.na(as.logical(add))) stop("add should be TRUE or FALSE")
   
-  if((x$conv==1|x$conv==2)& (sum(is.na(x$predSurv)==0)))
+  if((x$conv==1|x$conv==2|x$conv==3)& (sum(is.na(x$predSurv)==0)))
   {
    ng <- x$ng
   

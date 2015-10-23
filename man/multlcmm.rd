@@ -15,7 +15,8 @@ multlcmm(fixed, mixture, random, subject, classmb, ng = 1,
 idiag = FALSE,nwg = FALSE, randomY=FALSE, link = "linear", 
 intnodes = NULL, epsY = 0.5, cor=NULL, data, B, convB = 1e-04, 
 convL = 1e-04, convG = 1e-04, maxiter=100,
-nsim=100, prior,range=NULL, subset=NULL, na.action=1)
+nsim=100, prior,range=NULL, subset=NULL, na.action=1,
+posfix=NULL, partialH=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -69,9 +70,11 @@ optional definite positive real used to rescale the marker in (0,1) when the bet
  data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}.
 }
   \item{B}{
-optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section.
-If no vector is specified and ng>1, a preliminary analysis involving the estimation of a linear mixed model (\code{multlcmm} with ng=1) is performed to choose initial values.
-Due to possible local maxima in latent class mixed models, the \code{B} vector should be specified and several different starting points should be tried when ng>1.
+optional specification for the initial values for the parameters. Three options are allowed: 
+(1) a vector of initial values is entered (the order in which the parameters are included is detailed in \code{details} section). 
+(2) nothing is specified. A preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
+(3) when ng>1, a multlcmm object is entered. It should correspond to the exact same structure of model but with ng=1. The program will automatically generate initial values from this model. This specification avoids the preliminary analysis indicated in (2)
+Note that due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
 
   \item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001.
@@ -93,6 +96,15 @@ number of points used to plot the estimated link functions. By default, nsim=100
 }
   \item{na.action}{
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.
+}
+\item{posfix}{
+  Optional vector giving the indices in vector B of the parameters that
+  should not be estimated. Default to NULL, all parameters are estimated.
+}
+\item{partialH}{
+ optional logical for Beta or Splines link function only. Indicates if
+ link function parameters can be dropped from Hessian matrix to define
+ convergence criteria.
 }
 }
 
@@ -133,10 +145,12 @@ We understand that it can be difficult to enter the correct number of parameters
 C. CAUTIONS REGARDING THE USE OF THE PROGRAM
 
 Some caution should be made when using the program.
-First, convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter and log-likelihood stability.
+Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter and log-likelihood stability.
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 100.
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space.
-If the parameters are on the boundaries of the parameter space, the identifiability of the model should be assessed.
+
+If the parameters are on the boundaries of the parameter space, the identifiability of the model is critical. This may happen especially with splines parameters that may be too close to 0 (lower boundary) or classmb parameters that are too high or low (perfect classification). When identifiability of some parameters is suspected, the program can be run again from the former estimates by fixing the suspected parameters to their value with option posfix. This usually solves the problem. An alternative is to remove the parameters of the Beta of Splines link function from the inverse of the Hessian with option partialH. 
+
 If not, the program should be run again with other initial values, with a higher maximum number of iterations or less strict convergence tolerances.
 
 Specifically when investigating heterogeneity (that is with ng>1):
@@ -146,6 +160,7 @@ However, we recommend to systematically enter initial values in \code{B} and try
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second,
 that the generated initial values can be very not likely and even may converge slowly to a local maximum.
 This is a reason why specification of initial values in \code{B} should be favoured.
+
 
 }
 \value{

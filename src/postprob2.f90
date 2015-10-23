@@ -340,7 +340,7 @@ subroutine postprob2_comp(Y0,Xdata0,ns0,nmes0,nobs0,ng0,nv0,idiag0,nwg0, &
   end if
 
   ! creer base de splines si transfo splines
-  if (idlink==2) then 
+  if (idlink.eq.2) then 
      call design_splines_comp(ier)
      if (ier.eq.-1) then
         go to 123

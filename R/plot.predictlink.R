@@ -32,6 +32,8 @@ plot.predictlink <- function(x,legend.loc="topleft",legend,add=FALSE,...)
                     }
 
                 dots$add <- add
+                if(!missing(legend)) dots$legend <- legend
+                if(!missing(legend.loc)) dots$legend.loc <- legend.loc
 
                     
                 ##tracer la transfo
@@ -102,6 +104,8 @@ plot.predictlink <- function(x,legend.loc="topleft",legend,add=FALSE,...)
                             }
                     }
                 dots$add <- add
+                if(!missing(legend)) dots$legend <- legend
+                if(!missing(legend.loc)) dots$legend.loc <- legend.loc
                 
                 ##tracer la transfo
                 if(inherits(x$object,"lcmm")) do.call("plot.lcmm",c(dots,list(x=copiex,which="link")))

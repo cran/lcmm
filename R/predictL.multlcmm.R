@@ -8,11 +8,11 @@ predictL.multlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
  if (!all(x$Xnames2 %in% colnames(newdata))) {
  stop(paste(c("newdata should at least include the following covariates: ","\n",x$Xnames2),collapse=" "))}
  if (!inherits(newdata, "data.frame")) stop("newdata should be a data.frame object")
- if(missing(var.time)) stop("missing argument 'var.time'")
- if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+# if(missing(var.time)) stop("missing argument 'var.time'")
+# if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
 
  
- if(x$conv==1|x$conv==2)
+ if(x$conv==1 | x$conv==2 | x$conv==3)
  { 
   if(!(na.action%in%c(1,2)))stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
 
@@ -58,7 +58,15 @@ predictL.multlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
    }
     
   ## var.time
-  times <- newdata[,var.time,drop=FALSE]
+  if(!missing( var.time))
+      {
+          if(!(var.time %in% colnames(newdata))) stop("'var.time' should be included in newdata")
+          times <- newdata[,var.time,drop=FALSE]         
+      }
+  else
+      {
+          times <- newdata[,1,drop=FALSE]
+      }
  
   ### Traitement des donnees manquantes
   newdata <- newdata[,x$Xnames2]
@@ -89,7 +97,7 @@ predictL.multlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
     Xnames <- gsub("factor\\(","",Xnames)
     Xnames[z] <- gsub("\\)","",Xnames[z])
    }
-   newdata1 <- newdata1[,c("(Intercept)",Xnames)]
+   newdata1 <- newdata1[,c("(Intercept)",Xnames),drop=FALSE]
   
   ###calcul des predictions
      
@@ -148,6 +156,8 @@ predictL.multlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
     }
    }
   }
+
+
   
   Y<-matrix(0,length(newdata1[,1]),x$ng)
   colnames(Y) <- paste("class",1:x$ng,sep="")

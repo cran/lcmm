@@ -15,7 +15,7 @@ Jointlcmm(fixed, mixture, random, subject, classmb, ng=1,
  link=NULL, intnodes=NULL, epsY=0.5, range=NULL,
  cor=NULL,data, B, convB=1e-4, convL=1e-4, convG=1e-4,
  maxiter=100, nsim=100, prior,logscale=FALSE, 
- subset=NULL, na.action=1)
+ subset=NULL, na.action=1, posfix=NULL, partialH=FALSE)
 }
 
 
@@ -96,9 +96,11 @@ optional definite positive real used to rescale the marker in (0,1) when the bet
 optional data frame containing the variables named in \code{fixed}, \code{mixture}, \code{random}, \code{classmb} and \code{subject}. 
 }
   \item{B}{
-optional vector containing the initial values for the parameters. The order in which the parameters are included is detailed in \code{details} section. 
-If no vector is specified, a preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
-Due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
+optional specification for the initial values for the parameters. Three options are allowed: 
+(1) a vector of initial values is entered (the order in which the parameters are included is detailed in \code{details} section). 
+(2) nothing is specified. A preliminary analysis involving the estimation of a standard linear mixed model is performed to choose initial values. 
+(3) when ng>1, a multlcmm object is entered. It should correspond to the exact same structure of model but with ng=1. The program will automatically generate initial values from this model. This specification avoids the preliminary analysis indicated in (2)
+Note that due to possible local maxima, the \code{B} vector should be specified and several different starting points should be tried.
 }
 \item{convB}{optional threshold for the convergence criterion based on the parameter stability. By default, convB=0.0001.
 }
@@ -123,6 +125,15 @@ Due to possible local maxima, the \code{B} vector should be specified and severa
 a specification of the rows to be used: defaults to all rows. This can be any valid indexing vector for the rows of data or if that is not supplied, a data frame made up of the variable used in formula.}
  \item{na.action}{
 Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as 'na.pass' or 'na.exclude' are not implemented in the current version.}
+\item{posfix}{
+  Optional vector specifying the indices in vector B of the parameters that
+  should not be estimated. Default to NULL, all parameters are estimated.
+}
+\item{partialH}{
+ optional logical for Beta or Splines link function only. Indicates if
+ link function parameters can be dropped from Hessian matrix to define
+ convergence criteria.
+}
 }
 
 
@@ -179,7 +190,7 @@ This is a reason why specification of initial values in \code{B} should be prefe
 (4) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 150. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
-If the parameters are on the boundaries of the parameter space, the identifiability of the model should be assessed. 
+If the parameters are on the boundaries of the parameter space, the identifiability of the model is critical. This may happen especially when baseline risk functions involve splines (value close to the lower boundary - 0 with logscale=F -infinity with logscale=F) or classmb parameters that are too high or low (perfect classification) or linkfunction parameters. When identifiability of some parameters is suspected, the program can be run again from the former estimates by fixing the suspected parameters to their value with option posfix. This usually solves the problem. An alternative is to remove the parameters of the Beta of Splines link function from the inverse of the Hessian with option partialH. 
 If not, the program should be run again with other initial values. 
 Some problems of convergence may happen when the instantaneous risks of event are very low and "piecewise" or "splines" baseline risk functions are specified. In this case, changing the parameterization of the baseline risk functions with option logscale is recommended (see paragraph A for details).  
 }

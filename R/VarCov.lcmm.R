@@ -4,7 +4,7 @@ VarCov.lcmm <- function(x)
  if(missing(x)) stop("The argument x should be specified")
  if (!inherits(x, "lcmm")) stop("use only with \"lcmm\" objects")
 
- if(x$conv==1 | x$conv==2)
+ if(x$conv==1 | x$conv==2 | x$conv==3)
  {
   res <- matrix(0,length(x$best),length(x$best))
   res[upper.tri(res,diag=TRUE)] <- x$V
