@@ -42,11 +42,10 @@ Cecile Proust-Lima and Viviane Philipps
 
 \examples{
 \dontrun{
-data(data_Jointlcmm)
 # estimation of the joint latent class model
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_lcmm,
 B=c(0.7667, 0.4020, -0.8243, -0.2726, 0.0000, 0.0000, 0.0000, 0.3020,
 -0.6212, 2.6247, 5.3139, -0.0255, 1.3595, 0.8172, -11.6867, 10.1668,
 10.2355, 11.5137, -2.6209, -0.4328, -0.6062, 1.4718, -0.0378, 0.8505,

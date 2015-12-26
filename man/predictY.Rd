@@ -6,7 +6,7 @@
 \alias{predictY.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Predicted values of a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object in the natural scale of the longitudinal outcome(s) for a specified profile of covariates.
+Marginal predictions (possibly class-specific) of a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object in the natural scale of the longitudinal outcome(s) for a specified profile of covariates.
 }
 \description{
 For \code{hlme} and \code{Jointlcmm} objects, the function computes the predicted values of the longitudinal marker in each latent class for a specified profile of covariates. 
@@ -74,10 +74,9 @@ Cecile Proust-Lima, Viviane Philipps
 
 #### Prediction from a 2-class model with a Splines link function
 \dontrun{
-data(data_Jointlcmm)
 ## fitted model
 m<-lcmm(Ydep2~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_Jointlcmm,link="splines",B=c(
+subject='ID',ng=2,data=data_lcmm,link="splines",B=c(
 -0.175,      -0.191,       0.654,      -0.443, 
 -0.345,      -1.780,       0.913,       0.016, 
  0.389,       0.028,       0.083,      -7.349, 

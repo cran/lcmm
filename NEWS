@@ -8,6 +8,17 @@ Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models 
 
 
 
+Changes in Version 1.7.4 (2015-12-26):
+
+* The package uses lazydata to automatically load the datasets of the package.
+
+* 'jlcmm' and 'mlcmm' are shortcuts for functions 'Jointlcmm' and 'multlcmm', respectively.
+
+* Function 'gridsearch' provides an automatic grid of departures for reducing the odds of converging towards a local maximum. 
+
+* Initial values can be randomly generated from a model with 1 class (called m1 in next example) with option B=random(m1) in hlme, lcmm, multlcmm and Jointlcmm.
+
+
 
 Changes in Version 1.7.3.0 (2015-10-23):
 

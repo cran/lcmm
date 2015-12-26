@@ -61,10 +61,9 @@ Cecile Proust-Lima, Viviane Philipps
 \examples{
 #### Prediction from a 2-class model with a Splines link function
 \dontrun{
-data(data_Jointlcmm)
 ## fitted model
 m<-lcmm(Ydep2~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_Jointlcmm,link="splines",B=c(
+subject='ID',ng=2,data=data_lcmm,link="splines",B=c(
 -0.175,      -0.191,       0.654,      -0.443, 
 -0.345,      -1.780,       0.913,       0.016, 
  0.389,       0.028,       0.083,      -7.349, 

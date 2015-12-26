@@ -44,18 +44,17 @@ Cecile Proust-Lima, Viviane Philipps
 \examples{
 
 \dontrun{
-data(data_Jointlcmm)
 
 ## Joint latent class model with 2 classes :
 m32 <- Jointlcmm(Ydep1~Time*X1,mixture=~Time,random=~Time,subject="ID",
 classmb=~X3,ng=2,survival=Surv(Tevent,Event)~X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",data=data_Jointlcmm,B = c(0.64, -0.62, 
+hazard="3-quant-splines",hazardtype="PH",data=data_lcmm,B = c(0.64, -0.62, 
 0, 0, 0.52, 0.81, 0.41, 0.78, 0.1, 0.77, -0.05, 10.43, 11.3, -2.6, -0.52, 1.41, 
 -0.05, 0.91, 0.05, 0.21, 1.5))
 
 ## Predictions at landmark 10 and 12 for horizon 3, 5 and 10 for two subjects :
 dynpred.m32 <- dynpred(m32,landmark=c(10,12),horizon=c(3,5,10),var.time="Time",
-fun.time=function(x){10*x},newdata=data_Jointlcmm[4:8,],draws=TRUE,ndraws=2000)
+fun.time=function(x){10*x},newdata=data_lcmm[4:8,],draws=TRUE,ndraws=2000)
 
 ## Plot of the predictions at landmark 10 for horizon 3,5,10 :
 plot(dynpred.m32,landmark=10)

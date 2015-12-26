@@ -390,8 +390,9 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                         }
                 }
             
-            ## nb de sujets 
+            ## nb de sujets
             id.subject <- newdata1[,model$Names$ID]
+            if(class(id.subject)=="factor") id.subject <- factor(id.subject,levels=unique(id.subject))
             ns <- length(unique(id.subject))
             
             ## vecteur Y et indiceY,uniqueY,nvalSPL
@@ -522,7 +523,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
             Xnames <- lapply(Xnames,paste,collapse=":")
             Xnames <- unlist(Xnames)
             
-            X <- X[,Xnames]
+            X <- X[,Xnames,drop=FALSE]
 
 
             
@@ -893,7 +894,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                         } # fin boucle ks
 
 
-                    res <- rep(sort(unique(id.subject)),each=nbland*nbhoriz)
+                    res <- data.frame(rep(sort(unique(id.subject)),each=nbland*nbhoriz))
                     res <- cbind(res,rep(landmark,each=nbhoriz))
                     res <- cbind(res,horizon)
                     res <- cbind(res,NA)
@@ -1193,7 +1194,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
 
 
                             
-                            res <- rep(sort(unique(id.subject)),each=nbland*nbhoriz)
+                            res <- data.frame(rep(sort(unique(id.subject)),each=nbland*nbhoriz))
                             res <- cbind(res,rep(landmark,each=nbhoriz))
                             res <- cbind(res,horizon)
                             res <- cbind(res,NA)
@@ -1238,7 +1239,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
                     qmax <- apply(resdraws,1,quantile,prob=0.975,na.rm=TRUE)
 
 
-                    res <- rep(sort(unique(id.subject)),each=nbland*nbhoriz)
+                    res <- data.frame(rep(sort(unique(id.subject)),each=nbland*nbhoriz))
                     res <- cbind(res,rep(landmark,each=nbhoriz))
                     res <- cbind(res,horizon)
                     res <- cbind(res,med,qmin,qmax)
@@ -1256,7 +1257,7 @@ dynpred <- function(model,newdata,event=1,landmark,horizon,var.time,
             timemes <- NA 
         }
     
-    prmatrix(res)  
+    prmatrix(res,quote=FALSE)  
     
     res.list <- list(pred=res,newdata=data.frame(id=rep(unique(id.subject),nmes)[which(timemes<=max(landmark))],y=Y[which(timemes<=max(landmark))],time=timemes[which(timemes<=max(landmark))]))
     class(res.list) <- "dynpred"

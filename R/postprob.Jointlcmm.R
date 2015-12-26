@@ -63,7 +63,7 @@ postprob.Jointlcmm <- function(x,threshold=c(0.7,0.8,0.9),...)
     
     if(!is.null(thr.table))
     {
-     cat("Posterior probalities above a threshold (%):", "\n")
+     cat("Posterior probabilities above a threshold (%):", "\n")
      print(round(thr.table,2))
      cat(" \n")    
     }

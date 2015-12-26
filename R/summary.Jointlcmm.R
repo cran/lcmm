@@ -164,10 +164,14 @@ summary.Jointlcmm <- function(object,...)
                 }
             else
                 {
-                    se <- NULL
-                    wald <- NULL
-                    pwald <- NULL
+                    se <- NA
+                    wald <- NA
+                    pwald <- NA
                     coef <- x$best
+
+                    sech <- rep(NA,length(coef))
+                    waldch <- rep(NA,length(coef))
+                    pwaldch <- rep(NA,length(coef))
                 }
 
             if(nw>0) coef[nprob+nrisqtot+nvarxevt+nef+nvc+1:nw] <- abs(coef[nprob+nrisqtot+nvarxevt+nef+nvc+1:nw])
@@ -175,10 +179,17 @@ summary.Jointlcmm <- function(object,...)
             if(ntrtot==1) coef[nprob+nrisqtot+nvarxevt+nef+nvc+nw+ncor+1] <- abs(coef[nprob+nrisqtot+nvarxevt+nef+nvc+nw+ncor+1])
 
             
-            coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
-            sech <- format(as.numeric(sprintf("%.5f",se)),nsmall=5,scientific=FALSE)
-            waldch <- format(as.numeric(sprintf("%.3f",wald)),nsmall=3,scientific=FALSE)
-            pwaldch <- format(as.numeric(sprintf("%.5f",pwald)),nsmall=5,scientific=FALSE)
+            if(x$conv!=2)
+                {
+                    coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
+                    sech <- format(as.numeric(sprintf("%.5f",se)),nsmall=5,scientific=FALSE)
+                    waldch <- format(as.numeric(sprintf("%.3f",wald)),nsmall=3,scientific=FALSE)
+                    pwaldch <- format(as.numeric(sprintf("%.5f",pwald)),nsmall=5,scientific=FALSE)
+                }
+            else
+                {
+                    coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
+                }
             
 
             if(length(posfix))

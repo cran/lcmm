@@ -1,5 +1,6 @@
 \name{Jointlcmm}
 \alias{Jointlcmm}
+\alias{jlcmm}
 \title{
 Estimation of joint latent class models for longitudinal and time-to-event data
 }
@@ -130,9 +131,7 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
   should not be estimated. Default to NULL, all parameters are estimated.
 }
 \item{partialH}{
- optional logical for Beta or Splines link function only. Indicates if
- link function parameters can be dropped from Hessian matrix to define
- convergence criteria.
+ optional logical for Piecewise and Splines baseline risk functions only. Indicates whether the parameters of the baseline risk functions can be dropped from the Hessian matrix to define convergence criteria.
 }
 }
 
@@ -184,8 +183,7 @@ However, we recommend to systematically enter initial values in \code{B} and try
 
 (2) The automatic choice of initial values that we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why specification of initial values in \code{B} should be preferred.
-
+This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
 
 (4) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 150. 
@@ -271,15 +269,13 @@ Proust-Lima, Sene, Taylor and Jacqmin-Gadda (2014). Joint latent class models of
 # other sets of initial values should be tried to ensure convergence
 # towards the global maximum.
 
-#### data loading
-data(data_Jointlcmm)
 
 \dontrun{
 #### estimation with 1 latent class (ng=1): independent models for the 
 # longitudinal outcome and the time of event
 m1 <- Jointlcmm(fixed= Ydep1~X1*Time,random=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="3-quant-splines"
-,hazardtype="PH",ng=1,data=data_Jointlcmm)
+,hazardtype="PH",ng=1,data=data_lcmm)
 summary(m1)
 #Goodness-of-fit statistics for m1:
 #    maximum log-likelihood: -3944.77 ; AIC: 7919.54  ;  BIC: 7975.09  
@@ -288,7 +284,7 @@ summary(m1)
 #### estimation with 2 latent classes (ng=2)
 m2 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=2,data=data_lcmm,
 B=c(0.64,-0.62,0,0,0.52,0.81,0.41,0.78,0.1,0.77,-0.05,10.43,11.3,-2.6,
 -0.52,1.41,-0.05,0.91,0.05,0.21,1.5))
 summary(m2)
@@ -299,7 +295,7 @@ summary(m2)
 #### estimation with 3 latent classes (ng=3)
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_lcmm,
 B=c(0.77,0.4,-0.82,-0.27,0,0,0,0.3,0.62,2.62,5.31,-0.03,1.36,0.82,
 -13.5,10.17,10.24,11.51,-2.62,-0.43,-0.61,1.47,-0.04,0.85,0.04,0.26,1.5))
 summary(m3)
@@ -309,7 +305,7 @@ summary(m3)
 #### estimation with 4 latent classes (ng=4)
 m4 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=4,data=data_lcmm,
 B=c(0.54,-0.42,0.36,-0.94,-0.64,-0.28,0,0,0,0.34,0.59,2.6,2.56,5.26,
 -0.1,1.27,1.34,0.7,-5.72,10.54,9.02,10.2,11.58,-2.47,-2.78,-0.28,-0.57,
 1.48,-0.06,0.61,-0.07,0.31,1.5))
@@ -330,7 +326,7 @@ plot(m3,which="baselinerisk",ylim=c(0,5),bty="l")
 plot(m3,which="survival",bty="l")
 # class-specific predicted trajectories in the 3-class model retained 
 # (with characteristics of subject ID=193)
-data <- data_Jointlcmm[data_Jointlcmm$ID==193,]
+data <- data_lcmm[data_lcmm$ID==193,]
 plot(predictY(m3,var.time="Time",newdata=data,bty="l")
 # predictive accuracy of the model evaluated with EPOCE
 vect <- 1:15

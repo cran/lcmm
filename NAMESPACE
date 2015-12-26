@@ -7,7 +7,7 @@ importFrom("graphics", "axis", "hist", "lines", "matlines", "matplot",
 importFrom("stats", "as.formula", "formula", "get_all_vars",
      "integrate", "median", "model.frame", "model.matrix",
      "na.fail", "na.omit", "na.pass", "pchisq", "pnorm", "qnorm",
-     "quantile", "rnorm", "sd", "terms")
+     "quantile", "rnorm", "sd", "terms", "residuals", "vcov", "fitted","coef")
 
 S3method(print,hlme)
 S3method(summary,hlme)
@@ -18,6 +18,12 @@ S3method(estimates,hlme)
 S3method(VarCov,hlme)
 S3method(VarCovRE,hlme)
 S3method(VarExpl,hlme)
+S3method(fixef,hlme)
+S3method(ranef,hlme)
+S3method(coef,hlme)
+S3method(vcov,hlme)
+S3method(fitted,hlme)
+S3method(residuals,hlme)
 
 S3method(print,lcmm)
 S3method(summary,lcmm)
@@ -31,6 +37,12 @@ S3method(VarCovRE,lcmm)
 S3method(VarExpl,lcmm)
 S3method(predictlink,lcmm)
 S3method(fitY,lcmm)
+S3method(fixef,lcmm)
+S3method(ranef,lcmm)
+S3method(coef,lcmm)
+S3method(vcov,lcmm)
+S3method(fitted,lcmm)
+S3method(residuals,lcmm)
 
 
 S3method(print,multlcmm)
@@ -45,6 +57,12 @@ S3method(VarCovRE,multlcmm)
 S3method(VarExpl,multlcmm)
 S3method(predictlink,multlcmm)
 S3method(fitY,multlcmm)
+S3method(fixef,multlcmm)
+S3method(ranef,multlcmm)
+S3method(coef,multlcmm)
+S3method(vcov,multlcmm)
+S3method(fitted,multlcmm)
+S3method(residuals,multlcmm)
 
 S3method(print,Jointlcmm)
 S3method(summary,Jointlcmm)
@@ -58,6 +76,12 @@ S3method(VarExpl,Jointlcmm)
 S3method(predictL,Jointlcmm)
 S3method(predictlink,Jointlcmm)
 S3method(fitY,Jointlcmm)
+S3method(fixef,Jointlcmm)
+S3method(ranef,Jointlcmm)
+S3method(coef,Jointlcmm)
+S3method(vcov,Jointlcmm)
+S3method(fitted,Jointlcmm)
+S3method(residuals,Jointlcmm)
 
 S3method(plot,dynpred)
 S3method(plot,cuminc)
@@ -75,6 +99,6 @@ S3method(print,Diffepoce)
 S3method(summary,Diffepoce)
 S3method(plot,Diffepoce)
 
-export(postprob,predictY,predictL,predictlink,estimates,VarCov,VarExpl,VarCovRE,fitY,WaldMult)
+export(postprob,predictY,predictL,predictlink,estimates,VarCov,VarExpl,VarCovRE,fitY,WaldMult,gridsearch)
 
 

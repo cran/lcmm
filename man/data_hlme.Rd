@@ -7,7 +7,7 @@ Simulated dataset for hlme function
 \description{
 The data were simulated from a 3-latent class linear mixed model. Repeated data for 100 subjects were simulated. The three latent classes are predicted by X2 and X3. In each latent class, Y follows a linear mixed model including intercept and time both with correlated random-effects and class-specific fixed effects. In addition, X1 and X1*time have a common impact over classes on the Y trajectory.  
 }
-\usage{data(data_hlme)}
+\usage{data_hlme}
 \format{
   A data frame with 326 observations on the following 9 variables.
   \describe{

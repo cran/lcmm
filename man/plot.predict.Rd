@@ -59,7 +59,6 @@ Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 \examples{
 
 ################# Prediction from linear latent class model
-data(data_hlme)
 ## fitted model
 m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme,B=c(0.41,0.55,-0.18,-0.41,
@@ -74,18 +73,17 @@ plot(predictL(m,firstdata,var.time="Time"),legend.loc="right",bty="l")
 
  \dontrun{
 ################# Prediction from a joint latent class model
-data(data_Jointlcmm)
 ## fitted model - see help of Jointlcmm function for details on the model
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_lcmm,
 B=c(0.7576, 0.4095, -0.8232, -0.2737, 0, 0, 0, 0.2838, -0.6338, 
 2.6324, 5.3963, -0.0273, 1.398, 0.8168, -15.041, 10.164, 10.2394, 
 11.5109, -2.6219, -0.4553, -0.6055, 1.473, -0.0383, 0.8512, 0.0389, 
 0.2624, 1.4982))
 # class-specific predicted trajectories 
 #(with characteristics of subject ID=193)
-data <- data_Jointlcmm[data_Jointlcmm$ID==193,]
+data <- data_lcmm[data_lcmm$ID==193,]
 plot(predictY(m3,newdata=data,var.time="Time"),bty="l")
 }
 }

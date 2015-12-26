@@ -1,7 +1,7 @@
 \name{Diffepoce}
 \alias{Diffepoce}
 \title{
-Computation of the difference of expected prognostic cross-entropy (EPOCE) estimators and its 95\% tracking interval between two joint latent class models estimated with \code{Jointlcmm}
+Difference of expected prognostic cross-entropy (EPOCE) estimators and its 95\% tracking interval between two joint latent class models estimated with \code{Jointlcmm}
 }
 \description{
 This function computes the difference of 2 EPOCE estimates (CVPOL or MPOL) and its 95\% tracking interval between two joint latent class models estimated using \code{Jointlcmm} and evaluated using \code{epoce} function. Difference in CVPOL is computed when the EPOCE was previously estimated on the same dataset as used for estimation (using an approximated cross-validation), and difference in MPOL is computed when the EPOCE was previously estimated on an external dataset. 
@@ -55,15 +55,14 @@ Cecile Proust-Lima and Amadou Diakite
 \examples{
 \dontrun{
 #### estimation with 2 latent classes (ng=2)
-data(data_Jointlcmm)
 m2 <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,mixture=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="Weibull"
-,hazardtype="PH",ng=2,data=data_Jointlcmm,
+,hazardtype="PH",ng=2,data=data_lcmm,
 B=c( 0.7608, -9.4974,  1.0242,  1.4331,  0.1063 , 0.6714, 10.4679, 11.3178,
  -2.5671, -0.5386,  1.4616, -0.0605,  0.9489,  0.1020,  0.2079,  1.5045),logscale=TRUE)
 m1 <- Jointlcmm(fixed= Ydep1~Time*X1,random=~Time,subject='ID'
 ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="Weibull"
-,hazardtype="PH",ng=1,data=data_Jointlcmm,
+,hazardtype="PH",ng=1,data=data_lcmm,
 B=c(-7.6634,  0.9136,  0.1002,  0.6641, 10.5675, -1.6589,  1.4767, -0.0806,
   0.9240,0.5643,  1.2277,  1.5004))
 

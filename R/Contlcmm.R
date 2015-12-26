@@ -273,7 +273,7 @@
         nvar.exp <- length(nom.X0)
         
         IND <- newdata[,nom.subject] 
-        IDnum <- as.numeric(IND)
+        #IDnum <- as.numeric(IND)
 
 
 #### INCLUSION PRIOR 
@@ -309,15 +309,15 @@
         if((int.fixed+int.random)>0) idprob0[1] <- 0
 
         ## on ordonne les donn es suivants la variable IND
-        matYX <- cbind(IDnum,IND,PRIOR,Y0,X0)
+        matYX <- cbind(IND,PRIOR,Y0,X0)
         matYXord <- matYX[sort.list(matYX[,1]),]
-        Y0 <- matYXord[,4]  
-        X0 <- matYXord[,-c(1,2,3,4)]
-        IDnum <- matYXord[,1]
-        IND <-  matYXord[,2]
+        Y0 <- as.numeric(matYXord[,3])  
+        X0 <- apply(matYXord[,-c(1,2,3)],2,as.numeric)
+        #IDnum <- matYXord[,1]
+        IND <-  matYXord[,1]
 
 #### INCLUSION PRIOR 
-        PRIOR <- matYXord[,3]
+        PRIOR <- as.numeric(matYXord[,2])
         PRIOR <- as.integer(as.vector(PRIOR))
 ####
 
@@ -362,6 +362,8 @@
         ##---------------------------------------------------------------------------
         ##definition du vecteur de parametre + initialisation
         ##---------------------------------------------------------------------------
+
+
 #####cas 1 : ng=1
         b<-NULL
         b1 <- NULL
@@ -520,7 +522,7 @@
                 }
 
                 b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- init$best[(NEF2+1):(NEF2+NVC)]
-                b[(NPM-ntrtot0+1):(NPM-ncor0)] <- init$best[(NPM2-ntrtot0+1):(NPM2-ncor0)]
+                b[(NPM-ntrtot0-ncor0+1):(NPM-ncor0)] <- init$best[(NPM2-ntrtot0-ncor0+1):(NPM2-ncor0)]
                 if (ncor0>0) {b[(NPROB+NEF+NVC+NW+ntrtot0+1):(NPROB+NEF+NVC+NW+ntrtot0+ncor0)] <- init$best[(NPM2-ncor0+1):NPM2]}
             } 
             if(ng0==1 ){
@@ -543,54 +545,165 @@
                                 NEF2 <- sum(idg0!=0)-1
                                 NPM2 <- NEF2+NVC+ntrtot0+ncor0
                                 if(length(B$best)!=NPM2) stop("B is not correct")
-                                
-                                k <- NPROB
-                                l <- 0
-                                t<- 0
-                                for (i in 1:nvar.exp)    {
-                                    if(idg0[i]==1 & i>1){
-                                        l <- l+1
-                                        t <- t+1
-                                        b[k+t] <- B$best[l]
-                                    }
-                                    if(idg0[i]==2){
-                                        if (i==1){
-                                            for (g in 2:ng){
-                                                t <- t+1
-                                                b[k+t] <- - 0.5*(g-1)
-                                            }
-                                        }
-                                        if (i>1){
-                                            
-                                            l <- l+1
-                                            for (g in 1:ng){
-                                                t <- t+1
-                                                if(B$conv==1) b[k+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
-                                                else b[k+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                if(NVC>0)
+
+                                if(!length(B$Brandom))
                                     {
-                                        if(idiag==TRUE)
-                                            {
-                                                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky[(1:nea0)*(2:(nea0+1))/2]
-                                                
+                                        ## B deterministe
+                                        k <- NPROB
+                                        l <- 0
+                                        t <- 0
+                                        for (i in 1:nvar.exp)    {
+                                            if(idg0[i]==1 & i>1){
+                                                l <- l+1
+                                                t <- t+1
+                                                b[k+t] <- B$best[l]
                                             }
+                                            if(idg0[i]==2){
+                                                if (i==1){
+                                                    for (g in 2:ng){
+                                                        t <- t+1
+                                                        b[k+t] <- - 0.5*(g-1)
+                                                    }
+                                                }
+                                                if (i>1){
+                                                    
+                                                    l <- l+1
+                                                    for (g in 1:ng){
+                                                        t <- t+1
+                                                        if(B$conv==1) b[k+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
+                                                        else b[k+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        if(NVC>0)
+                                            {
+                                                if(idiag==TRUE)
+                                                    {
+                                                        b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky[(1:nea0)*(2:(nea0+1))/2]
+                                                        
+                                                    }
+                                                else
+                                                    {
+                                                        b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky
+                                                    }
+                                            }
+                                        
+                                        b[NPROB+NEF+NVC+NW+1:ntrtot0] <- B$best[NEF2+NVC+1:ntrtot0]
+
+                                        if (ncor0>0) {b[NPROB+NEF+NVC+NW+ntrtot0+1:ncor0] <- B$best[NEF2+NVC+ntrtot0+1:ncor0]}
+                                        
+                                        return(b)
+                                    }
+                                else
+                                    {
+                                        ## B random
+                                        bb <- rep(0,NPM-NPROB-NW)
+                                        vbb <- matrix(0,NPM-NPROB-NW,NPM-NPROB-NW)
+
+                                        VB <- matrix(0,NPM2,NPM2)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+                                        VB <- t(VB)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+
+                                        nbg <- idg0[which(idg0!=0)]
+                                        nbg[which(nbg==2)] <- ng
+                                        nbgnef <- unlist(sapply(nbg,function(k) if(k>1) rep(2,k) else k))
+                                        nbgnef <- nbgnef[-1]
+                                        nbg <- nbg[-1]
+                                        
+                                        vbb[which(nbgnef==1),setdiff(1:ncol(vbb),which(nbgnef!=1))] <- VB[which(nbg==1),setdiff(1:ncol(VB),which(nbg!=1))]
+                                        vbb[(NEF+1):nrow(vbb),(NEF+1):ncol(vbb)] <- VB[(NEF2+1):nrow(VB),(NEF2+1):ncol(VB)]
+                                        
+                                        t <- 0
+                                        l <- 0
+                                        for (i in 1:nvar.exp)
+                                            {
+                                                if(idg0[i]==1)
+                                                    {
+                                                        if(i==1) next
+                                                        l <- l+1
+                                                        t <- t+1
+                                                        bb[t] <- B$best[l]
+                                                    }
+                                                if(idg0[i]==2)
+                                                    {
+                                                        if(i==1)
+                                                            {
+                                                                t <- t+ng-1
+                                                                next
+                                                            }
+                                                        l <- l+1
+                                                        for (g in 1:ng)
+                                                            {
+                                                                t <- t+1
+                                                                bb[t] <- B$best[l]
+                                                                vbb[t,t] <- VB[l,l]
+                                                            }
+                                                    }
+                                            }
+                                        
+                                        if(NVC>0)
+                                            {
+                                                if(idiag==TRUE)
+                                                    {
+                                                        bb[NEF+1:NVC] <- B$cholesky[(1:nea0)*(2:(nea0+1))/2]
+                                                    }
+                                                else
+                                                    {
+                                                        bb[NEF+1:NVC] <- B$cholesky
+                                                    }
+                                            }
+
+                                        #transfo
+                                        bb[NEF+NVC+1:ntrtot0] <- B$best[NEF2+NVC+1:ntrtot0]
+                                        
+                                        
+                                        if (ncor0>0)
+                                            {
+                                                bb[NEF+NVC+ntrtot0+1:ncor0] <- B$best[NEF2+NVC+ntrtot0+1:ncor0]
+                                            }
+                                           
+                                        if(idg0[1]>1)
+                                            {
+                                                bb <- bb[-(1:(ng-1))]
+                                                vbb <- vbb[-(1:(ng-1)),-(1:(ng-1))]
+                                            }
+
+                                        up <- vbb[upper.tri(vbb,diag=TRUE)]
+                                        vbb <- t(vbb)
+                                        vbb[upper.tri(vbb,diag=TRUE)] <- up
+                                        Chol <- chol(vbb)
+                                        Chol <- t(Chol)
+
+                                        if(idg0[1]>1)
+                                            {
+                                              b[c((NPROB+ng):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
+                                              b[NPROB+1:(ng-1)] <- 0
+                                          } 
                                         else
                                             {
-                                                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky
+                                                b[c((NPROB+1):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
                                             }
+
+                                        b[1:NPROB] <- 0
+                                        if(NW>0) b[NPROB+NEF+NVC+1:NW] <- 1
+
+                                        if(NVC>0)
+                                            {
+                                                cholRE <- matrix(0,nea0,nea0)
+                                                cholRE[upper.tri(cholRE,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                                varcovRE <- t(cholRE) %*% cholRE
+                                                b[NPROB+NEF+1:NVC] <- varcovRE[upper.tri(varcovRE,diag=TRUE)]
+                                            }
+                                        
                                     }
-                                b[(NPM-ntrtot0+1):(NPM-ncor0)] <- B$best[(NPM2-ntrtot0+1):(NPM2-ncor0)]
-                                if (ncor0>0) {b[(NPROB+NEF+NVC+NW+ntrtot0+1):(NPROB+NEF+NVC+NW+ntrtot0+ncor0)] <- B$best[(NPM2-ncor0+1):NPM2]}
                             }
                      }
             }
         
-        se <- rep(0,length(b))
+
         ##------------------------------------------
         ##------nom au vecteur best
         ##--------------------------------------------

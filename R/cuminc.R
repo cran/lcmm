@@ -404,7 +404,9 @@ cuminc <- function(x,time,draws=FALSE,ndraws=2000,...)
 
         if(!isTRUE(draws))
             {
-                return(calculincid(0))
+                res <- calculincid(0)
+                class(res) <- "cuminc"
+                return(res)
             }
         else
             {

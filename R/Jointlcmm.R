@@ -521,17 +521,17 @@ attributes(data)$terms <- NULL
 
 ###ordonner les mesures par individu
         IND <- newdata[,nom.subject]
-        IDnum <- as.numeric(IND)
+        #IDnum <- as.numeric(IND)
         if(missing(prior)) prior <- rep(0,length(Y0))  
         if(!length(indiceY0)) indiceY0 <- rep(0,length(Y0))  
-        matYX <- cbind(IDnum,IND,prior,Y0,indiceY0,Tentry,Tevent,Event,Tint,X0)
-        matYXord <- matYX[order(IDnum),]
-        Y0 <- matYXord[,4]
-        X0 <- matYXord[,-c(1:9),drop=FALSE]
-        IDnum <- matYXord[,1]
-        IND <- matYXord[,2]
-        indiceY0 <- matYXord[,5]
-        prior0 <- matYXord[,3]
+        matYX <- cbind(IND,prior,Y0,indiceY0,Tentry,Tevent,Event,Tint,X0)
+        matYXord <- matYX[order(IND),]
+        Y0 <- as.numeric(matYXord[,3])
+        X0 <- apply(matYXord[,-c(1:8),drop=FALSE],2,as.numeric)
+        #IDnum <- matYXord[,1]
+        IND <- matYXord[,1]
+        indiceY0 <- as.numeric(matYXord[,4])
+        prior0 <- as.numeric(matYXord[,2])
 
         ## nombre de sujets
         ns0 <- length(unique(IND))  
@@ -540,7 +540,7 @@ attributes(data)$terms <- NULL
         #data.surv <- unique(cbind(IND,matYX[,c(6,7,8,9)]))
         #if(nrow(data.surv) != ns0) stop("Subjects cannot have several times to event.")
         nmes <- as.vector(table(IND))
-        data.surv <- matYX[cumsum(nmes),c(6,7,8,9)]
+        data.surv <- apply(matYXord[cumsum(nmes),c(5,6,7,8)],2,as.numeric)
         
         tsurv0 <- data.surv[,1] 
         tsurv <- data.surv[,2]
@@ -635,7 +635,7 @@ attributes(data)$terms <- NULL
 
         zi <- matrix(0,nrow=max(nz),ncol=nbevt)
         nb <- 0   
-  
+ 
         minT1 <- 0
         maxT1 <- max(tsurv)
         tsurvevt <- tsurv #[which(devt!=0)] 
@@ -937,7 +937,21 @@ attributes(data)$terms <- NULL
         Hr0 <- as.numeric(partialH)
         if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined in the absence of baseline risk function approximated by splines or piecewise linear function")
         
+    
+        ## gestion de B=random(mod)
 
+        Brandom <- FALSE
+        if(length(cl$B)==2)
+            {
+                if(class(eval(cl$B[[2]]))!="Jointlcmm") stop("The model specified in B should be of class Jointlcmm")
+                if(as.character(cl$B[1])!="random") stop("Please use random() to specify random initial values")
+                
+                Brandom <- TRUE
+                B <- eval(cl$B[[2]])
+
+                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
+            }
+    
         ##valeurs initiales
         if(!(missing(B)))
             {
@@ -952,147 +966,379 @@ attributes(data)$terms <- NULL
 
                         b <- rep(0,NPM)
 
-                    if(ng>1 & B$ng==1)
+                        if(ng>1 & B$ng==1)
                             {
                                 nef2 <- sum(idg0!=0)
                                 NPM2 <- sum(nprisq)+nvarxevt2+nef2+nvc+ncor0+ntrtot0
                                 if(length(B$best)!=NPM2) stop("B is not correct")
-                                
-                                for(ke in 1:nbevt)
-                                    {
-                                        if(risqcom[ke]==0)
-                                            {
-                                                indb <- nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]
-                                                indinit <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
-                                                if(B$conv==1)
-                                                    {
-                                                        b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(sqrt(B$V[indinit*(indinit+1)/2]),ng0))
-                                                    }
-                                                else
-                                                    {
-                                                        b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(B$best[indinit],ng0))
-                                                    }
-                                            }
-
-                                        if(risqcom[ke]==1)
-                                            {
-                                                b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- B$best[sum(nrisq[1:ke])-nrisq[ke]+1:nprisq[ke]]
-                                            }
-
-                                        if(risqcom[ke]==2)
-                                            {
-                                                b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- c(B$best[sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]],0.5+(0:(ng0-2))*0.5)
-                                            }
-                                    }
-
-
-                                ## pr bevt
-                                avtj <- nprob+nrisqtot
-                                avtj2 <- sum(nprisq)
-                                for(j in 1:nv0)
-                                    {
-                                        if(idcom[j]==0 & all(idspecif[,j]==0)) next
-                                        
-                                        if(idcom[j]==1 & all(idspecif[,j]==1))
-                                            {
-                                                b[avtj+1] <- B$best[avtj2+1]
-                                                avtj <- avtj+1
-                                                avtj2 <- avtj2+1
-                                            }
-
-                                        if(idcom[j]==1 & all(idspecif[,j]==2))
-                                            {
-                                                if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
-                                                else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
-
-                                                avtj <- avtj+ng0
-                                                avtj2 <- avtj2+1
-                                            }
-
-                                        if(idcom[j]==0 & idcause[j]!=0)
-                                            {
-                                                for(k in 1:nbevt)
-                                                    {
-                                                        if(idspecif[k,j]==0) next
-
-                                                        if(idspecif[k,j]==1)
-                                                            {
-                                                                b[avtj+1] <- B$best[avtj2+1]
-                                                                avtj <- avtj+1
-                                                                avtj2 <- avtj2+1
-                                                            }
-
-                                                        if(idspecif[k,j]==2)
-                                                            {
-                                                                if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
-                                                                else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
-
-                                                                avtj <- avtj+ng0
-                                                                avtj2 <- avtj2+1 
-                                                            }
-                                                    }
-                                                
-                                            }
-                                    }
-
 
                                 
-                                ## pr nef
-                                avtj <- nprob+nrisqtot+nvarxevt
-                                avtj2 <- sum(nprisq)+nvarxevt2
-                                for(j in 1:nv0)
+                                if(Brandom==FALSE)
                                     {
-                                        if(idg0[j]==1)
+                                        ## B deterministe
+                                        for(ke in 1:nbevt)
                                             {
-                                                if(j==1 & idlink!=-1) next
-                                                else
+                                                if(risqcom[ke]==0)
                                                     {
-                                                        if(B$conv==1) b[avtj+1] <- B$best[avtj2+1]
-                                                        avtj <- avtj+1
-                                                        avtj2 <- avtj2+1
-                                                    }
-                                            }
-
-                                        if(idg0[j]==2)
-                                            {
-                                                if(j==1)
-                                                    {
-                                                        if(idlink!=-1)
+                                                        indb <- nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]
+                                                        indinit <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
+                                                        if(B$conv==1)
                                                             {
-                                                                b[avtj+1:(ng0-1)] <- -0.5*(1:(ng0-1))
-
-                                                                avtj <- avtj+ng0-1
+                                                                b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(sqrt(B$V[indinit*(indinit+1)/2]),ng0))
                                                             }
                                                         else
                                                             {
-                                                                b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
-                                                                avtj <- avtj+ng0
-                                                                avtj2 <- avtj2+1
+                                                                b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(B$best[indinit],ng0))
                                                             }
                                                     }
-                                                else
+
+                                                if(risqcom[ke]==1)
                                                     {
-                                                        if(B$conv==1) b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*sqrt(B$V[(avtj2+1)*(avtj2+1+1)/2])
-                                                        else b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- B$best[sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]]
+                                                    }
+
+                                                if(risqcom[ke]==2)
+                                                    {
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- c(B$best[sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]],0.5+(0:(ng0-2))*0.5)
+                                                    }
+                                            }
+
+
+                                        ## pr bevt
+                                        avtj <- nprob+nrisqtot
+                                        avtj2 <- sum(nprisq)
+                                        for(j in 1:nv0)
+                                            {
+                                                if(idcom[j]==0 & all(idspecif[,j]==0)) next
+                                                
+                                                if(idcom[j]==1 & all(idspecif[,j]==1))
+                                                    {
+                                                        b[avtj+1] <- B$best[avtj2+1]
+                                                        avtj <- avtj+1
+                                                        avtj2 <- avtj2+1
+                                                    }
+
+                                                if(idcom[j]==1 & all(idspecif[,j]==2))
+                                                    {
+                                                        if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
+                                                        else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
 
                                                         avtj <- avtj+ng0
                                                         avtj2 <- avtj2+1
                                                     }
-                                                
+
+                                                if(idcom[j]==0 & any(idspecif[,j]!=0))
+                                                    {
+                                                        for(k in 1:nbevt)
+                                                            {
+                                                                if(idspecif[k,j]==0) next
+
+                                                                if(idspecif[k,j]==1)
+                                                                    {
+                                                                        b[avtj+1] <- B$best[avtj2+1]
+                                                                        avtj <- avtj+1
+                                                                        avtj2 <- avtj2+1
+                                                                    }
+
+                                                                if(idspecif[k,j]==2)
+                                                                    {
+                                                                        if(B$conv==1) b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(sqrt(B$V[(avtj2+1)*(avtj2+2)/2]),ng0))
+                                                                        else b[avtj+1:ng0] <- abs(rep(B$best[avtj2+1],ng0)+c(1:ng0-(ng0+1)/2)*rep(B$best[avtj2+1],ng0))
+
+                                                                        avtj <- avtj+ng0
+                                                                        avtj2 <- avtj2+1 
+                                                                    }
+                                                            }
+                                                        
+                                                    }
                                             }
+
+
+                                        
+                                        ## pr nef
+                                        avtj <- nprob+nrisqtot+nvarxevt
+                                        avtj2 <- sum(nprisq)+nvarxevt2
+                                        for(j in 1:nv0)
+                                            {
+                                                if(idg0[j]==1)
+                                                    {
+                                                        if(j==1 & idlink!=-1) next
+                                                        else
+                                                            {
+                                                                if(B$conv==1) b[avtj+1] <- B$best[avtj2+1]
+                                                                avtj <- avtj+1
+                                                                avtj2 <- avtj2+1
+                                                            }
+                                                    }
+
+                                                if(idg0[j]==2)
+                                                    {
+                                                        if(j==1)
+                                                            {
+                                                                if(idlink!=-1)
+                                                                    {
+                                                                        b[avtj+1:(ng0-1)] <- -0.5*(1:(ng0-1))
+
+                                                                        avtj <- avtj+ng0-1
+                                                                    }
+                                                                else
+                                                                    {
+                                                                        b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
+                                                                        avtj <- avtj+ng0
+                                                                        avtj2 <- avtj2+1
+                                                                    }
+                                                            }
+                                                        else
+                                                            {
+                                                                if(B$conv==1) b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*sqrt(B$V[(avtj2+1)*(avtj2+1+1)/2])
+                                                                else b[avtj+1:ng0] <- B$best[avtj2+1]+(1:ng0-(ng0+1)/2)*B$best[avtj2+1]
+
+                                                                avtj <- avtj+ng0
+                                                                avtj2 <- avtj2+1
+                                                            }
+                                                        
+                                                    }
+                                            }
+
+
+                                        ## pr nvc
+                                        if(nvc>0)
+                                            {
+                                                b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- B$cholesky
+                                            }
+
+
+                                        ## cor et transfo
+                                        b[(nprob+nrisqtot+nvarxevt+nef+nvc+nw+1):NPM] <- B$best[(sum(nprisq)+nvarxevt2+nef2+nvc+1):NPM2]
+
                                     }
-
-
-                                ## pr nvc
-                                if(nvc>0)
+                                else
                                     {
-                                        b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- B$cholesky
+                                        ## B random
+                                        bb <- rep(0,NPM-nprob-(ng-1)*length(which(risqcom==2))-nw) # tous les prm sauf nprob, bPH et nw
+                                        vbb <- matrix(0,length(bb),length(bb))
+                                                                                
+                                        VB <- matrix(0,NPM2,NPM2)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+                                        VB <- t(VB)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+
+                                        
+                                        copcov <- rep(0,length(bb))
+                                        copcov2 <- rep(0,length(B$best))
+
+                                        avt <- 0
+                                        for(ke in 1:nbevt)
+                                            {
+                                                if(risqcom[ke]==0)
+                                                    {
+                                                        indbb <- avt+1:nrisq[ke]
+                                                        indB <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
+                                                        
+                                                        bb[indbb] <- rep(B$best[indB],ng)
+                                                        diag(vbb[indbb,indbb]) <- rep(diag(VB[indB,indB]),ng)
+
+                                                        avt <- avt + nrisq[ke]
+                                                    }
+
+                                                if(risqcom[ke]==1)
+                                                    {
+                                                        indbb <- avt+1:nrisq[ke]
+                                                        indB <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
+                                                        
+                                                        bb[indbb] <- B$best[indB]
+                                                        copcov[indbb] <- 1
+                                                        copcov2[indB] <- 1
+
+                                                        avt <- avt + nrisq[ke]
+                                                    }
+
+                                                if(risqcom[ke]==2)
+                                                    {
+                                                        indbb <- avt+1:nprisq[ke]
+                                                        indB <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
+                                                        
+                                                        bb[indbb] <- B$best[indB]
+                                                        copcov[indbb] <- 1
+                                                        copcov2[indB] <- 1
+
+
+                                                        avt <- avt + nprisq[ke]
+                                                    }
+                                            }
+
+                                        avt2 <- sum(nprisq)
+                                        for(j in 1:nv0)
+                                            {
+                                                if(idcom[j]==0 & all(idspecif[,j]==0)) next
+                                                
+                                                if(idcom[j]==1 & all(idspecif[,j]==1))
+                                                    {
+                                                        bb[avt+1] <- B$best[avt2+1]
+                                                        copcov[avt+1] <- 1
+                                                        copcov2[avt2+1] <- 1
+                                                        
+                                                        avt <- avt+1
+                                                        avt2 <- avt2+1
+                                                    }
+
+                                                if(idcom[j]==1 & all(idspecif[,j]==2))
+                                                    {
+                                                        bb[avt+1:ng] <- rep(B$best[avt2+1],ng)
+                                                        diag(vbb[avt+1:ng,avt+1:ng]) <- rep(VB[avt2+1,avt2+1],ng)
+                                                        
+                                                        avt <- avt+ng
+                                                        avt2 <- avt2+1
+                                                    }
+
+                                                if(idcom[j]==0 & any(idspecif[,j]!=0))
+                                                    {
+                                                        for(k in 1:nbevt)
+                                                            {
+                                                                if(idspecif[k,j]==0) next
+
+                                                                if(idspecif[k,j]==1)
+                                                                    {
+                                                                        bb[avt+1] <- B$best[avt2+1]
+                                                                        copcov[avt+1] <- 1
+                                                                        copcov2[avt2+1] <- 1
+                                                                        
+                                                                        avt <- avt+1
+                                                                        avt2 <- avt2+1
+                                                                    }
+
+                                                                if(idspecif[k,j]==2)
+                                                                    {
+                                                                        bb[avt+1:ng] <- rep(B$best[avt2+1],ng)
+                                                                        diag(vbb[avt+1:ng,avt+1:ng]) <- rep(VB[avt2+1,avt2+1],ng)
+                                                                        
+                                                                        avt <- avt+ng
+                                                                        avt2 <- avt2+1 
+                                                                    }
+                                                            }
+                                                        
+                                                    }
+                                            }
+
+                                       
+                                        for(j in 1:nv0)
+                                            {
+                                                if(idg0[j]==1)
+                                                    {
+                                                        if(j==1 & idlink!=-1) next
+                                                        else
+                                                            {
+                                                                bb[avt+1] <- B$best[avt2+1]
+                                                                copcov[avt+1] <- 1
+                                                                copcov2[avt2+1] <- 1
+                                                                
+                                                                avt <- avt+1
+                                                                avt2 <- avt2+1
+                                                            }
+                                                    }
+
+                                                if(idg0[j]==2)
+                                                    {
+                                                        if(j==1 & idlink!=-1)
+                                                            {
+                                                                avt <- avt+ng-1
+                                                            }
+                                                        else
+                                                            {
+                                                                bb[avt+1:ng] <- rep(B$best[avt2+1],ng)
+                                                                diag(vbb[avt+1:ng,avt+1:ng]) <- rep(VB[avt2+1,avt2+1],ng)
+                                                                        
+                                                                avt <- avt+ng
+                                                                avt2 <- avt2+1
+                                                            }
+                                                        
+                                                    }
+                                            }
+                                        
+
+                                        if(nvc>0)
+                                            {
+                                                bb[avt+1:nvc] <- B$cholesky
+                                                copcov[avt+1:nvc] <- 1
+                                                copcov2[avt2+1:nvc] <- 1
+
+                                                avt <- avt+nvc
+                                                avt2 <- avt2+nvc
+                                            }
+
+                                        
+                                        bb[(avt+1):length(bb)] <- B$best[(avt2+1):NPM2]
+                                        copcov[(avt+1):length(bb)] <- 1
+                                        copcov2[(avt2+1):length(B$best)] <- 1
+
+                                        vbb[which(copcov==1),which(copcov==1)] <- VB[which(copcov2==1),which(copcov2==1)]
+
+
+                                        if(idlink!=-1 & idg0[1]>1)
+                                            {
+                                                bb <- bb[-(1:(ng-1))]
+                                                vbb <- vbb[-(1:(ng-1)),-(1:(ng-1))]
+                                            }
+                                        
+                                        Chol <- chol(vbb)
+                                        Chol <- t(Chol)
+                                        
+                                        bb <- bb + Chol %*% rnorm(length(bb))
+
+                                        
+                                        b[1:nprob] <- 0
+
+                                        avt <- 0
+                                        for(ke in 1:nbevt)
+                                            {
+                                                if(risqcom[ke]==0)
+                                                    {
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- bb[avt+1:nrisq[ke]]
+
+                                                        avt <- avt + nrisq[ke]
+                                                    }
+
+                                                if(risqcom[ke]==1)
+                                                    {
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nrisq[ke]] <- bb[avt+1:nrisq[ke]]
+                                                       
+                                                        avt <- avt + nrisq[ke]
+                                                    }
+
+                                                if(risqcom[ke]==2)
+                                                    {
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+1:nprisq[ke]] <- bb[avt+1:nprisq[ke]]
+                                                        b[nprob+sum(nrisq[1:ke])-nrisq[ke]+nprisq[ke]+1:(ng-1)] <- 1 #bPH
+
+                                                        avt <- avt + nprisq[ke]
+                                                    }
+                                            }
+
+                                        b[nprob+nrisqtot+1:nvarxevt] <- bb[avt+1:nvarxevt]
+
+                                        if(idlink!=-1 & idg0[1]>1)
+                                            {
+                                                b[nprob+nrisqtot+nvarxevt+1:(ng-1)] <- 0
+                                                b[nprob+nrisqtot+nvarxevt+ng:(nprob+nrisqtot+nvarxevt+nef)] <- bb[avt+nvarxevt+1:(nef-(ng-1))]
+                                            } 
+                                        else
+                                            {                                        
+                                                b[nprob+nrisqtot+nvarxevt+1:nef] <- bb[avt+nvarxevt+1:nef]
+                                            }
+                                                
+                                        if(nvc>0)
+                                            {
+                                                cholRE <- matrix(0,nea0,nea0)
+                                                cholRE[upper.tri(cholRE,diag=TRUE)] <- b[avt+nvarxevt+nef+1:nvc]
+                                                varcovRE <- t(cholRE) %*% cholRE
+                                                b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- varcovRE[upper.tri(varcovRE,diag=TRUE)]
+                                            }
+                                                
+                                        if(nw>0) b[nprob+nrisqtot+nvarxevt+nef+nvc+1:nw] <- 1
+
+                                        b[(nprob+nrisqtot+nvarxevt+nef+nvc+nw+1):NPM] <- bb[(avt+nvarxevt+nef+nvc+1):length(bb)]
+                                        
                                     }
-
-
-                                ## cor et transfo
-                                b[(nprob+nrisqtot+nvarxevt+nef+nvc+nw+1):NPM] <- B$best[(sum(nprisq)+nvarxevt2+nef2+nvc+1):NPM2]
-
                             }
                     }
    
@@ -1899,3 +2145,7 @@ attributes(data)$terms <- NULL
 
         return(res)
     }
+
+
+
+jlcmm <- Jointlcmm

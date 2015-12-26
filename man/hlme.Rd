@@ -107,7 +107,6 @@ when \code{idiag=TRUE}, or the inferior triangular variance-covariance matrix of
 
 (6) the standard error of the residual error. 
 
-We understand that it can be difficult to enter the correct number of parameters in \code{B} at the first place. So we recommend to run the program without specifying the initial vector \code{B} even if this model does not converge. To save time, the number of iterations can be restricted to 0 with \code{maxiter=0}. As the final vector \code{best} has exactly the same structure as \code{B} (even when the program stops without convergence), it will help defining a satisfying vector of initial values \code{B} for next runs. 
 
 
 B. CAUTIONS
@@ -119,10 +118,9 @@ Some caution should be made when using the program:
 The program can be run without entering the vector of initial values (see point 2). 
 However, we recommend to systematically enter initial values in \code{B} and try different sets of initial values. 
 
-
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why the specification of initial values in \code{B} should be systematically preferred.
+This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
 
 
 (4) Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter stability and log-likelihood stability. 
@@ -153,7 +151,6 @@ The list returned is:
 
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
-
 }
 \references{
 
@@ -186,38 +183,59 @@ Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 # trend (intercept and Time in fixed, random and mixture components)
 # and a common effect of X1 and its interaction with time over classes 
 # (in fixed). 
-# The random-effects are assumed independent (idiag=TRUE). The variance
-# of the random intercept and slope are assumed to be equal 
+# The variance of the random intercept and slope are assumed to be equal 
 # over classes (nwg=F).
-# The covariate X3 predicts the class membership (in classmb). 
-# !CAUTION: for illustration, only default initial values where used but 
-# other sets of initial values should be tried to ensure convergence
-# towards the global maximum.
-
-data(data_hlme)
+# The covariate X3 predicts the class membership (in classmb).
+#
+# !CAUTION: initialization of mixed models with latent classes is 
+# of most importance because of the problem of multimodality of the likelihood.
+# Calls m2a-m2d illustrate the different implementations for the 
+# initial values.
 
 ### homogeneous linear mixed model (standard linear mixed model) 
-### with independent random-effects
-m1<-hlme(Y~Time*X1,random=~Time,subject='ID',ng=1,idiag=TRUE,
-data=data_hlme)
+### with correlated random-effects
+m1<-hlme(Y~Time*X1,random=~Time,subject='ID',ng=1,data=data_hlme)
 summary(m1)
-### latent class linear mixed model with 2 classes
-m2<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_hlme,B=c(0.11,-0.74,-0.07,20.71,
-29.39,-1,0.13,2.45,-0.29,4.5,0.36,0.79,0.97))
-m2
-summary(m2)
-plot(m2,which="postprob")
-### same model as m2 with the vector of initial values specified
-m3<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
-subject='ID',ng=2,data=data_hlme,B=c(0,0,0,30,25,0,-1,0,0,5,0,1,1))
-m3
-summary(m3)
 
-## plot of predicted trajectories using some newdata
+### latent class linear mixed model with 2 classes
+
+# a. automatic specification from G=1 model estimates:
+m2a<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',
+         ng=2,data=data_hlme,B=m1)
+         
+# b. vector of initial values provided by the user:
+m2b<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',
+         ng=2,data=data_hlme,B=c(0.11,-0.74,-0.07,20.71,
+                                 29.39,-1,0.13,2.45,-0.29,4.5,0.36,0.79,0.97))
+ 
+# c. random draws from G = 1 model estimates:
+m2c<-hlme(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,subject='ID',
+          ng=2,data=data_hlme,B=random(m1))
+
+# d. gridsearch with 50 departures and 10 iterations of the algorithm 
+#     (see function gridsearch for details)
+\dontrun{
+m2d <- gridsearch(rep = 50, maxiter = 10, minit = m1, hlme(Y ~ Time * X1, 
+mixture =~ Time, random =~ Time, classmb =~ X2 + X3, subject = 'ID', ng = 2, 
+data = data_hlme))
+
+}  
+          
+
+
+# summary of the estimation process
+summarytable(m1, m2a, m2b, m2c)
+
+# summary of m2a
+summary(m2a)
+
+# posterior classification
+postprob(m2a)
+
+# plot of predicted trajectories using some newdata
 newdata<-data.frame(Time=seq(0,5,length=100),
 X1=rep(0,100),X2=rep(0,100),X3=rep(0,100))
-plot(predictY(m3,newdata,var.time="Time"),legend.loc="right",bty="l")
+plot(predictY(m2a,newdata,var.time="Time"),legend.loc="right",bty="l")
 
 %}
 }

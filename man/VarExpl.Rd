@@ -43,12 +43,9 @@ Cecile Proust-Lima, Viviane Philipps
 
 \examples{
 \dontrun{
-
-data(data_Jointlcmm)
-
 m1 <- multlcmm(Ydep1+Ydep2~1+Time*X2+contrast(X2),random=~1+Time,
 subject="ID",randomY=TRUE,link=c("4-manual-splines","3-manual-splines"),
-intnodes=c(8,12,25),data=data_Jointlcmm, 
+intnodes=c(8,12,25),data=data_lcmm, 
 B=c(-1.071, -0.192,  0.106, -0.005, -0.193,  1.012,  0.870,  0.881,
   0.000,  0.000, -7.520,  1.401,  1.607 , 1.908,  1.431,  1.082,
  -7.528,  1.135 , 1.454 , 2.328, 1.052))

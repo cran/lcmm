@@ -7,7 +7,7 @@ Longitudinal data on cognitive and physical aging in the elderly
 \description{
 The dataset consists in a subsample of the Paquid prospective cohort study. Repeated measures cognitive measures (MMSE, IST, BVRT psychometric tests), physical dependency (HIER) and depression sympatomatology (CESD) were collected over a maximum period of 20 years along with dementia information (age at dementia diagnosis, dementia diagnosis information). Time-independent socio-demographic information is also provided (CEP, male, age_init).
 }
-\usage{data(paquid)}
+\usage{paquid}
 \format{
   A data frame with 2250 observations over 500 subjects and 12 variables:
   \describe{
@@ -31,7 +31,6 @@ of dementia and Alzheimer's disease in elderly community residents of southweste
 France. International Journal of Epidemiology, 23 (6), 1256-61.
 }
 \examples{
-data(paquid)
 summary(paquid)
 }
 \keyword{datasets}

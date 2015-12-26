@@ -47,7 +47,8 @@ fitY.multlcmm <- function(x)
             }
         
         
-        res <- cbind(idres,pred)
+        #res <- cbind(idres,pred)
+        res <- data.frame(idres,pred)
         colnames(res) <- c(x$call$subject,"Yname",paste("Ypred_class",1:x$ng,sep=""))
 
         

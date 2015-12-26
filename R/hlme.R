@@ -357,11 +357,12 @@ hlme <-
 
         IND <- newdata[,nom.subject]
 
-        IDnum <- as.numeric(IND)
+        #IDnum <- as.numeric(IND)
 
 
 #### INCLUSION PRIOR 
-        if(missing(prior)){ PRIOR <- seq(0,length=length(IDnum))} 
+        #if(missing(prior)){ PRIOR <- seq(0,length=length(IDnum))} 
+        if(missing(prior)){ PRIOR <- seq(0,length=length(IND))} 
         if(!missing(prior)){ 
             PRIOR <- newdata[,nom.prior]
             PRIOR[(is.na(PRIOR))] <- 0
@@ -404,23 +405,29 @@ hlme <-
 
 
                                         # on ordonne les donn es suivants la variable IND
-        matYX <- cbind(IDnum,IND,PRIOR,Y0,X0)
-        matYXord <- matYX[sort.list(matYX[,1]),]
-        Y0 <- matYXord[,4]  
-        X0 <- matYXord[,-c(1,2,3,4)]
-        IDnum <- matYXord[,1]
-        IND <- matYXord[,2]
+        #matYX <- cbind(IDnum,IND,PRIOR,Y0,X0)
+        #matYXord <- matYX[sort.list(matYX[,1]),]
+        #Y0 <- matYXord[,4]  
+        #X0 <- matYXord[,-c(1,2,3,4)]
+        #IDnum <- matYXord[,1]
+        #IND <- matYXord[,2]
 
+        matYX <- cbind(IND,PRIOR,Y0,X0)
+        matYXord <- matYX[sort.list(matYX[,1]),]
+        Y0 <- as.numeric(matYXord[,3])
+        X0 <- apply(matYXord[,-c(1,2,3)],2,as.numeric)
+        IND <- matYXord[,1]
 
 
 #### INCLUSION PRIOR 
-        PRIOR <- matYXord[,3]
+        PRIOR <- as.numeric(matYXord[,3])
         PRIOR <-as.integer(as.vector(PRIOR))
 ####
 
         X0<-as.numeric(as.matrix(X0))
         Y0<-as.numeric(as.matrix(Y0))
-        nmes0<-as.vector(table(IDnum))
+        #nmes0<-as.vector(table(IDnum))
+        nmes0<-as.vector(table(IND))
         ns0<-length(nmes0)
 
 
@@ -456,53 +463,70 @@ hlme <-
         ##---------------------------------------------------------------------------
         ##definition du vecteur de parametres + initialisation
         ##---------------------------------------------------------------------------
+
+## gestion de B=random(mod)
+
+        Brandom <- FALSE
+        if(length(cl$B)==2)
+            {
+                if(class(eval(cl$B[[2]]))!="hlme") stop("The model specified in B should be of class hlme")
+                if(as.character(cl$B[1])!="random") stop("Please use random() to specify random initial values")
+                
+                Brandom <- TRUE
+                B <- eval(cl$B[[2]])
+
+                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
+            }
+
+        
+
 #####cas 1 : ng=1
-        b<-NULL
+        b <- NULL
         b1 <- NULL
         NPROB <- 0
         if(ng0==1| missing(B)){
             NEF<-sum(idg0!=0)  
-            b1[1:NEF]<-0
-            if(int.fixed > 0)  b1[1]<-mean(Y0)
+            b1[1:NEF] <- 0
+            if(int.fixed > 0)  b1[1] <- mean(Y0)
 
             if(idiag0==1){
                 NVC<-sum(idea0==1)
-                b1[(NEF+1):(NEF+NVC)]<-1}
+                b1[(NEF+1):(NEF+NVC)] <- 1}
 
             if(idiag0==0){
                 kk<-sum(idea0==1) 
                 NVC<-(kk*(kk+1))/2
                 indice<-cumsum(1:kk)
                 bidiag<-rep(0,NVC)
-                bidiag[indice]<-1
-                b1[(NEF+1):(NEF+NVC)]<-bidiag
+                bidiag[indice] <- 1
+                b1[(NEF+1):(NEF+NVC)] <- bidiag
             }
             if(ncor0==1)
                 {b1[NEF+NVC+1] <- 1 }
             if(ncor0==2)
                 {b1[(NEF+NVC+1):(NEF+NVC+ncor0)] <- c(0,1) }
-            b1[NEF+NVC+ncor0+1]<-1
-            NPM<-length(b1)
-            NW<-0
+            b1[NEF+NVC+ncor0+1] <- 1
+            NPM <- length(b1)
+            NW <- 0
             V <- rep(0,NPM*(NPM+1)/2) 
         }
 
 #####cas 2 : ng>=2
         if(ng0>1){
-            NPROB<-(sum(idprob0==1)+1)*(ng0-1)
-            b[1:NPROB]<-0
-            NEF<-sum(idg0==1)+(sum(idg0==2))*ng0
-            if(idiag0==1)NVC<-sum(idea0==1)
+            NPROB <- (sum(idprob0==1)+1)*(ng0-1)
+            b[1:NPROB] <- 0
+            NEF <- sum(idg0==1)+(sum(idg0==2))*ng0
+            if(idiag0==1) NVC <- sum(idea0==1)
             if(idiag0==0){
-                kk<-sum(idea0==1) 
-                NVC<-(kk*(kk+1))/2}
-            NW<-nwg0*(ng0-1)
-            if(NW>0) b[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]<-1   
+                kk <- sum(idea0==1) 
+                NVC <- (kk*(kk+1))/2}
+            NW <- nwg0*(ng0-1)
+            if(NW>0) b[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- 1   
             if(ncor0==1)
                 {b[NEF+NVC+NW+1] <- 1 }
             if(ncor0==2)
                 {b[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- c(0,1) }
-            NPM<-NPROB+NEF+NVC+NW+ncor0+1
+            NPM <- NPROB+NEF+NVC+NW+ncor0+1
             V <- rep(0,NPM*(NPM+1)/2)
         }
 
@@ -567,7 +591,7 @@ hlme <-
                         }
                     }
                 }
-                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <-init$best[(NEF2+1):(NEF2+NVC)]
+                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- init$best[(NEF2+1):(NEF2+NVC)]
                 if (ncor0>0) {b[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- init$best[(NPM2-ncor0):(NPM2-1)]}
                 b[NPROB+NEF+NVC+NW+ncor0+1] <- init$best[NPM2]
             } 
@@ -593,48 +617,131 @@ hlme <-
                                 NPM2 <- NEF2+NVC+ncor0+1
                                 if(length(B$best)!=NPM2) stop("B is not correct")
 
-                                k <- NPROB
-                                l <- 0
-                                t<- 0
-                                for (i in 1:nvar.exp)
+
+                                if(Brandom==FALSE)
                                     {
-                                        if(idg0[i]==1)
+                                        ## B deterministe
+                                        l <- 0
+                                        t <- 0
+                                        for (i in 1:nvar.exp)
                                             {
-                                                l <- l+1
-                                                t <- t+1
-                                                b[k+t] <- B$best[l]
-                                            }
-                                        if(idg0[i]==2)
-                                            {
-                                                l <- l+1
-                                                for (g in 1:ng)
+                                                if(idg0[i]==1)
                                                     {
+                                                        l <- l+1
                                                         t <- t+1
-                                                        if(B$conv==1) b[k+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
-                                                        else b[k+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
+                                                        b[NPROB+t] <- B$best[l]
+                                                    }
+                                                if(idg0[i]==2)
+                                                    {
+                                                        l <- l+1
+                                                        for (g in 1:ng)
+                                                            {
+                                                                t <- t+1
+                                                                if(B$conv==1) b[NPROB+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
+                                                                else b[NPROB+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
+                                                            }
                                                     }
                                             }
+                                        if(NVC>0)
+                                            {
+                                                if(idiag==TRUE)
+                                                    {
+                                                        b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky[(1:nea0)*(2:(nea0+1))/2]
+                                                        
+                                                    }
+                                                else
+                                                    {
+                                                        b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- B$cholesky
+                                                    }
+                                            }
+                                        if (ncor0>0) {b[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- B$best[(NPM2-ncor0):(NPM2-1)]}
+                                        b[NPROB+NEF+NVC+NW+ncor0+1] <- B$best[NPM2]
                                     }
-                                if(NVC>0)
+                                else
                                     {
-                                        if(idiag==TRUE)
+                                        ## B random
+                                        bb <- rep(0,NPM-NPROB-NW)
+                                        vbb <- matrix(0,NPM-NPROB-NW,NPM-NPROB-NW)
+                                        
+                                        VB <- matrix(0,NPM2,NPM2)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+                                        VB <- t(VB)
+                                        VB[upper.tri(VB,diag=TRUE)] <- B$V
+
+                                        nbg <- idg0[which(idg0!=0)]
+                                        nbg[which(nbg==2)] <- ng
+                                        nbgnef <- unlist(sapply(nbg,function(k) if(k>1) rep(2,k) else k))
+                                        
+                                        vbb[which(nbgnef==1),setdiff(1:ncol(vbb),which(nbgnef!=1))] <- VB[which(nbg==1),setdiff(1:ncol(VB),which(nbg!=1))]
+                                        vbb[(NEF+1):nrow(vbb),(NEF+1):ncol(vbb)] <- VB[(NEF2+1):nrow(VB),(NEF2+1):ncol(VB)]
+                                        
+                                        l <- 0
+                                        t <- 0
+                                        for (i in 1:nvar.exp)
                                             {
-                                                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <-B$cholesky[(1:nea0)*(2:(nea0+1))/2]
-                                                
+                                                if(idg0[i]==1)
+                                                    {
+                                                        l <- l+1
+                                                        t <- t+1
+                                                        bb[t] <- B$best[l]
+                                                    }
+                                                if(idg0[i]==2)
+                                                    {
+                                                        l <- l+1
+                                                        for (g in 1:ng)
+                                                            {
+                                                                t <- t+1
+                                                                bb[t] <- B$best[l]
+                                                                vbb[t,t] <- VB[l,l]
+                                                            }
+                                                    }
                                             }
-                                        else
+                                        
+                                        if(NVC>0)
                                             {
-                                                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <-B$cholesky
+                                                if(idiag==TRUE)
+                                                    {
+                                                        bb[NEF+1:NVC] <- B$cholesky[(1:nea0)*(2:(nea0+1))/2]
+                                                    }
+                                                else
+                                                    {
+                                                        bb[NEF+1:NVC] <- B$cholesky
+                                                    }
                                             }
-                                    }
-                                if (ncor0>0) {b[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- B$best[(NPM2-ncor0):(NPM2-1)]}
-                                b[NPROB+NEF+NVC+NW+ncor0+1] <- B$best[NPM2]
-                            } 
+                            
+                                
+                                        if (ncor0>0)
+                                            {
+                                                bb[NEF+NVC+1:ncor0] <- B$best[(NPM2-ncor0):(NPM2-1)]
+                                            }
+                                
+                                        bb[NEF+NVC+ncor0+1] <- B$best[NPM2]
+                                                            
+                                        up <- vbb[upper.tri(vbb,diag=TRUE)]
+                                        vbb <- t(vbb)
+                                        vbb[upper.tri(vbb,diag=TRUE)] <- up
+                                        Chol <- chol(vbb)
+                                        Chol <- t(Chol)
+                                        
+                                        b[c((NPROB+1):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(NPM-NPROB-NW)
+
+                                        b[1:NPROB] <- 0
+                                        if(NW>0) b[NPROB+NEF+NVC+1:NW] <- 1
+
+                                        if(NVC>0)
+                                            {
+                                                cholRE <- matrix(0,nea0,nea0)
+                                                cholRE[upper.tri(cholRE,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                                varcovRE <- t(cholRE) %*% cholRE
+                                                b[NPROB+NEF+1:NVC] <- varcovRE[upper.tri(varcovRE,diag=TRUE)]
+                                            }
+                                   
+                                    } 
+                            }
                     }
             }
                 
   
-        se <- rep(0,length(b))
         ##------------------------------------------
         ##------nom au vecteur best
         ##--------------------------------------------

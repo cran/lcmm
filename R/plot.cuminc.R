@@ -13,7 +13,7 @@ plot.cuminc <- function(x,profil=1,event=1,add=FALSE,legend,legend.loc="topleft"
         xx <- x[[profil]]
         mat <- xx[which(xx[,"event"]==event),]
 
-        if("med_class1" %in% colnames(xx))
+        if("med_class1" %in% colnames(xx) | "50_class1" %in% colnames(xx))
             {
                 ic <- 1
                 ng <- (ncol(xx)-2)/3
@@ -86,7 +86,7 @@ plot.cuminc <- function(x,profil=1,event=1,add=FALSE,legend,legend.loc="topleft"
                         "tck","tcl","type","usr","xaxp","xaxs","xaxt","xlab",
                         "xlim","xpd","yaxp","yaxs","yaxt","ylab","ylbias","ylim") 
         dots.plot <- dots[intersect(names(dots),names.plot)]
-        
+
         if(!isTRUE(add))
             {
                 do.call("matplot",c(dots.plot,list(x=mat[,2],y=mat[,-c(1,2)])))

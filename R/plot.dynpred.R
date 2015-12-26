@@ -178,9 +178,9 @@ plot.dynpred <- function(x,subject=NULL,landmark=NULL,horizon=NULL,add=FALSE,...
                 {
                     ##selectionner les donnees de ce sujet
                     newdatai <- newdata[which(newdata$id==subject[i]),,drop=FALSE]
-                    predi <- res[which(res[,1]==subject[i]),,drop=FALSE] 
+                    predi <- as.matrix(res[which(res[,1]==subject[i]),-1,drop=FALSE])
                     
-                    if(all(is.na(predi[,4])))
+                    if(all(is.na(predi[,3])))
                         {
                             next
                         }
@@ -200,29 +200,29 @@ plot.dynpred <- function(x,subject=NULL,landmark=NULL,horizon=NULL,add=FALSE,...
                         }
                     
                     ##tracer les predictions
-                    do.call(points,c(dots.plot[setdiff(names(dots.plot),"axes")],list(x=predi[,2],y=fromptoy(predi[,4]),col=col1[length(subject)+i],pch=pch1[length(subject)+i])))
+                    do.call(points,c(dots.plot[setdiff(names(dots.plot),"axes")],list(x=predi[,1],y=fromptoy(predi[,3]),col=col1[length(subject)+i],pch=pch1[length(subject)+i])))
                     
                     ##tracer les IC
                     if(ncol(x$pred)==6)
                         {
                             do.call(segments,c(dots.plot[setdiff(names(dots.plot),c("type","axes"))],
-                                               list(x0=predi[,2,drop=FALSE],
-                                                    y0=fromptoy(predi[,5,drop=FALSE]),
-                                                    x=predi[,2,drop=FALSE],
-                                                    y=fromptoy(predi[,6,drop=FALSE]),
+                                               list(x0=predi[,1,drop=FALSE],
+                                                    y0=fromptoy(predi[,4,drop=FALSE]),
+                                                    x=predi[,1,drop=FALSE],
+                                                    y=fromptoy(predi[,5,drop=FALSE]),
                                                     col=col1[length(subject)+i])))
                             ##tracer les bouts des IC :
                             do.call(segments,c(dots.plot[setdiff(names(dots.plot),c("type","axes"))],
-                                               list(x0=predi[,2,drop=FALSE]-bout,
-                                                    y0=fromptoy(predi[,5,drop=FALSE]),
-                                                    x=predi[,2,drop=FALSE]+bout,
-                                                    y=fromptoy(predi[,5,drop=FALSE]),
+                                               list(x0=predi[,1,drop=FALSE]-bout,
+                                                    y0=fromptoy(predi[,4,drop=FALSE]),
+                                                    x=predi[,1,drop=FALSE]+bout,
+                                                    y=fromptoy(predi[,4,drop=FALSE]),
                                                     col=col1[length(subject)+i])))
                             do.call(segments,c(dots.plot[setdiff(names(dots.plot),c("type","axes"))],
-                                               list(x0=predi[,2,drop=FALSE]-bout,
-                                                    y0=fromptoy(predi[,6,drop=FALSE]),
-                                                    x=predi[,2,drop=FALSE]+bout,
-                                                    y=fromptoy(predi[,6,drop=FALSE]),
+                                               list(x0=predi[,1,drop=FALSE]-bout,
+                                                    y0=fromptoy(predi[,5,drop=FALSE]),
+                                                    x=predi[,1,drop=FALSE]+bout,
+                                                    y=fromptoy(predi[,5,drop=FALSE]),
                                                     col=col1[length(subject)+i])))
                         }    
                 }
@@ -280,9 +280,9 @@ plot.dynpred <- function(x,subject=NULL,landmark=NULL,horizon=NULL,add=FALSE,...
             for(i in 1:length(subject))
                 {
                     newdatai <- newdata[which(newdata$id==subject[i]),,drop=FALSE]
-                    predi <- res[which(res[,1]==subject[i]),,drop=FALSE]
+                    predi <- as.matrix(res[which(res[,1]==subject[i]),-1,drop=FALSE])
                     
-                    if(all(is.na(predi[,4])))
+                    if(all(is.na(predi[,3])))
                         {
                             next
                         }
@@ -302,13 +302,13 @@ plot.dynpred <- function(x,subject=NULL,landmark=NULL,horizon=NULL,add=FALSE,...
                         }
                     
                     ##tracer les predictions
-                    do.call(lines,c(dots.plot[setdiff(names(dots.plot),"axes")],list(x=predi[,2]+predi[,3],y=fromptoy(predi[,4]),col=col1[length(subject)+i])))
+                    do.call(lines,c(dots.plot[setdiff(names(dots.plot),"axes")],list(x=predi[,1]+predi[,2],y=fromptoy(predi[,3]),col=col1[length(subject)+i])))
 
                     ##tracer les IC
                     if(ncol(x$pred)==6)
                         {
                             do.call(matlines,c(dots.plot[setdiff(names(dots.plot),"axes")],
-                                               list(x=predi[,2]+predi[,3],y=cbind(fromptoy(predi[,5]),fromptoy(predi[,6])),col=col1[length(subject)+i],lty=2)))
+                                               list(x=predi[,1]+predi[,2],y=cbind(fromptoy(predi[,4]),fromptoy(predi[,5])),col=col1[length(subject)+i],lty=2)))
                         }
                 }
             

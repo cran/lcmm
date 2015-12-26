@@ -111,6 +111,10 @@ summary.multlcmm <- function(object,...)
                     wald <- NA
                     pwald <- NA
                     coef <- x$best
+
+                    sech <- rep(NA,length(coef))
+                    waldch <- rep(NA,length(coef))
+                    pwaldch <- rep(NA,length(coef))
                 }
 
             if(nw>0) coef[nef+nvc+1:nw] <- abs(coef[nef+nvc+1:nw])
@@ -118,16 +122,18 @@ summary.multlcmm <- function(object,...)
             coef[nef+nvc+nw+ncor+1:ny] <- abs(coef[nef+nvc+nw+ncor+1:ny])
             if(nalea>0) coef[nef+nvc+nw+ncor+ny+1:ny] <- abs(coef[nef+nvc+nw+ncor+ny+1:ny])
 
+            if(x$conv!=2)
+                {
+                    coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
+                    sech <- format(as.numeric(sprintf("%.5f",se)),nsmall=5,scientific=FALSE)
+                    waldch <- format(as.numeric(sprintf("%.3f",wald)),nsmall=3,scientific=FALSE)
+                    pwaldch <- format(as.numeric(sprintf("%.5f",pwald)),nsmall=5,scientific=FALSE)
+                }
+            else
+                {
+                    coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
+                }
             
-            coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
-            sech <- format(as.numeric(sprintf("%.5f",se)),nsmall=5,scientific=FALSE)
-            waldch <- format(as.numeric(sprintf("%.3f",wald)),nsmall=3,scientific=FALSE)
-            pwaldch <- format(as.numeric(sprintf("%.5f",pwald)),nsmall=5,scientific=FALSE)
-
-            sech[which(is.na(se))] <- "NA"
-            waldch[which(is.na(se))] <- "NA"
-            pwaldch[which(is.na(se))] <- "NA"
-
             
             if(length(posfix))
                 {
@@ -371,7 +377,7 @@ summary.multlcmm <- function(object,...)
             maxch <- apply(std.err,2,function(x) max(nchar(x)))
             if(any(c(nef+nvc+nw+ncor+1:(ny+nalea)) %in% posfix)) maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))] <- maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))]-1
             colnames(std.err) <- sapply(1:ny,function(k) paste(paste(rep(" ",max(0,maxch[k]-nchar(x$Ynames[k]))),collapse=""),x$Ynames[k],sep=""))
-            print(std.err,quote=FALSE,na.string="")
+            print(std.err,quote=FALSE,na.print="")
             
             cat("\n")
             

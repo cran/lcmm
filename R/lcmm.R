@@ -27,6 +27,19 @@ if (!is.null(cor.char))
 ### fin cor
 
 
+## gestion de B=random(mod)
+
+        if(length(mm$B)==2)
+            {
+                if(class(eval(mm$B[[2]]))!="lcmm") stop("The model specified in B should be of class lcmm")
+                if(as.character(mm$B[1])!="random") stop("Please use random() to specify random initial values")
+                
+                B <- eval(mm$B[[2]])   
+                B$Brandom <- TRUE
+                
+                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
+            }
+
 
 
 

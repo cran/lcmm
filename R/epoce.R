@@ -426,7 +426,7 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
 
     ##identifiant sujets
     IND <- newdata1[,model$Names$ID]
-    IDnum <- as.numeric(IND)
+    #IDnum <- as.numeric(IND)
 
 
 
@@ -444,20 +444,23 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
 
 
 ### DATA SORTING on IND variable
-    matYX <- cbind(IDnum,IND,PRIOR,Tentry,Tevent,Event,Tint,Y0,Time,X0)
-    matYXord <- matYX[order(IDnum),]
-    Y0 <- matYXord[,8]
-    Time <- matYXord[,9]
-    X0 <- matYXord[,-c(1,2,3,4,5,6,7,8,9),drop=FALSE]
-    IDnum <- matYXord[,1]
-    IND <- matYXord[,2]
-    PRIOR <- matYXord[,3]
+    matYX <- cbind(IND,PRIOR,Tentry,Tevent,Event,Tint,Y0,Time,X0)
+    matYXord <- matYX[order(IND),]
+    Y0 <- as.numeric(matYXord[,7])
+    Time <- as.numeric(matYXord[,9])
+    X0 <- apply(matYXord[,-c(1,2,3,4,5,6,7,8),drop=FALSE],2,as.numeric)
+    #IDnum <- matYXord[,1]
+    IND <- matYXord[,1]
+    PRIOR <- as.numeric(matYXord[,2])
     PRIOR <- as.integer(as.vector(PRIOR))
 
 ### Tevent, Tentry et Event de dim ns  
-    data.surv <- unique(cbind(IND,matYX[,c(4,5,6,7)]))
-
-    if(nrow(data.surv) != length(unique(IND))) stop("Subjects cannot have several times to event.")
+    nmes0 <- as.vector(table(IND))
+    data.surv <- data.frame(IND,apply(matYXord[,c(3,4,5,6)],2,as.numeric))
+    data.surv <- data.surv[cumsum(nmes0),]
+    
+    #data.surv <- unique(data.surv)
+    #if(nrow(data.surv) != length(unique(IND))) stop("Subjects cannot have several times to event.")
 
     tsurv0 <- data.surv[,2] 
     tsurv <- data.surv[,3]
@@ -466,12 +469,11 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
     ind_survint <- (tsurvint<tsurv) + 0 
 
 
-    nmes0<-as.vector(table(IDnum))
-    ns0<-length(nmes0)
+    ns0 <- length(nmes0)
 
     INDuniq <- unique(IND)
 
-    prior0 <- unique(cbind(IND,PRIOR))[,2]
+    prior0 <- unique(data.frame(IND,PRIOR))[,2]
 
 
     contribt <- rep(0,length=ns0*nT)
@@ -508,7 +510,7 @@ epoce <- function(model,pred.times,var.time,fun.time=identity,newdata=NULL,subse
     contrib <- matrix(out$contribt,nrow=ns0,ncol=nT)
     namesContrib <- as.vector(apply(matrix(pred.times,nrow=1),MARGIN=2,FUN=function(x){paste("IndivContrib_time_",x,sep="")}))
     colnames(contrib) <- namesContrib
-    contrib <- cbind(INDuniq,contrib)
+    contrib <- data.frame(INDuniq,contrib)
     contrib[contrib==0] <- NA
     ## remplacer les 0 (vrais 0 par NA) (le nombre de non nul pour un temps = ns_vect(de ce temps)
     ## colnames : permier colonne = le nom de la variable IND = colnames(model$pprob)[1]

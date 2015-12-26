@@ -4,12 +4,13 @@
 \alias{VarCov.lcmm}
 \alias{VarCov.Jointlcmm}
 \alias{VarCov.multlcmm}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{
 Variance-covariance of the estimates
 }
 \description{
-This function provides the variance-covariance matrix of the estimates.
+This function provides the variance-covariance matrix of the
+estimates. vcov is an alias for it.
 }
 \usage{
 \method{VarCov}{hlme}(x)
@@ -17,7 +18,7 @@ This function provides the variance-covariance matrix of the estimates.
 \method{VarCov}{Jointlcmm}(x)
 \method{VarCov}{multlcmm}(x)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{x}{
 an object of class \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm}

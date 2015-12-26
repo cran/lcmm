@@ -6,7 +6,7 @@
 \alias{estimates.multlcmm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Estimates
+Maximum likelihood estimates
 }
 \description{
 This function provides the vector of maximum likelihood estimates of a model estimated with \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm}.

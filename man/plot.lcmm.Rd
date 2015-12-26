@@ -98,7 +98,6 @@ Cecile Proust-Lima, Viviane Philipps and Benoit Liquet
 ###################### fit, residuals and postprob 
 
 # estimation of the model
-data(data_hlme)
 m<-lcmm(Y~Time*X1,mixture=~Time,random=~Time,classmb=~X2+X3,
 subject='ID',ng=2,data=data_hlme,B=c(0.41,0.55,-0.18,-0.41,
 -14.26,-0.34,1.33,13.51,24.65,2.98,1.18,26.26,0.97))  
@@ -118,17 +117,16 @@ plot(m,which="postprob")
 #### independent random intercept, slope and quadratic slope
 #### (comparison of linear, Beta and 3 and 5 splines link functions)
 \dontrun{
-data(data_Jointlcmm)
 
 # linear link function
 m10<-lcmm(Ydep2~Time+I(Time^2),random=~Time+I(Time^2),subject='ID',ng=1,
-          data=data_Jointlcmm,link="linear",
+          data=data_lcmm,link="linear",
           B=c(-0.7454, -0.2031,  0.2715,  0.2916 , 0.6114, -0.0064,  0.0545,
               0.0128, 25.3795, 2.2371))
             
 # Beta link function
 m11<-lcmm(Ydep2~Time+I(Time^2),random=~Time+I(Time^2),subject='ID',ng=1,
-          data=data_Jointlcmm,link="beta",B=c(-0.9109, -0.0831,  0.5194,  0.1910 ,
+          data=data_lcmm,link="beta",B=c(-0.9109, -0.0831,  0.5194,  0.1910 ,
           0.8984, -0.0179, -0.0636,  0.0045,  0.5514, -0.7692,  0.7037,  0.0899))
           
 # fit 
@@ -138,13 +136,13 @@ plot(m11,which="fit",var.time="Time",marg=FALSE,bty="l",ylim=c(-3,0))
 
 # I-splines with 3 equidistant nodes
 m12<-lcmm(Ydep2~Time+I(Time^2),random=~Time+I(Time^2),subject='ID',ng=1,
-          data=data_Jointlcmm,link="3-equi-splines",B=c(-0.9272, -0.0753 , 0.5304, 
+          data=data_lcmm,link="3-equi-splines",B=c(-0.9272, -0.0753 , 0.5304, 
           0.1950,  0.9260, -0.0204, -0.0739 , 0.0059, -7.8369,  0.9228 ,-1.4689,
           2.0396,  1.8102))
 
 # I-splines with 5 nodes, and interior nodes entered manually
 m13<-lcmm(Ydep2~Time+I(Time^2),random=~Time+I(Time^2),subject='ID',ng=1,
-          data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25),
+          data=data_lcmm,link="5-manual-splines",intnodes=c(10,20,25),
           B=c(-0.9315, -0.0739 , 0.5254 , 0.1933,  0.9418, -0.0206, -0.0776,
           0.0064, -7.8645, 0.7470,  1.2080,  1.5537 , 1.7558 , 1.3386 , 1.0982))
 
@@ -162,12 +160,11 @@ legend("topleft",col=1:4,legend=c("linear","beta","3-Isplines","5-Isplines"),lty
 
 ###################### fit, baselinerisk and survival
 \dontrun{
-data(data_Jointlcmm)
 #### estimation with 3 latent classes (ng=3) - see Jointlcmm 
 #### help for details on the model
 m3 <- Jointlcmm(fixed= Ydep1~Time*X1,mixture=~Time,random=~Time,
 classmb=~X3,subject='ID',survival = Surv(Tevent,Event)~ X1+mixture(X2),
-hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_Jointlcmm,
+hazard="3-quant-splines",hazardtype="PH",ng=3,data=data_lcmm,
 B=c(0.7576, 0.4095, -0.8232, -0.2737, 0, 0, 0, 0.2838, -0.6338, 
 2.6324, 5.3963, -0.0273, 1.3979, 0.8168, -15.041, 10.164, 10.2394, 
 11.5109, -2.6219, -0.4553, -0.6055, 1.473, -0.0383, 0.8512, 0.0389, 

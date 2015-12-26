@@ -107,8 +107,7 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
   should not be estimated. Default to NULL, all parameters are estimated.
 }
 \item{partialH}{
- optional logical for Beta or Splines link function only. Indicates if
- link function parameters can be dropped from Hessian matrix to define
+ optional logical for Beta or Splines link functions only. Indicates whether the parameters of the link functions can be dropped from the Hessian matrix to define
  convergence criteria.
 }
 }
@@ -145,7 +144,7 @@ if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of a
 (5) In contrast with hlme, due to identifiability purposes, the standard error of the Gaussian error is not estimated (fixed at 1), and should not be specified in \code{B};
 (6) The parameters of the link function: 2 for "linear", 4 for "beta", n+2 for "splines" with n nodes and the number of levels minus one for "thresholds".
 
-We understand that it can be difficult to enter the correct number of parameters in \code{B} at the first place. So we recommend to run the program without specifying the initial vector \code{B} even if this model does not converge. As the final vector \code{best} has exactly the same structure as \code{B} (even when the program stops without convergence), it will help defining a satisfying vector of initial values \code{B} for next runs. 
+
 
 
 C. CAUTIONS REGARDING THE USE OF THE PROGRAM
@@ -163,8 +162,7 @@ The program can be run without entering the vector of initial values (see point 
 However, we recommend to systematically enter initial values in \code{B} and try different sets of initial values. 
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why specification of initial values in \code{B} should be preferred.
-
+This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
 
 D. NUMERICAL INTEGRATION WITH THE THRESHOLD LINK FUNCTION
 
@@ -250,8 +248,7 @@ model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9)
 Proust-Lima, Amieva and Jacqmin-Gadda  (2013). Analysis of multivariate mixed longitudinal
 data : a flexible latent process approach, British Journal of Mathematical and Statistical Psychology 66(3): 470-87.
 
-Commenges, Proust-Lima, Samieri, Liquet (2012). A universal approximate cross-validation criterion and its
-asymptotic distribution, Arxiv.
+Commenges, Proust-Lima, Samieri, Liquet (2015). A universal approximate cross-validation criterion for regular risk functions. Int J Biostat. 2015 May;11(1):51-67
 }
 
 
@@ -266,27 +263,26 @@ asymptotic distribution, Arxiv.
 #### correlated random intercept and slope (the random quadratic slope 
 #### was removed as it did not improve the fit of the data).
 #### -- comparison of linear, Beta and 3 different splines link functions --
-data(data_Jointlcmm)
 # linear link function
 m10<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
-data=data_Jointlcmm,link="linear")
+data=data_lcmm,link="linear")
 summary(m10)
 # Beta link function
 m11<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
-data=data_Jointlcmm,link="beta")
+data=data_lcmm,link="beta")
 summary(m11)
 plot(m11,which="linkfunction",bty="l")
 # I-splines with 3 equidistant nodes
 m12<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
-data=data_Jointlcmm,link="3-equi-splines")
+data=data_lcmm,link="3-equi-splines")
 summary(m12)
 # I-splines with 5 nodes at quantiles
 m13<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
-data=data_Jointlcmm,link="5-quant-splines")
+data=data_lcmm,link="5-quant-splines")
 summary(m13)
 # I-splines with 5 nodes, and interior nodes entered manually
 m14<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1,
-data=data_Jointlcmm,link="5-manual-splines",intnodes=c(10,20,25))
+data=data_lcmm,link="5-manual-splines",intnodes=c(10,20,25))
 summary(m14)
 plot(m14,which="linkfunction",bty="l")
 
@@ -298,7 +294,7 @@ plot(m14,which="linkfunction",bty="l")
 # models with threshold link function involves a computationally demanding 
 # numerical integration -here of size 3)
 m15<-lcmm(Ydep2~Time+I(Time^2),random=~Time,subject='ID',ng=1
-,data=data_Jointlcmm,link="thresholds",maxiter=100,
+,data=data_lcmm,link="thresholds",maxiter=100,
 B=c(-0.8379, -0.1103,  0.3832,  0.3788 , 0.4524, -7.3180,  0.5917,  0.7364,
  0.6530, 0.4038,  0.4290,  0.6099,  0.6014 , 0.5354 , 0.5029 , 0.5463,
  0.5310 , 0.5352, 0.6498,  0.6653,  0.5851,  0.6525,  0.6701 , 0.6670 ,
@@ -327,24 +323,24 @@ col=1:6,lty=1,inset=.02,box.lty=0)
 #### towards the golbal maximum
 # Linear link function
 m20<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,
-idiag=TRUE,data=data_Jointlcmm,link="linear",B=c(-0.98,0.79,-2.09,
+idiag=TRUE,data=data_lcmm,link="linear",B=c(-0.98,0.79,-2.09,
 -0.81,0.19,0.55,24.49,2.24))
 summary(m20)
 postprob(m20)
 # Beta link function
 m21<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,
-idiag=TRUE,data=data_Jointlcmm,link="beta",B=c(-0.1,-0.56,-0.4,-1.77,
+idiag=TRUE,data=data_lcmm,link="beta",B=c(-0.1,-0.56,-0.4,-1.77,
 0.53,0.14,0.6,-0.83,0.73,0.09))
 summary(m21)
 postprob(m21)
 # I-splines link function (and 5 nodes at quantiles)
 m22<-lcmm(Ydep2~Time,random=~Time,subject='ID',mixture=~Time,ng=2,
-idiag=TRUE,data=data_Jointlcmm,link="5-quant-splines",B=c(0.12,0.63,
+idiag=TRUE,data=data_lcmm,link="5-quant-splines",B=c(0.12,0.63,
 -1.76,-0.39,0.51,0.13,-7.37,1.05,1.28,1.96,1.3,0.93,1.05))
 summary(m22)
 postprob(m22)
 
-data <- data_Jointlcmm[data_Jointlcmm$ID==193,]
+data <- data_lcmm[data_lcmm$ID==193,]
 plot(predictL(m22,var.time="Time",newdata=data,bty="l")
 
 }    

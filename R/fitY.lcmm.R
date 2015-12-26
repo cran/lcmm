@@ -29,7 +29,8 @@ fitY.lcmm <- function(x)
                 pred <- rbind(pred,predictY(x,newdata=data[which(data[,x$call$subject]==id[i]),],draws=FALSE,methInteg=1,nsim=2000)$pred)
             }
 
-        res <- cbind(data[,x$call$subject],pred)
+        #res <- cbind(data[,x$call$subject],pred)
+        res <- data.frame(data[,x$call$subject],pred)
         colnames(res) <- c(x$call$subject,paste("Ypred_class",1:x$ng,sep=""))
 
         
