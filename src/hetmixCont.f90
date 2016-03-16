@@ -2105,7 +2105,7 @@
                end if
             end do
          end do    
-           !print*,"Corr ok"
+          ! print*,"Corr ok",Corr
                  
 ! creation de Y1
 
@@ -2242,6 +2242,8 @@
                end do
             end do
          end if
+
+        ! print*,"v inverse",VC
 !     debut du calcul de la vraisemblance
        vrais=vrais-nmes(i)*dlog(dble(2*3.14159265))
 ! contribution individuelle a la vraisemblance

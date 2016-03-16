@@ -322,9 +322,9 @@ summary.multlcmm <- function(object,...)
                     Mat.cov[upper.tri(Mat.cov)] <- ""
                     pf <- sort(intersect(c(nef+1:nvc),posfix))
                     p <- matrix(0,sum(x$idea),sum(x$idea))
-                    if(x$idiag==FALSE) p[lower.tri(p,diag=TRUE)] <- c(0,nef+1:nvc)
+                    if(x$idiag==FALSE) p[upper.tri(p,diag=TRUE)] <- c(0,nef+1:nvc)
                     if(x$idiag==TRUE) diag(p) <- c(0,nef+1:nvc)
-                    Mat.cov[which(p %in% pf)] <- paste(Mat.cov[which(p %in% pf)],"*",sep="")
+                    Mat.cov[which(t(p) %in% pf)] <- paste(Mat.cov[which(t(p) %in% pf)],"*",sep="")
                     print(Mat.cov,quote=FALSE)
                 }
             else
@@ -375,7 +375,17 @@ summary.multlcmm <- function(object,...)
 
             rownames(std.err) <- nom
             maxch <- apply(std.err,2,function(x) max(nchar(x)))
-            if(any(c(nef+nvc+nw+ncor+1:(ny+nalea)) %in% posfix)) maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))] <- maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))]-1
+            if(any(c(nef+nvc+nw+ncor+1:(ny+nalea)) %in% posfix))
+                {
+                    if(nalea>0)
+                        {
+                            maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))] <- maxch[union(grep("*",std.err[1,]),grep("*",std.err[2,]))]-1
+                        }
+                    else
+                        {
+                            maxch[grep("*",std.err[1,])] <- maxch[grep("*",std.err[1,])]-1
+                        }
+                }
             colnames(std.err) <- sapply(1:ny,function(k) paste(paste(rep(" ",max(0,maxch[k]-nchar(x$Ynames[k]))),collapse=""),x$Ynames[k],sep=""))
             print(std.err,quote=FALSE,na.print="")
             

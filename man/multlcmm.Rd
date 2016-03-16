@@ -17,7 +17,7 @@ idiag = FALSE,nwg = FALSE, randomY=FALSE, link = "linear",
 intnodes = NULL, epsY = 0.5, cor=NULL, data, B, convB = 1e-04, 
 convL = 1e-04, convG = 1e-04, maxiter=100,
 nsim=100, prior,range=NULL, subset=NULL, na.action=1,
-posfix=NULL, partialH=FALSE)
+posfix=NULL, partialH=FALSE, verbose=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -106,6 +106,10 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
  optional logical for Beta or Splines link functions only. Indicates whether the parameters of the link functions can be dropped from the Hessian matrix to define
  convergence criteria.
 }
+\item{verbose}{
+  logical indicating if information about computation should be
+  reported. Default to TRUE.
+}
 }
 
 \details{
@@ -140,7 +144,6 @@ The parameters in the vector of initial values \code{B} or in the vector of maxi
 (9) the parameters of each parameterized link function: 2 for "linear", 4 for "beta", n+2 for "splines" with n nodes.
 
 
-
 C. CAUTIONS REGARDING THE USE OF THE PROGRAM
 
 Some caution should be made when using the program.
@@ -158,7 +161,8 @@ The program can be run without entering the vector of initial values (see point 
 However, we recommend to systematically enter initial values in \code{B} and try different sets of initial values.
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second,
 that the generated initial values can be very not likely and even may converge slowly to a local maximum.
-This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
+This is the reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
+
 
 }
 \value{

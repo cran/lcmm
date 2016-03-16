@@ -37,7 +37,7 @@
             if(is.character(outcome))
                 {
                     numoutcome <- which(x$Ynames==outcome)
-                    if(length(numoutcome==0)) stop("Argument 'outcome' is not correct")
+                    if(length(numoutcome)==0) stop("Argument 'outcome' is not correct")
                     linesNA <- x$na.action[[numoutcome]]
                 }
 

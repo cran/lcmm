@@ -326,10 +326,10 @@ summary.Jointlcmm <- function(object,...)
                             Mat.cov[upper.tri(Mat.cov)] <- ""
                             pf <- sort(intersect(c(nprob+nrisqtot+nvarxevt+nef+1:nvc),posfix))
                             p <- matrix(0,sum(x$idea),sum(x$idea))
-                            if(x$idiag==FALSE) p[lower.tri(p,diag=TRUE)] <- c(nprob+nrisqtot+nvarxevt+nef+1:nvc)
+                            if(x$idiag==FALSE) p[upper.tri(p,diag=TRUE)] <- c(nprob+nrisqtot+nvarxevt+nef+1:nvc)
                             if(x$idiag==TRUE & nvc>1) diag(p) <- c(nprob+nrisqtot+nvarxevt+nef+1:nvc)
                             if(x$idiag==TRUE & nvc==1) p <- matrix(c(nprob+nrisqtot+nvarxevt+nef+1),1,1)
-                            Mat.cov[which(p %in% pf)] <- paste(Mat.cov[which(p %in% pf)],"*",sep="")
+                            Mat.cov[which(t(p) %in% pf)] <- paste(Mat.cov[which(t(p) %in% pf)],"*",sep="")
                             print(Mat.cov,quote=FALSE)
                         }
                     else

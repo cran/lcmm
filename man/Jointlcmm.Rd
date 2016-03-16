@@ -16,7 +16,8 @@ Jointlcmm(fixed, mixture, random, subject, classmb, ng=1,
  link=NULL, intnodes=NULL, epsY=0.5, range=NULL,
  cor=NULL,data, B, convB=1e-4, convL=1e-4, convG=1e-4,
  maxiter=100, nsim=100, prior,logscale=FALSE, 
- subset=NULL, na.action=1, posfix=NULL, partialH=FALSE)
+ subset=NULL, na.action=1, posfix=NULL, partialH=FALSE,
+ verbose=TRUE)
 }
 
 
@@ -133,6 +134,10 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
 \item{partialH}{
  optional logical for Piecewise and Splines baseline risk functions only. Indicates whether the parameters of the baseline risk functions can be dropped from the Hessian matrix to define convergence criteria.
 }
+\item{verbose}{
+  logical indicating if information about computation should be
+  reported. Default to TRUE.
+}
 }
 
 
@@ -185,7 +190,8 @@ However, we recommend to systematically enter initial values in \code{B} and try
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
 This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
 
-(4) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
+
+(3) Convergence criteria are very strict as they are based on derivatives of the log-likelihood in addition to the parameter and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 150. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
 If the parameters are on the boundaries of the parameter space, the identifiability of the model is critical. This may happen especially when baseline risk functions involve splines (value close to the lower boundary - 0 with logscale=F -infinity with logscale=F) or classmb parameters that are too high or low (perfect classification) or linkfunction parameters. When identifiability of some parameters is suspected, the program can be run again from the former estimates by fixing the suspected parameters to their value with option posfix. This usually solves the problem. An alternative is to remove the parameters of the Beta of Splines link function from the inverse of the Hessian with option partialH. 

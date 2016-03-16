@@ -14,7 +14,8 @@ This function is limited to a mixture of Gaussian outcomes. For other types of o
 hlme(fixed, mixture, random, subject, classmb, ng = 1,
  idiag = FALSE, nwg = FALSE, cor=NULL, data, B,
  convB=0.0001,convL=0.0001,convG=0.0001,prior,
- maxiter=500, subset=NULL, na.action=1, posfix=NULL)
+ maxiter=500, subset=NULL, na.action=1, posfix=NULL,
+ verbose=TRUE)
 }
 
 
@@ -82,6 +83,10 @@ Integer indicating how NAs are managed. The default is 1 for
   Optional vector specifying the indices in vector B of the parameters that
   should not be estimated. Default to NULL, all parameters are estimated.
 }
+\item{verbose}{
+  logical indicating if information about computation should be
+  reported. Default to TRUE.
+}
 }
 
 
@@ -108,7 +113,6 @@ when \code{idiag=TRUE}, or the inferior triangular variance-covariance matrix of
 (6) the standard error of the residual error. 
 
 
-
 B. CAUTIONS
 
 Some caution should be made when using the program:
@@ -118,12 +122,13 @@ Some caution should be made when using the program:
 The program can be run without entering the vector of initial values (see point 2). 
 However, we recommend to systematically enter initial values in \code{B} and try different sets of initial values. 
 
+
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
+This is the reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
 
 
-(4) Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter stability and log-likelihood stability. 
+(3) Convergence criteria are very strict as they are based on the derivatives of the log-likelihood in addition to the parameter stability and log-likelihood stability. 
 In some cases, the program may not converge and reach the maximum number of iterations fixed at 100. 
 In this case, the user should check that parameter estimates at the last iteration are not on the boundaries of the parameter space. 
 If the parameters are on the boundaries of the parameter space, the identifiability of the model is critical. This may happen especially with splines parameters that may be too close to 0 (lower boundary) or classmb parameters that are too high or low (perfect classification). When identifiability of some parameters is suspected, the program can be run again from the former estimates by fixing the suspected parameters to their value with option posfix. This usually solves the problem. An alternative is to remove the parameters of the Beta of Splines link function from the inverse of the Hessian with option partialH. 
@@ -151,6 +156,7 @@ The list returned is:
 
 \item{predRE}{table containing individual predictions of the random-effects : a column per random-effect, a line per subject}
 \item{cholesky}{vector containing the estimates of the Cholesky transformed parameters of the variance-covariance matrix of the random-effects}
+
 }
 \references{
 

@@ -15,7 +15,8 @@ lcmm(fixed, mixture, random, subject, classmb, ng = 1,
  idiag = FALSE, nwg = FALSE, link = "linear", intnodes = NULL,
  epsY = 0.5, cor=NULL, data, B, convB = 1e-04, convL = 1e-04, 
  convG = 1e-04, maxiter=100, nsim=100, prior,range=NULL,
- subset=NULL, na.action=1, posfix=NULL, partialH=FALSE)
+ subset=NULL, na.action=1, posfix=NULL, partialH=FALSE,
+ verbose=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -110,6 +111,10 @@ Integer indicating how NAs are managed. The default is 1 for 'na.omit'. The alte
  optional logical for Beta or Splines link functions only. Indicates whether the parameters of the link functions can be dropped from the Hessian matrix to define
  convergence criteria.
 }
+\item{verbose}{
+  logical indicating if information about computation should be
+  reported. Default to TRUE.
+}
 }
 
 \details{
@@ -142,9 +147,9 @@ if \code{idiag=TRUE} and the inferior triangular variance-covariance matrix of a
 (4) only if \code{nwg=TRUE}, ng-1 parameters for class-specific proportional coefficients
  for the variance covariance matrix of the random-effects; 
 (5) In contrast with hlme, due to identifiability purposes, the standard error of the Gaussian error is not estimated (fixed at 1), and should not be specified in \code{B};
-(6) The parameters of the link function: 2 for "linear", 4 for "beta", n+2 for "splines" with n nodes and the number of levels minus one for "thresholds".
-
-
+(6) The parameters of the link function: 2 for "linear", 4 for "beta",
+n+2 for "splines" with n nodes and the number of levels minus one for
+"thresholds".
 
 
 C. CAUTIONS REGARDING THE USE OF THE PROGRAM
@@ -162,7 +167,8 @@ The program can be run without entering the vector of initial values (see point 
 However, we recommend to systematically enter initial values in \code{B} and try different sets of initial values. 
 (2) The automatic choice of initial values we provide requires the estimation of a preliminary linear mixed model. The user should be aware that first, this preliminary analysis can take time for large datatsets and second, 
 that the generated initial values can be very not likely and even may converge slowly to a local maximum. 
-This is a reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
+This is the reason why several alternatives exist. The vector of initial values can be directly specified in \code{B} the initial values can be generated (automatically or randomly) from a model with \code{ng=}. Finally, function \code{gridsearch} performs an automatic grid search. 
+
 
 D. NUMERICAL INTEGRATION WITH THE THRESHOLD LINK FUNCTION
 
@@ -179,7 +185,7 @@ E. POSTERIOR DISCRETE LIKELIHOOD
 
 Models involving nonlinear continuous link functions assume the continuous data while the model with a threshold model assumes discrete data. As a consequence, comparing likelihoods or criteria based on the likelihood (as AIC) for these models is not possible as the former are based on a Lebesgue measure and the latter on a counting measure. To make the comparison possible, we compute the posterior discrete likelihood for all the models with a nonlinear continuous link function. This posterior likelihood considers the data as discrete; it is computed at the MLE (maximum likelihood estimates) using the counting measure so that models with threshold or continuous link functions become comparable. Further details can be found in Proust-Lima, Amieva, Jacqmin-Gadda (2012). 
 
-In addition to the Akaike information criterion based on the discrete posterior likelihood, we also compute a universal approximate cross-validation criterion to compare models based on a different measure. See Commenges, Porust-Lima, Samieri, Liquet (2012) for further details.
+In addition to the Akaike information criterion based on the discrete posterior likelihood, we also compute a universal approximate cross-validation criterion to compare models based on a different measure. See Commenges, Proust-Lima, Samieri, Liquet (2015) for further details.
 
 
 }
@@ -247,6 +253,7 @@ model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9)
 
 Proust-Lima, Amieva and Jacqmin-Gadda  (2013). Analysis of multivariate mixed longitudinal
 data : a flexible latent process approach, British Journal of Mathematical and Statistical Psychology 66(3): 470-87.
+
 
 Commenges, Proust-Lima, Samieri, Liquet (2015). A universal approximate cross-validation criterion for regular risk functions. Int J Biostat. 2015 May;11(1):51-67
 }

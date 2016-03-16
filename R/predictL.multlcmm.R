@@ -56,7 +56,28 @@ predictL.multlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
      }
     }
    }
-    
+
+
+
+  ## pour poly()
+  if(any(grep("poly",termes)))
+      {
+          split_termes <- strsplit(termes,split="")
+          for(j in 1:length(split_termes))
+              {
+                  splitj <- split_termes[[j]]
+                  
+                  if(paste(splitj[c(1:5,length(splitj)-1)],collapse="")=="poly()")
+                      {
+                          termes[j] <- paste(splitj[1:(length(splitj)-1)],collapse="")
+                      }
+
+              }
+              
+      }
+
+
+  
   ## var.time
   if(!missing( var.time))
       {

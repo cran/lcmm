@@ -1,10 +1,10 @@
 ###################### derniere mise a jour : 2012/03/16 ############"
 .Ordlcmm <-
-    function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete,subset=subset,na.action,posfix)
+    function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,data,B,convB,convL,convG,prior,maxiter,zitr,ide,call,Ydiscrete,subset=subset,na.action,posfix,verbose)
 {
     
     ptm<-proc.time()
-    cat("Be patient, lcmm is running ... \n")
+    if(verbose==TRUE) cat("Be patient, lcmm is running ... \n")
 
     cl <- match.call()
 
@@ -764,7 +764,7 @@
     class(res) <-c("lcmm")  
 
     cost<-proc.time()-ptm
-    cat("The program took", round(cost[3],2), "seconds \n")
+    if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
     res
 }
 

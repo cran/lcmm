@@ -1,7 +1,7 @@
 ############## last change 2012/03/16 #####################
 
 .Contlcmm <-
-    function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,cor,data,B,convB,convL,convG,prior,maxiter,epsY,idlink0,ntrtot0,nbzitr0,zitr,nsim,call,Ydiscrete,subset,na.action,posfix,partialH){
+    function(fixed,mixture,random,subject,classmb,ng,idiag,nwg,cor,data,B,convB,convL,convG,prior,maxiter,epsY,idlink0,ntrtot0,nbzitr0,zitr,nsim,call,Ydiscrete,subset,na.action,posfix,partialH,verbose){
         
         cl <- match.call()
 
@@ -760,7 +760,7 @@
                                         #cat("valeurs initiales : ",b,"\n")
 ################ Sortie ###########################
         ptm <- proc.time()
-        cat("Be patient, lcmm is running ... \n")
+        if(verbose==TRUE) cat("Be patient, lcmm is running ... \n")
 
 
         marker <- rep(0,nsim)
@@ -890,6 +890,6 @@
         class(res) <- c("lcmm") 
 
         cost <- proc.time()-ptm
-        cat("The program took", round(cost[3],2), "seconds \n") 
+        if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n") 
         res
     }

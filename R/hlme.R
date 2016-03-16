@@ -2,10 +2,10 @@
 
 
 hlme <-
-    function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500,subset=NULL,na.action=1,posfix=NULL){
+    function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500,subset=NULL,na.action=1,posfix=NULL,verbose=TRUE){
 
         ptm<-proc.time()
-        cat("Be patient, hlme is running ... \n")
+        if(verbose==TRUE) cat("Be patient, hlme is running ... \n")
 
         cl <- match.call()
         args <- as.list(match.call(hlme))[-1]
@@ -420,7 +420,7 @@ hlme <-
 
 
 #### INCLUSION PRIOR 
-        PRIOR <- as.numeric(matYXord[,3])
+        PRIOR <- as.numeric(matYXord[,2])
         PRIOR <-as.integer(as.vector(PRIOR))
 ####
 
@@ -868,7 +868,7 @@ hlme <-
         res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,dataset=args$data,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,na.action=na.action,AIC=2*(length(out$best)-length(posfix)-out$loglik),BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik)
         class(res) <-c("hlme") 
         cost<-proc.time()-ptm
-        cat("The program took", round(cost[3],2), "seconds \n")
+        if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
 
         
         res

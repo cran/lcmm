@@ -1,8 +1,8 @@
 
-multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE)
+multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE)
 {
     ptm<-proc.time()
-    cat("Be patient, multlcmm is running ... \n")
+    if(verbose==TRUE) cat("Be patient, multlcmm is running ... \n")
 
     cl <- match.call()
 
@@ -538,6 +538,12 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                 {
                     if(class(B)!="multlcmm") stop("B should be either a vector or an object of class multlcmm")
 
+                    if(ng==1 & B$ng==1)
+                        {
+                            if(length(B$best)!=NPM) stop("B is not correct")
+                            b <- B$best
+                        }
+
                     if(ng>1 & B$ng==1)
                             {
                                 nef2 <- sum(idg0!=0)-1 + (ny0-1)*sum(idcontr0)
@@ -691,6 +697,8 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                         Chol <- chol(vbb)
                                         Chol <- t(Chol)
 
+                                        b <- rep(0,NPM)
+                                        
                                         if(idg0[1]>1)
                                             {
                                                 b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
@@ -700,6 +708,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                             {                                        
                                                 b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(NPM-nprob-nw)
                                             }
+
 
                                         b[1:nprob] <- 0
                                         if(nw>0) b[nef+nvc+1:nw] <- 1
@@ -1076,7 +1085,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
     class(res) <-c("multlcmm")
 
     cost<-proc.time()-ptm
-    cat("The program took", round(cost[3],2), "seconds \n")
+    if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
 
     res
 }

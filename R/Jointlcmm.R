@@ -3,11 +3,11 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                       hazardnodes=NULL,TimeDepVar=NULL,link=NULL,intnodes=NULL,
                       epsY=0.5,range=NULL,cor=NULL,data,B,convB=0.0001,
                       convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,
-                      logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE)
+                      logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE)
     {
         
         ptm<-proc.time()
-        cat("Be patient, Jointlcmm is running ... \n")
+        if(verbose==TRUE) cat("Be patient, Jointlcmm is running ... \n")
 
         cl <- match.call()
 
@@ -2140,7 +2140,7 @@ attributes(data)$terms <- NULL
         class(res) <-c("Jointlcmm")
 
         cost<-proc.time()-ptm
-        cat("The program took", round(cost[3],2), "seconds \n")
+        if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
 
 
         return(res)

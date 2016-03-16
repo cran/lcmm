@@ -254,10 +254,10 @@ summary.lcmm <- function(object,...)
                         Mat.cov[upper.tri(Mat.cov)] <- ""
                         pf <- sort(intersect(c(NPROB+NEF+1:NVC),posfix))
                         p <- matrix(0,sum(x$idea0),sum(x$idea0))
-                        if(x$idiag==FALSE) p[lower.tri(p,diag=TRUE)] <- c(NPROB+NEF+1:NVC)
+                        if(x$idiag==FALSE) p[upper.tri(p,diag=TRUE)] <- c(NPROB+NEF+1:NVC)
                         if(x$idiag==TRUE & NVC>1) diag(p) <- c(NPROB+NEF+1:NVC)
                         if(x$idiag==TRUE & NVC==1) p <- matrix(c(NPROB+NEF+1),1,1)
-                        Mat.cov[which(p %in% pf)] <- paste(Mat.cov[which(p %in% pf)],"*",sep="")
+                        Mat.cov[which(t(p) %in% pf)] <- paste(Mat.cov[which(t(p) %in% pf)],"*",sep="")
                         print(Mat.cov,quote=FALSE)
                     }
                 else

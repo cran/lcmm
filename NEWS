@@ -2,10 +2,18 @@ News about R package lcmm :
 ---------------------------
 
 
-The companion paper is now available on arxiv!
+The companion paper is accepted in Journal of Statistical Software and available on arxiv! 
 
 Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
 
+http://arxiv.org/abs/1503.00890
+
+
+
+
+Changes in Version 1.7.5 (2015-03-15):
+
+* Samll bugs identified and solved in multlcmm, predictY and predictL
 
 
 Changes in Version 1.7.4 (2015-12-26):
@@ -17,7 +25,6 @@ Changes in Version 1.7.4 (2015-12-26):
 * Function 'gridsearch' provides an automatic grid of departures for reducing the odds of converging towards a local maximum. 
 
 * Initial values can be randomly generated from a model with 1 class (called m1 in next example) with option B=random(m1) in hlme, lcmm, multlcmm and Jointlcmm.
-
 
 
 Changes in Version 1.7.3.0 (2015-10-23):
