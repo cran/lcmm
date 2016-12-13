@@ -61,7 +61,7 @@ m1 <- hlme(Y ~ Time * X1, random =~ Time, subject = 'ID', ng = 1,
       data = data_hlme)
 
 # gridsearch with 10 iterations from 50 random departures
-m2d <- searchgrid(rep = 50, maxiter = 10, minit = m1, hlme(Y ~ Time * X1,
+m2d <- gridsearch(rep = 50, maxiter = 10, minit = m1, hlme(Y ~ Time * X1,
       mixture =~ Time, random =~ Time, classmb =~ X2 + X3, subject = 'ID',
           ng = 2, data = data_hlme))
         }

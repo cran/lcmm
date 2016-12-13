@@ -22,7 +22,7 @@ VarExpl.multlcmm <- function(x,values)
    names.values <- unique(c(names.random,name.cor))   #contient I(T^2))
 
    vars <- unique(c(all.vars(x$call$random),all.vars(x$call$cor)))
-   if(!all(vars %in% colnames(values))) stop(paste(c("values should give a value for each of the following covariates: ","\n",vars,collapse=" ")))
+   if(!all(vars %in% colnames(values))) stop(paste(c("values should give a value for each of the following covariates: ","\n",vars),collapse=" "))
 
    ### pour les facteurs
 

@@ -49,12 +49,12 @@
 
         !Declaration des variables en entree
       integer,intent(in)::nv0,maxiter0,Ydiscret,ny0
+      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,nea0,nsim0,ncor0,nalea0
       double precision,dimension(ny0),intent(in)::epsY0
       integer, dimension(ny0),intent(in)::idlink0,nbzitr0,nvalSPL0
       double precision,dimension(maxval(nbzitr0),ny0),intent(in)::zitr0
       integer,dimension(nobs0),intent(in)::indiceY0
       double precision,dimension(sum(nvalSPL0(:))),intent(in)::uniqueY0
-      integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,nea0,nsim0,ncor0,nalea0
       integer, dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0,idcontr0
       integer, dimension(ns0),intent(in)::prior0
       integer,dimension(ns0,ny0)::nmes0   
@@ -1876,13 +1876,13 @@ end do
 
       implicit none
 
+      integer::kk,nsim,npm,j,k,yk,sumntrtot,numSPL,l
       double precision,dimension(nsim*ny)::marker,transfY
       double precision,dimension(maxval(ntrtot))::splaa
       double precision,dimension(maxval(ntrtot))::Xspl
       double precision,dimension(nsim)::mmm,mmm1,mmm2,iim,iim1,iim2
       double precision::aa1,bb1,dd1,aa,bb,betai,eps,pas,ytemp,cc1
       double precision, dimension(npm)::b,b1
-      integer::kk,nsim,npm,j,k,yk,sumntrtot,numSPL,l
       double precision ::ht,htm,ht2,ht3,hht,h,hh,h2,h3,h2n,hn
 
 

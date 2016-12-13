@@ -11,9 +11,14 @@ http://arxiv.org/abs/1503.00890
 
 
 
-Changes in Version 1.7.5 (2015-03-15):
+Changes in Version 1.7.6 (2016-12-12):
 
-* Samll bugs identified and solved in multlcmm, predictY and predictL
+* Small bugs identified and solved in multlcmm
+
+
+Changes in Version 1.7.5 (2016-03-15):
+
+* Small bugs identified and solved in multlcmm, predictY and predictL
 
 
 Changes in Version 1.7.4 (2015-12-26):

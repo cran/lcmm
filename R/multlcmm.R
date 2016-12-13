@@ -123,8 +123,16 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
         }
 
     attributes(data)$terms <- NULL
+
+### si subject est un factor
+    if(is.factor(data[,nom.subject]))
+        {
+            data[,nom.subject] <- as.numeric(data[,nom.subject])
+        }
+
     
 ###subset de data avec les variables utilisees
+    
     newdata <- data[,c(nom.subject,nomsY,ttesLesVar,nom.prior)]
     if(!is.null(nom.prior))
         {
@@ -218,6 +226,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                 {
                     X0 <- cbind(X0, data0[,cor.var.time])
                     colnames(X0) <- c(nom.unique, cor.var.time)
+                    nom.unique <- c(nom.unique,cor.var.time)
                 }
         }
 

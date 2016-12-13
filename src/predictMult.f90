@@ -8,9 +8,9 @@ subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
   IMPLICIT NONE
 
   ! in input
+  integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,nsim,methInteg,nalea,ny
   double precision,dimension(maxmes*nv),intent(in) ::X0
   integer,dimension(nv),intent(in)::idprob,idea,idg,idcor,idcontr
-  integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,nsim,methInteg,nalea,ny
   integer,dimension(ny),intent(in)::idlink,nbzitr
   double precision,dimension(npm),intent(in)::b1
   double precision,dimension(ny),intent(in) ::epsY

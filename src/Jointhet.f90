@@ -2674,8 +2674,8 @@ end subroutine competinghet
         integer::i,k,n,l,ke
         double precision::ht,htm,h2t,ht2,ht3,hht,h,hh,h2,h3,h4,h3m,h2n, &
         hn,hh2,hh3
-        double precision,dimension(nsim)::time
         integer::nsim
+        double precision,dimension(nsim)::time
 
 
         Tmm_est=0.d0
@@ -2855,11 +2855,11 @@ end subroutine competinghet
 
       implicit none
 
+      integer::kk,nsim,npm,j,k,l
       double precision,dimension(nsim)::marker,transfY
       double precision,dimension(ntrtot)::splaa,Xspl
       double precision::aa1,bb1,dd1,aa,bb,betai,eps,pas,ytemp,cc1
       double precision, dimension(npm)::b,b1
-      integer::kk,nsim,npm,j,k,l
       double precision ::ht,htm,ht2,ht3,hht,h,hh,h2,h3,h2n,hn
       double precision,dimension(nsim)::mmm,mmm1,mmm2,iim,iim1,iim2
 

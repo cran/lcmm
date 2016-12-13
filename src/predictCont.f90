@@ -27,9 +27,9 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
   IMPLICIT NONE
 
   ! in input
+  integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,idlink,nbzitr,nsim,Ydiscret,methInteg
   double precision,dimension(maxmes*nv),intent(in) ::X0
   integer,dimension(nv),intent(in)::idprob,idea,idg,idcor
-  integer,intent(in)::ng,ncor,nv,maxmes,idiag,nwg,npm,idlink,nbzitr,nsim,Ydiscret,methInteg
   double precision,dimension(npm),intent(in)::b1
   double precision,intent(in) ::epsY
   double precision,dimension(nbzitr),intent(in)::zitr0

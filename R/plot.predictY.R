@@ -15,7 +15,7 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
 
                 if(length(grep("_class2",colx))) #ng>1
                     {
-                        if(grep("Ypred_50",colx)) #draws
+                        if(length(grep("Ypred_50",colx))) #draws
                             {
                                 ng <- length(grep("Ypred_50_class",colx))
                                 Ypred <- x$pred[which(x$pred[,1]==outcome),1+1:ng,drop=FALSE]

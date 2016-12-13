@@ -174,7 +174,7 @@ D. NUMERICAL INTEGRATION WITH THE THRESHOLD LINK FUNCTION
 
 With exception for the threshold link function, maximum likelihood estimation implemented in lcmm does not require any numerical integration over the random-effects so that the estimation procedure is relatively fast. See Proust et al. (2006) for more details on the estimation procedure. 
 
-However, with the treshold link function and when at least one random-effect is specified, a numerical integration over the random-effects distribution is required in each computation of the individual contribution to the likelihood which complicates greatly the estimation procedure. For the moment, we do not allow any option regarding the numerical integration technics used. 
+However, with the threshold link function and when at least one random-effect is specified, a numerical integration over the random-effects distribution is required in each computation of the individual contribution to the likelihood which complicates greatly the estimation procedure. For the moment, we do not allow any option regarding the numerical integration technics used. 
 1. When a single random-effect is specified, we use a standard non-adaptive Gaussian quadrature with 30 points.
 2. When at least two random-effects are specified, we use a multivariate non-adaptive Gaussian quadrature implemented by Genz (1996) in HRMSYM Fortran subroutine. 
 

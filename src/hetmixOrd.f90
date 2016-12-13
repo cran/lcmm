@@ -3102,9 +3102,9 @@
       implicit none
 
       double precision,dimension(2*(maxY-minY+1))::marker,transfY
+      integer::npm,k,l
       double precision, dimension(npm)::b
       double precision, dimension(npmtot2)::b1
-      integer::npm,k,l
       double precision::inf,sup
 
       b1=0.d0
@@ -3661,12 +3661,12 @@
         
         double precision::funcpio, &
              rldiscret,UACV,trace,th0,thn,th
+        integer::m,i,k,id,j
         double precision,dimension(m,1)::Uscore
         double precision,dimension(m)::b
         double precision,dimension(m*(m+1)/2)::vopt
         double precision,dimension(m,m)::J_cond,H_1,MAT
         double precision,dimension(ns)::rlindiv
-        integer::m,i,k,id,j
         
         J_cond=0.d0
         th0=0.d0

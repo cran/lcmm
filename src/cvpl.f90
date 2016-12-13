@@ -634,12 +634,12 @@ subroutine derivc_condt(b,m,v,rlindiv,t1,valt)
 
   IMPLICIT NONE
 
+  integer::m,i,k,ii,id,t1
   double precision::funcpi_condt,thn,th,z,valt,vrais_comp_i,temp1,temp2
   double precision,dimension(m,1)::Uscore, Uscore2
   double precision,dimension(m)::b
   double precision,dimension(m,m)::v
   double precision,dimension(ns)::rlindiv
-  integer::m,i,k,ii,id,t1
 
   V=0.d0
   z=0.d0

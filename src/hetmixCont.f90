@@ -2282,6 +2282,13 @@
             Y4=DOT_PRODUCT(Y2,Y3)
 
             vrais=vrais-Y4
+! if(i<9) then
+! print*, "i=",i
+! print*, "ni=",nmes(i)," log(det)=",det," jac=",jacobien
+! print*, "mu=",mu
+! print*, "Zi=",Z
+! print*, "B=",MATMUL(Ut,transpose(Ut))
+! endif
 
 ! cas 2 :  ng>1  composantes
          else
@@ -3634,11 +3641,11 @@
 
       implicit none
 
+      integer::kk,nsim,npm,j,k
       double precision,dimension(nsim)::marker,transfY
       double precision,dimension(ntrtot)::splaa
       double precision::aa1,bb1,dd1,aa,bb,betai,eps,pas,ytemp,cc1
       double precision, dimension(npm)::b,b1
-      integer::kk,nsim,npm,j,k
 
 
 
@@ -4608,6 +4615,7 @@
 
         IMPLICIT NONE
 
+        integer::m,i,k,id,j
         double precision::vrais_discret_i,vrais_cont_i, &
              rldiscret,UACV,trace,th0,thn,th,rlcont
         double precision,dimension(m,1)::Uscore, Uscore2
@@ -4615,7 +4623,6 @@
         double precision,dimension(m*(m+1)/2)::vopt
         double precision,dimension(m,m)::J_cond,H_1,MAT
         double precision,dimension(ns)::rlindiv
-        integer::m,i,k,id,j
 
         J_cond=0.d0
         th0=0.d0
