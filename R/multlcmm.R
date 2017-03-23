@@ -562,9 +562,10 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
                                 if(Brandom==FALSE)
                                     {
-                                        ## B deterministe
+                                        ### B deterministe
                                         b <- rep(0,NPM)
 
+                                        ## calcul des valeurs initiales pour les effets fixes
                                         l <- 0
                                         t <- 0
                                         for (i in 1:nv0)
@@ -582,7 +583,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                                 for (g in 2:ng0)
                                                                     {
                                                                         t <- t+1
-                                                                        b[nprob+t] <- - 0.5*(g-1)
+                                                                        b[nprob+t] <- -0.5*(g-1)
                                                                     }
                                                             }
                                                         if (i>1)
@@ -598,6 +599,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                     }
                                             }
 
+                                        ## remplacer varcov par cholesky pour les effets aleatoires
                                         if(nvc>0)
                                             {
                                                 if(idiag==TRUE)
@@ -611,6 +613,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                     }
                                             }
 
+                                        ## les autres parametres sont inchanges
                                         if (ncor0>0) {b[nef+nvc+nw+1:ncor0] <- B$best[nef2+nvc+1:ncor0]}
                                         b[nef+nvc+nw+ncor0+1:ny0] <- B$best[nef2+nvc+ncor0+1:ny0]
                                         b[nef+nvc+nw+ncor0+ny0+1:nalea0] <- B$best[nef2+nvc+ncor0+ny0+1:nalea0]
@@ -619,7 +622,9 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                     }
                                 else
                                     {
-                                        ## B random
+                                        ### B random
+
+                                        ## initialiser le vecteur bb contenant les prm (avec repetition) du modele dans B et sa variance vbb
                                         bb <- rep(0,NPM-nprob-nw)
                                         vbb <- matrix(0,NPM-nprob-nw,NPM-nprob-nw)
                                         
@@ -636,7 +641,10 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                         
                                         vbb[which(nbgnef==1),setdiff(1:ncol(vbb),which(nbgnef!=1))] <- VB[which(nbg==1),setdiff(1:ncol(VB),which(nbg!=1))]
                                         vbb[(nef-nprob+1):nrow(vbb),(nef-nprob+1):ncol(vbb)] <- VB[(nef2+1):nrow(VB),(nef2+1):ncol(VB)]
+
                                         
+
+                                        ## remplir les effets fixes (avec repetition si effet specifique a la classe)
                                         l <- 0
                                         t <- 0
                                         for (i in 1:nv0)
@@ -665,7 +673,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                     }
                                             }
 
-                                        
+                                        ## remplacer les varcov par la cholesky
                                         if(nvc>0)
                                             {
                                                 if(idiag==TRUE)
@@ -678,7 +686,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                     }
                                             }
                             
-                                
+                                        ##les autres parametres sont inchanges
                                         if (ncor0>0)
                                             {
                                                 bb[nef-nprob+nvc+1:ncor0] <- B$best[(NPM2-ncor0):(NPM2-1)]
@@ -694,6 +702,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
                                         bb[nef-nprob+nvc+ncor0+ny0+nalea0+1:sum(ntrtot0)] <- B$best[nef2+nvc+ncor0+ny0+nalea0+1:sum(ntrtot0)]
 
+                                        ## on enleve les intercepts car ils seront tous initialises a 0
                                         if(idg0[1]>1)
                                             {
                                                 bb <- bb[-(1:(ng-1))]
@@ -706,6 +715,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                         Chol <- chol(vbb)
                                         Chol <- t(Chol)
 
+                                        ## vecteur final b cree a partir de bb et vbb
                                         b <- rep(0,NPM)
                                         
                                         if(idg0[1]>1)
@@ -718,24 +728,24 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                                 b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(NPM-nprob-nw)
                                             }
 
-
+                                        ## les prm de classmb et nwg sont toujours initalises a 0 et 1
                                         b[1:nprob] <- 0
                                         if(nw>0) b[nef+nvc+1:nw] <- 1
 
-                                        if(nvc>0)
-                                            {
-                                                cholRE <- matrix(0,nea0,nea0)
-                                                cholRE[upper.tri(cholRE,diag=TRUE)] <- c(1,b[nef+1:nvc])
-                                                varcovRE <- t(cholRE) %*% cholRE
-                                                b[nef+1:nvc] <- varcovRE[upper.tri(varcovRE,diag=TRUE)][-1]
-                                            }
+                                        ## if(nvc>0)
+                                        ##     {
+                                        ##         cholRE <- matrix(0,nea0,nea0)
+                                        ##         cholRE[upper.tri(cholRE,diag=TRUE)] <- c(1,b[nef+1:nvc])
+                                        ##         varcovRE <- t(cholRE) %*% cholRE
+                                        ##         b[nef+1:nvc] <- varcovRE[upper.tri(varcovRE,diag=TRUE)][-1]   
+                                        ##     }
                                                                                 
                                     }
                             }
                                 
                 }
         }
-    else
+    else ## B missing
         {
             b <- rep(0,NPM)
             if (nvc>0)
@@ -884,17 +894,61 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
             convG2 <- max(0.01,convG)
             Hr02 <- 0
 
-            init <- .Fortran("hetmixContMult",as.double(Y0),as.double(X0),as.integer(prior02),as.integer(idprob02),as.integer(idea0),
-                             as.integer(idg02),as.integer(idcor0),as.integer(idcontr02),as.integer(ny0),as.integer(ns0),as.integer(ng02),
-                             as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg02),
-                             as.integer(ncor0),as.integer(nalea02),as.integer(NPM2),best=as.double(b2),V=as.double(V2),loglik=as.double(loglik2),
-                             niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi02),resid_m=as.double(resid_m),
-                             resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g2),pred_ss_g=as.double(pred_ss_g2),predRE=as.double(predRE),
-                             predRE_Y=as.double(predRE_Y2),as.double(convB2),as.double(convL2),as.double(convG2),as.integer(maxiter2),as.double(epsY),
-                             as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(uniqueY0),as.integer(indiceY0),as.integer(nvalSPL0),
-                             marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
-                             vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),
-                             as.integer(pbH0),as.integer(fix0),PACKAGE="lcmm")
+            init <- .Fortran(C_hetmixcontmult,
+                             as.double(Y0),
+                             as.double(X0),
+                             as.integer(prior02),
+                             as.integer(idprob02),
+                             as.integer(idea0),
+                             as.integer(idg02),
+                             as.integer(idcor0),
+                             as.integer(idcontr02),
+                             as.integer(ny0),
+                             as.integer(ns0),
+                             as.integer(ng02),
+                             as.integer(nv0),
+                             as.integer(nobs0),
+                             as.integer(nea0),
+                             as.integer(nmes0),
+                             as.integer(idiag0),
+                             as.integer(nwg02),
+                             as.integer(ncor0),
+                             as.integer(nalea02),
+                             as.integer(NPM2),
+                             best=as.double(b2),
+                             V=as.double(V2),
+                             loglik=as.double(loglik2),
+                             niter=as.integer(ni),
+                             conv=as.integer(istop),
+                             gconv=as.double(gconv),
+                             ppi2=as.double(ppi02),
+                             resid_m=as.double(resid_m),
+                             resid_ss=as.double(resid_ss),
+                             pred_m_g=as.double(pred_m_g2),
+                             pred_ss_g=as.double(pred_ss_g2),
+                             predRE=as.double(predRE),
+                             predRE_Y=as.double(predRE_Y2),
+                             as.double(convB2),
+                             as.double(convL2),
+                             as.double(convG2),
+                             as.integer(maxiter2),
+                             as.double(epsY),
+                             as.integer(idlink0),
+                             as.integer(nbzitr0),
+                             as.double(zitr),
+                             as.double(uniqueY0),
+                             as.integer(indiceY0),
+                             as.integer(nvalSPL0),
+                             marker=as.double(marker),
+                             transfY=as.double(transfY),
+                             as.integer(nsim),
+                             Yobs=as.double(Yobs),
+                             as.integer(Ydiscrete),
+                             vraisdiscret=as.double(vraisdiscret),
+                             UACV=as.double(UACV),
+                             rlindiv=as.double(rlindiv),
+                             as.integer(pbH0),
+                             as.integer(fix0))
 
 
             l <- 0
@@ -914,7 +968,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                     for (g in 2:ng0)
                                         {
                                             t <- t+1
-                                            b[nprob+t] <- - 0.5*(g-1)
+                                            b[nprob+t] <- -0.5*(g-1)
                                         }
                                 }
                             if (i>1)
@@ -939,17 +993,61 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
 
     
 ###estimation
-    out <- .Fortran("hetmixContMult",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),as.integer(idea0),
-                    as.integer(idg0),as.integer(idcor0),as.integer(idcontr0),as.integer(ny0),as.integer(ns0),as.integer(ng0),
-                    as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),
-                    as.integer(ncor0),as.integer(nalea0),as.integer(NPM),best=as.double(b),V=as.double(V),loglik=as.double(loglik),
-                    niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),ppi2=as.double(ppi0),resid_m=as.double(resid_m),
-                    resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),
-                    predRE_Y=as.double(predRE_Y),as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),
-                    as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(uniqueY0),as.integer(indiceY0),as.integer(nvalSPL0),
-                    marker=as.double(marker),transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
-                    vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),
-                    as.integer(pbH0),as.integer(fix0),PACKAGE="lcmm")
+    out <- .Fortran(C_hetmixcontmult,
+                    as.double(Y0),
+                    as.double(X0),
+                    as.integer(prior0),
+                    as.integer(idprob0),
+                    as.integer(idea0),
+                    as.integer(idg0),
+                    as.integer(idcor0),
+                    as.integer(idcontr0),
+                    as.integer(ny0),
+                    as.integer(ns0),
+                    as.integer(ng0),
+                    as.integer(nv0),
+                    as.integer(nobs0),
+                    as.integer(nea0),
+                    as.integer(nmes0),
+                    as.integer(idiag0),
+                    as.integer(nwg0),
+                    as.integer(ncor0),
+                    as.integer(nalea0),
+                    as.integer(NPM),
+                    best=as.double(b),
+                    V=as.double(V),
+                    loglik=as.double(loglik),
+                    niter=as.integer(ni),
+                    conv=as.integer(istop),
+                    gconv=as.double(gconv),
+                    ppi2=as.double(ppi0),
+                    resid_m=as.double(resid_m),
+                    resid_ss=as.double(resid_ss),
+                    pred_m_g=as.double(pred_m_g),
+                    pred_ss_g=as.double(pred_ss_g),
+                    predRE=as.double(predRE),
+                    predRE_Y=as.double(predRE_Y),
+                    as.double(convB),
+                    as.double(convL),
+                    as.double(convG),
+                    as.integer(maxiter),
+                    as.double(epsY),
+                    as.integer(idlink0),
+                    as.integer(nbzitr0),
+                    as.double(zitr),
+                    as.double(uniqueY0),
+                    as.integer(indiceY0),
+                    as.integer(nvalSPL0),
+                    marker=as.double(marker),
+                    transfY=as.double(transfY),
+                    as.integer(nsim),
+                    Yobs=as.double(Yobs),
+                    as.integer(Ydiscrete),
+                    vraisdiscret=as.double(vraisdiscret),
+                    UACV=as.double(UACV),
+                    rlindiv=as.double(rlindiv),
+                    as.integer(pbH0),
+                    as.integer(fix0))
     
 
 ### mettre NA pour les variances et covariances non calculees et  0 pr les prm fixes

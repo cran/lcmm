@@ -18,7 +18,7 @@
 !===================================================================
 
 
-subroutine predict_cont(X0,idprob,idea,idg,idcor &
+subroutine predictcont(X0,idprob,idea,idg,idcor &
      ,ng,ncor,nv,maxmes,idiag,nwg,npm,b1,epsY,idlink &
      ,nbzitr,zitr0,nsim,methInteg,Ydiscret,Ymarg)
 
@@ -742,7 +742,7 @@ subroutine predict_cont(X0,idprob,idea,idg,idcor &
 
   return
 
-end subroutine predict_cont
+end subroutine predictcont
 
 
 

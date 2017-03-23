@@ -312,7 +312,7 @@
         matYX <- cbind(IND,PRIOR,Y0,X0)
         matYXord <- matYX[sort.list(matYX[,1]),]
         Y0 <- as.numeric(matYXord[,3])  
-        X0 <- apply(matYXord[,-c(1,2,3)],2,as.numeric)
+        X0 <- apply(matYXord[,-c(1,2,3),drop=FALSE],2,as.numeric)
         #IDnum <- matYXord[,1]
         IND <-  matYXord[,1]
 
@@ -415,20 +415,19 @@
 
 #####cas 2 : ng>=2
         if(ng0>1){
-            NPROB<-(sum(idprob0==1)+1)*(ng0-1)
-            b[1:NPROB]<-0
-            NEF<-sum(idg0==1)+(sum(idg0==2))*ng0-1
-            if(idiag0==1)NVC<-sum(idea0==1)
-            if(idiag0==0){
-                kk<-sum(idea0==1) 
-                NVC<-(kk*(kk+1))/2}
-            NW<-nwg0*(ng0-1)
-            if(NW>0) b[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)]<-1
-            if(ncor0==1)
-                {b[NPROB+NEF+NVC+NW+ntrtot0+1] <- 1 }
-            if(ncor0==2)
-                {b[(NPROB+NEF+NVC+NW+ntrtot0+1):(NPROB+NEF+NVC+NW+ntrtot0+ncor0)] <- c(0,1) }
-            NPM<-NPROB+NEF+NVC+NW+ntrtot0+ncor0
+            NPROB <- (sum(idprob0==1)+1)*(ng0-1)
+            NEF <- sum(idg0==1)+(sum(idg0==2))*ng0-1
+            if(idiag0==1) NVC <- sum(idea0==1)
+            if(idiag0==0)
+                {
+                    kk <- sum(idea0==1) 
+                    NVC <- (kk*(kk+1))/2
+                }
+            NW <- nwg0*(ng0-1)
+            
+            NPM <- NPROB+NEF+NVC+NW+ntrtot0+ncor0
+
+            b <- rep(0,NPM) 
             V <- rep(0,NPM*(NPM+1)/2) 
         } 
 
@@ -480,17 +479,54 @@
 
                                         
 
-                init <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior2),
-                                 as.integer(idprob2),as.integer(idea2),as.integer(idg2),as.integer(idcor0),as.integer(ns0),
-                                 as.integer(ng2),as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),
-                                 as.integer(idiag0),as.integer(nwg2),as.integer(ncor0),as.integer(NPM2),best=as.double(b1),
-                                 V=as.double(V2),as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),as.double(gconv),
-                                 as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),as.double(pred_ss_g2),
-                                 predRE=as.double(predRE),as.double(convB2),as.double(convL2),as.double(convG2),as.integer(maxiter2),
-                                 as.double(epsY),as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),as.double(marker),
-                                 as.double(transfY),as.integer(nsim),as.double(Yobs),as.integer(Ydiscrete),as.double(vraisdiscret),
-                                 as.double(UACV),as.double(rlindiv),
-                                 as.integer(pbH0),as.integer(fix0),PACKAGE="lcmm")
+                init <- .Fortran(C_hetmixcont,
+                                 as.double(Y0),
+                                 as.double(X0),
+                                 as.integer(prior2),
+                                 as.integer(idprob2),
+                                 as.integer(idea2),
+                                 as.integer(idg2),
+                                 as.integer(idcor0),
+                                 as.integer(ns0),
+                                 as.integer(ng2),
+                                 as.integer(nv0),
+                                 as.integer(nobs0),
+                                 as.integer(nea0),
+                                 as.integer(nmes0),
+                                 as.integer(idiag0),
+                                 as.integer(nwg2),
+                                 as.integer(ncor0),
+                                 as.integer(NPM2),
+                                 best=as.double(b1),
+                                 V=as.double(V2),
+                                 as.double(loglik),
+                                 niter=as.integer(ni),
+                                 conv=as.integer(istop),
+                                 as.double(gconv),
+                                 as.double(ppi2),
+                                 as.double(resid_m),
+                                 as.double(resid_ss),
+                                 as.double(pred_m_g2),
+                                 as.double(pred_ss_g2),
+                                 predRE=as.double(predRE),
+                                 as.double(convB2),
+                                 as.double(convL2),
+                                 as.double(convG2),
+                                 as.integer(maxiter2),
+                                 as.double(epsY),
+                                 as.integer(idlink0),
+                                 as.integer(nbzitr0),
+                                 as.double(zitr),
+                                 as.double(marker),
+                                 as.double(transfY),
+                                 as.integer(nsim),
+                                 as.double(Yobs),
+                                 as.integer(Ydiscrete),
+                                 as.double(vraisdiscret),
+                                 as.double(UACV),
+                                 as.double(rlindiv),
+                                 as.integer(pbH0),
+                                 as.integer(fix0))
 
 
                 k <- NPROB
@@ -506,7 +542,7 @@
                         if (i==1){
                             for (g in 2:ng){
                                 t <- t+1
-                                b[k+t] <- - 0.5*(g-1)
+                                b[k+t] <- -0.5*(g-1)
                             }
                         }
                         if (i>1){
@@ -552,30 +588,36 @@
                                         k <- NPROB
                                         l <- 0
                                         t <- 0
-                                        for (i in 1:nvar.exp)    {
-                                            if(idg0[i]==1 & i>1){
-                                                l <- l+1
-                                                t <- t+1
-                                                b[k+t] <- B$best[l]
-                                            }
-                                            if(idg0[i]==2){
-                                                if (i==1){
-                                                    for (g in 2:ng){
+                                        for (i in 1:nvar.exp)
+                                            {
+                                                if(idg0[i]==1 & i>1)
+                                                    {
+                                                        l <- l+1
                                                         t <- t+1
-                                                        b[k+t] <- - 0.5*(g-1)
+                                                        b[k+t] <- B$best[l]
                                                     }
-                                                }
-                                                if (i>1){
-                                                    
-                                                    l <- l+1
-                                                    for (g in 1:ng){
-                                                        t <- t+1
-                                                        if(B$conv==1) b[k+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
-                                                        else b[k+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
+                                                if(idg0[i]==2)
+                                                    {
+                                                        if (i==1)
+                                                            {
+                                                                for (g in 2:ng)
+                                                                    {
+                                                                        t <- t+1
+                                                                        b[k+t] <- -0.5*(g-1)
+                                                                    }
+                                                            }
+                                                        if (i>1)
+                                                            {
+                                                                l <- l+1
+                                                                for (g in 1:ng)
+                                                                    {
+                                                                        t <- t+1
+                                                                        if(B$conv==1) b[k+t] <- B$best[l]+(g-(ng+1)/2)*sqrt(B$V[l*(l+1)/2])
+                                                                        else b[k+t] <- B$best[l]+(g-(ng+1)/2)*B$best[l]
+                                                                    }
+                                                            }
                                                     }
-                                                }
                                             }
-                                        }
                                         
                                         if(NVC>0)
                                             {
@@ -594,7 +636,6 @@
 
                                         if (ncor0>0) {b[NPROB+NEF+NVC+NW+ntrtot0+1:ncor0] <- B$best[NEF2+NVC+ntrtot0+1:ncor0]}
                                         
-                                        return(b)
                                     }
                                 else
                                     {
@@ -679,8 +720,8 @@
 
                                         if(idg0[1]>1)
                                             {
-                                              b[c((NPROB+ng):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
-                                              b[NPROB+1:(ng-1)] <- 0
+                                                b[c((NPROB+ng):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
+                                                b[NPROB+1:(ng-1)] <- 0
                                           } 
                                         else
                                             {
@@ -689,14 +730,6 @@
 
                                         b[1:NPROB] <- 0
                                         if(NW>0) b[NPROB+NEF+NVC+1:NW] <- 1
-
-                                        if(NVC>0)
-                                            {
-                                                cholRE <- matrix(0,nea0,nea0)
-                                                cholRE[upper.tri(cholRE,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
-                                                varcovRE <- t(cholRE) %*% cholRE
-                                                b[NPROB+NEF+1:NVC] <- varcovRE[upper.tri(varcovRE,diag=TRUE)]
-                                            }
                                         
                                     }
                             }
@@ -768,17 +801,54 @@
 
 
         
-        out <- .Fortran("hetmixCont",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),
-                        as.integer(idea0),as.integer(idg0),as.integer(idcor0),as.integer(ns0),as.integer(ng0),
-                        as.integer(nv0),as.integer(nobs0),as.integer(nea0),as.integer(nmes0),as.integer(idiag0),
-                        as.integer(nwg0),as.integer(ncor0),as.integer(NPM),best=as.double(b),V=as.double(V),
-                        loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),
-                        ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),
-                        pred_m_g=as.double(pred_m_g),pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),
-                        as.double(convB),as.double(convL),as.double(convG),as.integer(maxiter),as.double(epsY),
-                        as.integer(idlink0),as.integer(nbzitr0),as.double(zitr),marker=as.double(marker),
-                        transfY=as.double(transfY),as.integer(nsim),Yobs=as.double(Yobs),as.integer(Ydiscrete),
-                        vraisdiscret=as.double(vraisdiscret),UACV=as.double(UACV),rlindiv=as.double(rlindiv),as.integer(pbH0),as.integer(fix0),PACKAGE="lcmm")
+        out <- .Fortran(C_hetmixcont,
+                        as.double(Y0),
+                        as.double(X0),
+                        as.integer(prior0),
+                        as.integer(idprob0),
+                        as.integer(idea0),
+                        as.integer(idg0),
+                        as.integer(idcor0),
+                        as.integer(ns0),
+                        as.integer(ng0),
+                        as.integer(nv0),
+                        as.integer(nobs0),
+                        as.integer(nea0),
+                        as.integer(nmes0),
+                        as.integer(idiag0),
+                        as.integer(nwg0),
+                        as.integer(ncor0),
+                        as.integer(NPM),
+                        best=as.double(b),
+                        V=as.double(V),
+                        loglik=as.double(loglik),
+                        niter=as.integer(ni),
+                        conv=as.integer(istop),
+                        gconv=as.double(gconv),
+                        ppi2=as.double(ppi0),
+                        resid_m=as.double(resid_m),
+                        resid_ss=as.double(resid_ss),
+                        pred_m_g=as.double(pred_m_g),
+                        pred_ss_g=as.double(pred_ss_g),
+                        predRE=as.double(predRE),
+                        as.double(convB),
+                        as.double(convL),
+                        as.double(convG),
+                        as.integer(maxiter),
+                        as.double(epsY),
+                        as.integer(idlink0),
+                        as.integer(nbzitr0),
+                        as.double(zitr),
+                        marker=as.double(marker),
+                        transfY=as.double(transfY),
+                        as.integer(nsim),
+                        Yobs=as.double(Yobs),
+                        as.integer(Ydiscrete),
+                        vraisdiscret=as.double(vraisdiscret),
+                        UACV=as.double(UACV),
+                        rlindiv=as.double(rlindiv),
+                        as.integer(pbH0),
+                        as.integer(fix0))
 
 
 

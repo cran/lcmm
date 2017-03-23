@@ -85,9 +85,23 @@ predictlink.lcmm <- function(x,ndraws=2000,Yvalues,...)
                 {
                     resFortran <- rep(0,nsim)
                     
-                    out0 <- .Fortran("calculus_transfo",as.double(best),as.integer(npm),as.integer(ny),as.integer(x$linktype),
-                                     as.integer(ntrtot),as.integer(imoins),as.double(zitr),as.integer(maxnbzitr),as.double(Yvalues),as.integer(nsim),
-                                     as.double(minY),as.double(maxY),as.double(epsY),as.integer(ide),as.integer(dimide),transfo=as.double(resFortran),PACKAGE="lcmm")
+                    out0 <- .Fortran(C_calculustransfo,
+                                     as.double(best),
+                                     as.integer(npm),
+                                     as.integer(ny),
+                                     as.integer(x$linktype),
+                                     as.integer(ntrtot),
+                                     as.integer(imoins),
+                                     as.double(zitr),
+                                     as.integer(maxnbzitr),
+                                     as.double(Yvalues),
+                                     as.integer(nsim),
+                                     as.double(minY),
+                                     as.double(maxY),
+                                     as.double(epsY),
+                                     as.integer(ide),
+                                     as.integer(dimide),
+                                     transfo=as.double(resFortran))
                     
                     transfY <- out0$transfo
                 }
@@ -109,9 +123,23 @@ predictlink.lcmm <- function(x,ndraws=2000,Yvalues,...)
                                     
                                     resFortran <- rep(0,nsim)
                                     
-                                    out <- .Fortran("calculus_transfo",as.double(bdraw),as.integer(npm),as.integer(ny),as.integer(x$linktype),
-                                                    as.integer(ntrtot),as.integer(imoins),as.double(zitr),as.integer(maxnbzitr),as.double(Yvalues),as.integer(nsim),
-                                                    as.double(minY),as.double(maxY),as.double(epsY),as.integer(ide),as.integer(dimide),transfo=as.double(resFortran),PACKAGE="lcmm")
+                                    out <- .Fortran(C_calculustransfo,
+                                                    as.double(bdraw),
+                                                    as.integer(npm),
+                                                    as.integer(ny),
+                                                    as.integer(x$linktype),
+                                                    as.integer(ntrtot),
+                                                    as.integer(imoins),
+                                                    as.double(zitr),
+                                                    as.integer(maxnbzitr),
+                                                    as.double(Yvalues),
+                                                    as.integer(nsim),
+                                                    as.double(minY),
+                                                    as.double(maxY),
+                                                    as.double(epsY),
+                                                    as.integer(ide),
+                                                    as.integer(dimide),
+                                                    transfo=as.double(resFortran))
                                     
                                     Hydraws <- cbind(Hydraws,out$transfo)
                                 }

@@ -1,6 +1,6 @@
 
 
-subroutine predict_mult(X0,idprob,idea,idg,idcor,idcontr &
+subroutine predictmult(X0,idprob,idea,idg,idcor,idcontr &
      ,ng,ncor,nalea,nv,ny,maxmes,idiag,nwg,npm,b1,epsY,idlink &
      ,nbzitr,zitr0,nsim,methInteg,Ymarg)  
 
@@ -919,5 +919,5 @@ end do
 
   return
 
-end subroutine predict_mult
+end subroutine predictmult
 

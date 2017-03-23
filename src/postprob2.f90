@@ -12,7 +12,7 @@
 
 
 
-subroutine postprob2_comp(Y0,Xdata0,ns0,nmes0,nobs0,ng0,nv0,idiag0,nwg0, &
+subroutine postprob2(Y0,Xdata0,ns0,nmes0,nobs0,ng0,nv0,idiag0,nwg0, &
      ncor0,logspecif0,zi0,idea0,idg0,idprob0,idcor0,idcom0,idspecif0,idtdv0, &
      risqcom0,nvdepsurv0,typrisq0,nz0,nprisq0,nbzitr0, &
      zitr0,idlink0,indiceY0,uniqueY0,nvalSPL0,epsY0,nbevt0, &
@@ -962,4 +962,4 @@ subroutine postprob2_comp(Y0,Xdata0,ns0,nmes0,nobs0,ng0,nv0,idiag0,nwg0, &
 
   return
 
-end subroutine postprob2_comp
+end subroutine postprob2

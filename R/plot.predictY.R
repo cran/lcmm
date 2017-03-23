@@ -55,14 +55,14 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
                     {
                         if(length(grep("Ypred_50",colx)) | length(grep("lower",colx)))
                             {
-                                ng <- length(grep("Ypred_class",colx))
+                                ng <- length(colx)/3#length(grep("Ypred_class",colx))
                                 Ypred <- x$pred[,1:ng]
                                 lower <- x$pred[,ng+1:ng]
                                 upper <- x$pred[,ng+ng+1:ng]
                             }
                         else
                             {
-                                ng <- length(grep("Ypred_class",colx))
+                                ng <- length(colx)#length(grep("Ypred_class",colx))
                                 Ypred <- x$pred[,1:ng]
                                 lower <- NULL
                                 upper <- NULL

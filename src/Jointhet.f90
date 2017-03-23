@@ -67,7 +67,7 @@
 
 
 
-  subroutine Competinghet(Y0,X0,Prior0,Tentr0,Tevt0,Devt0,ind_survint0 &
+  subroutine jointhet(Y0,X0,Prior0,Tentr0,Tevt0,Devt0,ind_survint0 &
        ,idprob0,idea0,idg0,idcor0,idcom0,idspecif0,idtdv0,idlink0 &
        ,epsY0,nbzitr0,zitr0,uniqueY0,nvalSPL0,indiceY0 &
        ,typrisq0,risqcom0,nz0,zi0 &
@@ -751,7 +751,7 @@
       return
 
 
-end subroutine competinghet
+end subroutine jointhet
 
 
 

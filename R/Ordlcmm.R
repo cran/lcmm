@@ -271,7 +271,7 @@
     matYX <- cbind(IND,PRIOR,Y0,X0)
     matYXord <- matYX[sort.list(matYX[,1]),]
     Y0 <- as.numeric(matYXord[,3] )
-    X0 <- apply(matYXord[,-c(1,2,3)],2,as.numeric)
+    X0 <- apply(matYXord[,-c(1,2,3),drop=FALSE],2,as.numeric)
     #IDnum <- matYXord[,1]
     IND <- matYXord[,1]
 
@@ -367,16 +367,17 @@
 #####cas 2 : ng>=2
     if(ng0>1){
         NPROB <- (sum(idprob0==1)+1)*(ng0-1)
-        b[1:NPROB] <- 0
         NEF <- sum(idg0==1)+(sum(idg0==2))*ng0-1
         NVC <- 0
-        if(idiag0==1&nea0>0)NVC <- sum(idea0==1)
+        if(idiag0==1&nea0>0) NVC <- sum(idea0==1)
         if(idiag0==0&nea0>0){
             kk <- sum(idea0==1) 
             NVC <- (kk*(kk+1))/2}
         NW <- nwg0*(ng0-1)
-        if(NW>0) b[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- 1
+        
         NPM <- NPROB+NEF+NVC+NW+ntrtot0
+        
+        b <- rep(0,NPM)
         V <- rep(0,NPM*(NPM+1)/2)
     } 
 
@@ -410,14 +411,46 @@
 
             marker <- rep(0,(maxY-minY+1)*2)
             transfY <- rep(0,(maxY-minY+1)*2)
-            init <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior2),as.integer(idprob2),
-                             as.integer(idea2),as.integer(idg2),as.integer(ns0),as.integer(ng2),as.integer(nv0),as.integer(nobs0),
-                             as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg2),as.integer(NPM2),
-                             best=as.double(b1),V=as.double(V2),as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),
-                             as.double(gconv),as.double(ppi2),as.double(resid_m),as.double(resid_ss),as.double(pred_m_g2),
-                             as.double(pred_ss_g2),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),
-                             as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),as.double(marker),as.double(transfY),
-                             as.double(UACV),as.double(rlindiv),as.integer(fix0),PACKAGE="lcmm")
+            init <- .Fortran(C_hetmixord,
+                             as.double(Y0),
+                             as.double(X0),
+                             as.integer(prior2),
+                             as.integer(idprob2),
+                             as.integer(idea2),
+                             as.integer(idg2),
+                             as.integer(ns0),
+                             as.integer(ng2),
+                             as.integer(nv0),
+                             as.integer(nobs0),
+                             as.integer(nea0),
+                             as.integer(nmes0),
+                             as.integer(idiag0),
+                             as.integer(nwg2),
+                             as.integer(NPM2),
+                             best=as.double(b1),
+                             V=as.double(V2),
+                             as.double(loglik),
+                             niter=as.integer(ni),
+                             conv=as.integer(istop),
+                             as.double(gconv),
+                             as.double(ppi2),
+                             as.double(resid_m),
+                             as.double(resid_ss),
+                             as.double(pred_m_g2),
+                             as.double(pred_ss_g2),
+                             predRE=as.double(predRE),
+                             as.double(convB),
+                             as.double(convL),
+                             as.double(convG),
+                             as.integer(maxiter),
+                             as.integer(minY),
+                             as.integer(maxY),
+                             as.integer(ide),
+                             as.double(marker),
+                             as.double(transfY),
+                             as.double(UACV),
+                             as.double(rlindiv),
+                             as.integer(fix0))
 
 
             k <- NPROB
@@ -612,14 +645,6 @@
 
                                     b[1:NPROB] <- 0
                                     if(NW>0) b[NPROB+NEF+NVC+1:NW] <- 1
-
-                                    if(NVC>0)
-                                        {
-                                            cholRE <- matrix(0,nea0,nea0)
-                                            cholRE[upper.tri(cholRE,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
-                                            varcovRE <- t(cholRE) %*% cholRE
-                                            b[NPROB+NEF+1:NVC] <- varcovRE[upper.tri(varcovRE,diag=TRUE)]
-                                        }
                                                                        
                                 }
                         }
@@ -687,14 +712,46 @@
     marker <- rep(0,(maxY-minY+1)*2)
     transfY <- rep(0,(maxY-minY+1)*2)
 
-    out <- .Fortran("hetmixOrd",as.double(Y0),as.double(X0),as.integer(prior0),as.integer(idprob0),
-                    as.integer(idea0),as.integer(idg0),as.integer(ns0),as.integer(ng0),as.integer(nv0),as.integer(nobs0),
-                    as.integer(nea0),as.integer(nmes0),as.integer(idiag0),as.integer(nwg0),as.integer(NPM),best=as.double(b),
-                    V=as.double(V),loglik=as.double(loglik),niter=as.integer(ni),conv=as.integer(istop),gconv=as.double(gconv),
-                    ppi2=as.double(ppi0),resid_m=as.double(resid_m),resid_ss=as.double(resid_ss),pred_m_g=as.double(pred_m_g),
-                    pred_ss_g=as.double(pred_ss_g),predRE=as.double(predRE),as.double(convB),as.double(convL),as.double(convG),
-                    as.integer(maxiter),as.integer(minY),as.integer(maxY),as.integer(ide),marker=as.double(marker),
-                    transfY=as.double(transfY),UACV=as.double(UACV),rlindiv=as.double(rlindiv),as.integer(fix0),PACKAGE="lcmm")
+    out <- .Fortran(C_hetmixord,
+                    as.double(Y0),
+                    as.double(X0),
+                    as.integer(prior0),
+                    as.integer(idprob0),
+                    as.integer(idea0),
+                    as.integer(idg0),
+                    as.integer(ns0),
+                    as.integer(ng0),
+                    as.integer(nv0),
+                    as.integer(nobs0),
+                    as.integer(nea0),
+                    as.integer(nmes0),
+                    as.integer(idiag0),
+                    as.integer(nwg0),
+                    as.integer(NPM),
+                    best=as.double(b),
+                    V=as.double(V),
+                    loglik=as.double(loglik),
+                    niter=as.integer(ni),
+                    conv=as.integer(istop),
+                    gconv=as.double(gconv),
+                    ppi2=as.double(ppi0),
+                    resid_m=as.double(resid_m),
+                    resid_ss=as.double(resid_ss),
+                    pred_m_g=as.double(pred_m_g),
+                    pred_ss_g=as.double(pred_ss_g),
+                    predRE=as.double(predRE),
+                    as.double(convB),
+                    as.double(convL),
+                    as.double(convG),
+                    as.integer(maxiter),
+                    as.integer(minY),
+                    as.integer(maxY),
+                    as.integer(ide),
+                    marker=as.double(marker),
+                    transfY=as.double(transfY),
+                    UACV=as.double(UACV),
+                    rlindiv=as.double(rlindiv),
+                    as.integer(fix0))
 
 
  ### mettre 0 pr les prm fixes

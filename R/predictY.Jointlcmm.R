@@ -161,7 +161,10 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                 }
             call_survival <- gsub("factor","",call_survival)
             
-            
+call_mixture <- formula(call_mixture)
+call_random <- formula(call_random)
+call_classmb <- formula(call_classmb)
+call_survival <- formula(paste("~",call_survival,sep=""))   
             
 ### Traitement des donnees manquantes
             ## fixed
@@ -179,58 +182,66 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
             na.fixed <- attr(m,"na.action")
 
             ## mixture
-            if(!is.null(x$call$mixture))
+            if((length(attr(terms(call_mixture),"term.labels"))+attr(terms(call_mixture),"intercept"))>0)
                 {
+                    id.X_mixture <- 1
                     m <- mcall
-                    m$formula <- formula(paste("~",call_mixture,sep=""))
+                    m$formula <- call_mixture
                     m[[1]] <- as.name("model.frame")	
                     m <- eval(m, sys.parent()) 
                     na.mixture <- attr(m,"na.action")
                 }
             else
                 {
+                    id.X_mixture <- 0
                     na.mixture <- NULL
                 }
 
             ## random
-            if(!is.null(x$call$random))
+            if((length(attr(terms(call_random),"term.labels"))+attr(terms(call_random),"intercept"))>0)
                 {
+                    id.X_random <- 1
                     m <- mcall
-                    m$formula <- formula(paste("~",call_random,sep=""))
+                    m$formula <- call_random
                     m[[1]] <- as.name("model.frame")	
                     m <- eval(m, sys.parent()) 
                     na.random <- attr(m,"na.action")
                 }
             else
                 {
+                    id.X_random <- 0
                     na.random <- NULL
                 }
 
             ## classmb
-            if(!is.null(x$call$classmb))
+            if((length(attr(terms(call_classmb),"term.labels"))+attr(terms(call_classmb),"intercept"))>0)
                 { 
+                    id.X_classmb <- 1
                     m <- mcall	
-                    m$formula <- formula(paste("~",call_classmb,sep=""))
+                    m$formula <- call_classmb
                     m[[1]] <- as.name("model.frame")	
                     m <- eval(m, sys.parent()) 
                     na.classmb <- attr(m,"na.action")
                 }
             else
                 {
+                    id.X_classmb <- 0
                     na.classmb <- NULL
                 }
 
             ##survival
-            if(!is.null(x$call$survival))
+            if((length(attr(terms(call_survival),"term.labels"))+attr(terms(call_survival),"intercept"))>0)
                 {
+                    id.X_survival <- 1
                     m <- mcall
-                    m$formula <- formula(paste("~",call_survival,sep=""))
+                    m$formula <- call_survival
                     m[[1]] <- as.name("model.frame")	
                     m <- eval(m, sys.parent()) 
                     na.survival <- attr(m,"na.action")
                 }
             else
                 {
+                    id.X_survival <- 0
                     na.survival <- NULL
                 }
 
@@ -277,69 +288,51 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
             X_intercept <- model.matrix(~1,data=newdata1)
             colnames(X_intercept) <- "intercept"
             
-            ## fixed
-            
+            ## fixed            
             X_fixed <- model.matrix(formula(paste("~",call_fixed,sep="")),data=newdata1)
             if(colnames(X_fixed)[1]=="(Intercept)")
                 {
                     X_fixed <- X_fixed[,-1,drop=FALSE]
-                }	
+                }
+            
             ## mixture
-            if(!is.null(x$call$mixture))
+            if(id.X_mixture==1)
                 {
-                    X_mixture <- model.matrix(formula(paste("~",call_mixture,sep="")),data=newdata1)	
+                    X_mixture <- model.matrix(call_mixture,data=newdata1)	
                     if(colnames(X_mixture)[1]=="(Intercept)")
                         {
                             colnames(X_mixture)[1] <- "intercept"
                         }
-                    id.X_mixture <- 1
                 }
-            else
-                {
-                    id.X_mixture <- 0
-                }	
+            
             ## random
-            if(!is.null(x$call$random))
+            if(id.X_random==1)
                 {
-                    X_random <- model.matrix(formula(paste("~",call_random,sep="")),data=newdata1)	
+                    X_random <- model.matrix(call_random,data=newdata1)	
                     if(colnames(X_random)[1]=="(Intercept)")
                         {
                             colnames(X_random)[1] <- "intercept"
                         }
-                    id.X_random <- 1
                 }
-            else
-                {
-                    id.X_random <- 0
-                }	
+            
             ## classmb
-            if(!is.null(x$call$classmb))
+            if(id.X_classmb==1)
                 { 
-                    X_classmb <- model.matrix(formula(paste("~",call_classmb,sep="")),data=newdata1)
+                    X_classmb <- model.matrix(call_classmb,data=newdata1)
                     if(colnames(X_classmb)[1]=="(Intercept)")
                         {
                             colnames(X_classmb)[1] <- "intercept"
                         }
-                    id.X_classmb <- 1
                 }
-            else
-                {
-                    id.X_classmb <- 0
-                }	
 
             ## survival
-            if(!is.null(x$call$survival))
+            if(id.X_survival==1)
                 { 
-                    X_survival <- model.matrix(formula(paste("~",call_survival,sep="")),data=newdata1)
+                    X_survival <- model.matrix(call_survival,data=newdata1)
                   if(colnames(X_survival)[1]=="(Intercept)")
                       {
                           colnames(X_survival)[1] <- "intercept"
                       }
-                    id.X_survival <- 1
-                }
-            else
-                {
-                    id.X_survival <- 0
                 }	
             
             ##cor
@@ -731,20 +724,29 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                     
                     if(!isTRUE(draws))
                         {
-                            out <- .Fortran("predict_cont",as.double(newdata1),
-                                           as.integer(idprob1),
-                                           as.integer(x$idea),as.integer(x$idg),
-                                           as.integer(x$idcor), as.integer(x$ng),
-                                           as.integer(x$N[7]),as.integer(nv),
-                                           as.integer(maxmes),as.integer(x$idiag),
-                                           as.integer(x$N[6]),as.integer(npm1),
-                                           as.double(b1), as.double(x$epsY),
-                                           as.integer(x$linktype),as.integer(nbzitr),
-                                           as.double(x$linknodes),
-                                           as.integer(nsim),as.integer(methInteg),
-                                           as.integer(Ydiscret),y=as.double(Ymarg),
-                                           PACKAGE="lcmm")
-                           
+                            out <- .Fortran(C_predictcont,
+                                            as.double(newdata1),
+                                            as.integer(idprob1),
+                                            as.integer(x$idea),
+                                            as.integer(x$idg),
+                                            as.integer(x$idcor),
+                                            as.integer(x$ng),
+                                            as.integer(x$N[7]),
+                                            as.integer(nv),
+                                            as.integer(maxmes),
+                                            as.integer(x$idiag),
+                                            as.integer(x$N[6]),
+                                            as.integer(npm1),
+                                            as.double(b1),
+                                            as.double(x$epsY),
+                                            as.integer(x$linktype),
+                                            as.integer(nbzitr),
+                                            as.double(x$linknodes),
+                                            as.integer(nsim),
+                                            as.integer(methInteg),
+                                            as.integer(Ydiscret),
+                                            y=as.double(Ymarg))
+                            
                             out$y[which(out$y==9999)] <- NA
                             res <- matrix(out$y,ncol=x$ng,byrow=FALSE)
 
@@ -787,19 +789,28 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
                                     if(x$N[8]>0) bdraw1 <- c(bdraw1,bdraw[sum(x$N[1:7])+1:x$N[8]])
                                     if(x$N[7]>0) bdraw1 <- c(bdraw1,bdraw[sum(x$N[1:6])+1:x$N[7]])
                                     Ymarg <- rep(0,maxmes*x$ng)
-                                    out <- .Fortran("predict_cont",as.double(newdata1),
+                                    out <- .Fortran(C_predictcont,
+                                                    as.double(newdata1),
                                                     as.integer(idprob1),
-                                                    as.integer(x$idea),as.integer(x$idg),
-                                                    as.integer(x$idcor), as.integer(x$ng),
-                                                    as.integer(x$N[7]),as.integer(nv),
-                                                    as.integer(maxmes),as.integer(x$idiag),
-                                                    as.integer(x$N[6]),as.integer(npm1),
+                                                    as.integer(x$idea),
+                                                    as.integer(x$idg),
+                                                    as.integer(x$idcor),
+                                                    as.integer(x$ng),
+                                                    as.integer(x$N[7]),
+                                                    as.integer(nv),
+                                                    as.integer(maxmes),
+                                                    as.integer(x$idiag),
+                                                    as.integer(x$N[6]),
+                                                    as.integer(npm1),
                                                     as.double(bdraw1),
-                                                    as.double(x$epsY),as.integer(x$linktype),
-                                                    as.integer(nbzitr),as.double(x$linknodes),
-                                                    as.integer(nsim),as.integer(methInteg),
-                                                    as.integer(Ydiscret),y=as.double(Ymarg),
-                                                    PACKAGE="lcmm")
+                                                    as.double(x$epsY),
+                                                    as.integer(x$linktype),
+                                                    as.integer(nbzitr),
+                                                    as.double(x$linknodes),
+                                                    as.integer(nsim),
+                                                    as.integer(methInteg),
+                                                    as.integer(Ydiscret),
+                                                    y=as.double(Ymarg))
                                     
                                     out$y[which(out$y==9999)] <- NA
                                     

@@ -1560,7 +1560,7 @@
 
 
 
-      subroutine hetmixOrd(Y0,X0,Prior0,idprob0,idea0,idg0,ns0,ng0,nv0,nobs0 &
+      subroutine hetmixord(Y0,X0,Prior0,idprob0,idea0,idg0,ns0,ng0,nv0,nobs0 &
           ,nea0,nmes0,idiag0,nwg0,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convB,convL,convG,maxiter0 &
           ,minY0,maxY0,ide0,marker,transfY,UACV,rlindiv,fix0)
@@ -1923,7 +1923,7 @@
       deallocate(pbH,fix,bfix)
 
       return
-      end subroutine hetmixOrd
+      end subroutine hetmixord
 
 
 

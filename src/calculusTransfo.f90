@@ -1,6 +1,6 @@
 
 
-subroutine calculus_transfo(b,npm,ny,idlink,ntrtot,imoins,zitr0,maxnbzitr,marker,nsim,minY,maxY,epsY,ide,dimide,transfY)
+subroutine calculustransfo(b,npm,ny,idlink,ntrtot,imoins,zitr0,maxnbzitr,marker,nsim,minY,maxY,epsY,ide,dimide,transfY)
 
       implicit none
       
@@ -221,4 +221,4 @@ subroutine calculus_transfo(b,npm,ny,idlink,ntrtot,imoins,zitr0,maxnbzitr,marker
  
  deallocate(zitr)
         
-end subroutine calculus_transfo
+end subroutine calculustransfo

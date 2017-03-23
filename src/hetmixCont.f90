@@ -1558,7 +1558,7 @@
 
 
 
-      subroutine hetmixCont(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,ns0,ng0,nv0,nobs0 &
+      subroutine hetmixcont(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,ns0,ng0,nv0,nobs0 &
           ,nea0,nmes0,idiag0,nwg0,ncor0,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,convB,convL,convG,maxiter0 &
           ,epsY0,idlink0,nbzitr0,zitr0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv,pbH0,fix0)
@@ -1975,7 +1975,7 @@
 
 !      write(*,*)'fin'
       return
-    end subroutine hetmixCont
+    end subroutine hetmixcont
 
 
 

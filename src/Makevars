@@ -1,10 +1,11 @@
 PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
 
+CSRC = init.c
 FMODSRC = AOptim.f90
-FSRC = calculusTransfo.f90 Jointhet.f90 hetmixCont.f90 hetmixContMult.f90 hetmixlin.f90 hetmixOrd.f90 predictCont.f90 predictMult.f90 postprob2.f90 cvpl.f90
+FSRC =  hetmixOrd.f90 hetmixlin.f90 hetmixCont.f90 hetmixContMult.f90 Jointhet.f90 calculusTransfo.f90 predictCont.f90 predictMult.f90 postprob2.f90 cvpl.f90
 
 # Define order of compilation
-OBJECTS = $(FMODSRC:.f90=.o) $(FSRC:.f90=.o)
+OBJECTS = $(CSRC:.c=.o) $(FMODSRC:.f90=.o) $(FSRC:.f90=.o) 
 
 $(SHLIB): $(OBJECTS)
 

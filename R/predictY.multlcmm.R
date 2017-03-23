@@ -155,11 +155,30 @@ if(x$conv==1 | x$conv==2 | x$conv==3)
   { 
    #if(verbose==TRUE) cat("ny=",ny,"nvc=",nvc,"ncontr=",x$N[2],"nv=",nv,"\n",x$Xnames,"\n",head(newdata1),"\n","idg",x$idg0)
    
-   out <- .Fortran("predict_mult",as.double(X0),as.integer(x$idprob0),as.integer(x$idea0),
-   as.integer(x$idg0),as.integer(x$idcor0),as.integer(x$idcontr0),as.integer(x$ng),as.integer(ncor),
-   as.integer(nalea),as.integer(nv),as.integer(ny),as.integer(maxmes),as.integer(x$idiag),as.integer(x$N[5]),
-   as.integer(npm),as.double(best),as.double(x$epsY),as.integer(x$linktype),as.integer(nbzitr),
-   as.double(x$linknodes),as.integer(nsim),as.integer(methInteg),Ymarg=as.double(Ymarg),PACKAGE="lcmm")
+      out <- .Fortran(C_predictmult,
+                      as.double(X0),
+                      as.integer(x$idprob0),
+                      as.integer(x$idea0),
+                      as.integer(x$idg0),
+                      as.integer(x$idcor0),
+                      as.integer(x$idcontr0),
+                      as.integer(x$ng),
+                      as.integer(ncor),
+                      as.integer(nalea),
+                      as.integer(nv),
+                      as.integer(ny),
+                      as.integer(maxmes),
+                      as.integer(x$idiag),
+                      as.integer(x$N[5]),
+                      as.integer(npm),
+                      as.double(best),
+                      as.double(x$epsY),
+                      as.integer(x$linktype),
+                      as.integer(nbzitr),
+                      as.double(x$linknodes),
+                      as.integer(nsim),
+                      as.integer(methInteg),
+                      Ymarg=as.double(Ymarg))
   
    out$Ymarg[out$Ymarg==9999] <- NA
    #Ypred <- matrix(out$Ymarg,ncol=x$ng,byrow=FALSE)
@@ -203,11 +222,30 @@ if(x$conv==1 | x$conv==2 | x$conv==3)
     bdraw <- rnorm(npm)
     bdraw <- best + Chol %*% bdraw
    
-    out <- .Fortran("predict_mult",as.double(X0),as.integer(x$idprob0),as.integer(x$idea0),
-    as.integer(x$idg0),as.integer(x$idcor0),as.integer(x$idcontr0),as.integer(x$ng),as.integer(ncor),
-    as.integer(nalea),as.integer(nv),as.integer(ny),as.integer(maxmes),as.integer(x$idiag),as.integer(x$N[5]),
-    as.integer(npm),as.double(bdraw),as.double(x$epsY),as.integer(x$linktype),as.integer(nbzitr),
-    as.double(x$linknodes),as.integer(nsim),as.integer(methInteg),Ymarg=as.double(Ymarg),PACKAGE="lcmm")
+    out <- .Fortran(C_predictmult,
+                    as.double(X0),
+                    as.integer(x$idprob0),
+                    as.integer(x$idea0),
+                    as.integer(x$idg0),
+                    as.integer(x$idcor0),
+                    as.integer(x$idcontr0),
+                    as.integer(x$ng),
+                    as.integer(ncor),
+                    as.integer(nalea),
+                    as.integer(nv),
+                    as.integer(ny),
+                    as.integer(maxmes),
+                    as.integer(x$idiag),
+                    as.integer(x$N[5]),
+                    as.integer(npm),
+                    as.double(bdraw),
+                    as.double(x$epsY),
+                    as.integer(x$linktype),
+                    as.integer(nbzitr),
+                    as.double(x$linknodes),
+                    as.integer(nsim),
+                    as.integer(methInteg),
+                    Ymarg=as.double(Ymarg))
   
     out$Ymarg[out$Ymarg==9999] <- NA
     ydraws <- cbind(ydraws,out$Ymarg)

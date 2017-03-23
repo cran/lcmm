@@ -138,8 +138,11 @@ if(na.action==1){
   }
  }
  call_mixture <- gsub("factor","",call_mixture)   
-     
- 
+
+call_mixture <- formula(call_mixture)
+call_random <- formula(call_random)
+call_classmb <- formula(call_classmb)
+
 ### Traitement des donnees manquantes
 
 # permet de conserver que data=... dans lcmm ; mcall= objet de type call
@@ -156,35 +159,41 @@ m <- eval(m, sys.parent())
 na.fixed <- attr(m,"na.action")
 
 # mixture
-if(!is.null(x$call$mixture)){
-	m <- mcall
-	m$formula <- formula(paste("~",call_mixture,sep=""))
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
-	na.mixture <- attr(m,"na.action")
+if((length(attr(terms(call_mixture),"term.labels"))+attr(terms(call_mixture),"intercept"))>0){
+    id.X_mixture <- 1
+    m <- mcall
+    m$formula <- call_mixture
+    m[[1]] <- as.name("model.frame")	
+    m <- eval(m, sys.parent()) 
+    na.mixture <- attr(m,"na.action")
 }else{
-	na.mixture <- NULL
+    id.X_mixture <- 0
+    na.mixture <- NULL
 }
 
 # random
-if(!is.null(x$call$random)){
-	m <- mcall
-	m$formula <- formula(paste("~",call_random,sep=""))
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
- 	na.random <- attr(m,"na.action")
+if((length(attr(terms(call_random),"term.labels"))+attr(terms(call_random),"intercept"))>0){
+    id.X_random <- 1
+    m <- mcall
+    m$formula <- call_random
+    m[[1]] <- as.name("model.frame")	
+    m <- eval(m, sys.parent()) 
+    na.random <- attr(m,"na.action")
 }else{
-	na.random <- NULL
+    id.X_random <- 0
+    na.random <- NULL
 }
 # classmb
-if(!is.null(x$call$classmb)){ 
-	m <- mcall	
-	m$formula <- formula(paste("~",call_classmb,sep=""))
-	m[[1]] <- as.name("model.frame")	
-	m <- eval(m, sys.parent()) 
- 	na.classmb <- attr(m,"na.action")
+if((length(attr(terms(call_classmb),"term.labels"))+attr(terms(call_classmb),"intercept"))>0){ 
+    id.X_classmb <- 1
+    m <- mcall	
+    m$formula <- call_classmb
+    m[[1]] <- as.name("model.frame")	
+    m <- eval(m, sys.parent()) 
+    na.classmb <- attr(m,"na.action")
 }else{
-	na.classmb <- NULL
+    id.X_classmb <- 0
+    na.classmb <- NULL
 }
 # cor
 na.cor <- NULL
@@ -237,34 +246,25 @@ if(length(na.action)){
 		int.fixed <- 1
 	}
 ## mixture
-	if(!is.null(x$call$mixture)){
-		X_mixture <- model.matrix(formula(paste("~",call_mixture,sep="")),data=newdata1)	
-		if(colnames(X_mixture)[1]=="(Intercept)"){
-			colnames(X_mixture)[1] <- "intercept"
-			int.mixture <- 1
-		}
-		id.X_mixture <- 1
-	}else{
-		id.X_mixture <- 0
+	if(id.X_mixture == 1){
+            X_mixture <- model.matrix(call_mixture,data=newdata1)	
+            if(colnames(X_mixture)[1]=="(Intercept)"){
+                colnames(X_mixture)[1] <- "intercept"
+                int.mixture <- 1
+            }
 	}	
 ## random
-	if(!is.null(x$call$random)){
-		X_random <- model.matrix(formula(paste("~",call_random,sep="")),data=newdata1)	
-		if(colnames(X_random)[1]=="(Intercept)"){
-			colnames(X_random)[1] <- "intercept"
-			int.random <- 1
-		}
-		id.X_random <- 1
-	}else{
-		id.X_random <- 0
+	if(id.X_random == 1){
+            X_random <- model.matrix(call_random,data=newdata1)	
+            if(colnames(X_random)[1]=="(Intercept)"){
+                colnames(X_random)[1] <- "intercept"
+                int.random <- 1
+            }
 	}	
 ## classmb
-	if(!is.null(x$call$classmb)){ 
-		X_classmb <- model.matrix(formula(paste("~",call_classmb,sep="")),data=newdata1)
-		colnames(X_classmb)[1] <- "intercept"
-		id.X_classmb <- 1
-	}else{
-		id.X_classmb <- 0
+	if(id.X_classmb == 1){ 
+            X_classmb <- model.matrix(call_classmb,data=newdata1)
+            colnames(X_classmb)[1] <- "intercept"
 	}
 ##cor	
 if(length(x$N)>5)
@@ -759,7 +759,28 @@ Ymarg <- rep(0,maxmes*x$ng)
 #cat(epsY,"\n")
 
 if (!draws){      
-out <- .Fortran("predict_cont",as.double(newdata1),as.integer(x$idprob0),as.integer(x$idea0),as.integer(x$idg0),as.integer(x$idcor0),as.integer(x$ng),as.integer(ncor),as.integer(nv),as.integer(maxmes),as.integer(x$idiag),as.integer(nwg),as.integer(npm),as.double(best),as.double(epsY),as.integer(x$linktype),as.integer(nbzitr),as.double(x$linknodes),as.integer(nsim),as.integer(methInteg),as.integer(x$Ydiscrete),Ymarg=as.double(Ymarg),PACKAGE="lcmm")
+    out <- .Fortran(C_predictcont,
+                    as.double(newdata1),
+                    as.integer(x$idprob0),
+                    as.integer(x$idea0),
+                    as.integer(x$idg0),
+                    as.integer(x$idcor0),
+                    as.integer(x$ng),
+                    as.integer(ncor),
+                    as.integer(nv),
+                    as.integer(maxmes),
+                    as.integer(x$idiag),
+                    as.integer(nwg),
+                    as.integer(npm),
+                    as.double(best),
+                    as.double(epsY),
+                    as.integer(x$linktype),
+                    as.integer(nbzitr),
+                    as.double(x$linknodes),
+                    as.integer(nsim),
+                    as.integer(methInteg),
+                    as.integer(x$Ydiscrete),
+                    Ymarg=as.double(Ymarg))
    
 out$Ymarg[out$Ymarg==9999] <- NA
 
@@ -789,7 +810,29 @@ for (j in 1:ndraws) {
 bdraw <- rnorm(npm)
 bdraw <- best + Chol %*% bdraw
  
-out <- .Fortran("predict_cont",as.double(newdata1),as.integer(x$idprob0),as.integer(x$idea0),as.integer(x$idg0),as.integer(x$idcor0),as.integer(x$ng),as.integer(ncor),as.integer(nv),as.integer(maxmes),as.integer(x$idiag),as.integer(nwg),as.integer(npm),as.double(bdraw),as.double(epsY),as.integer(x$linktype),as.integer(nbzitr),as.double(x$linknodes),as.integer(nsim),as.integer(methInteg),as.integer(x$Ydiscrete),Ymarg=as.double(Ymarg),PACKAGE="lcmm")
+out <- .Fortran(C_predictcont,
+                as.double(newdata1),
+                as.integer(x$idprob0),
+                as.integer(x$idea0),
+                as.integer(x$idg0),
+                as.integer(x$idcor0),
+                as.integer(x$ng),
+                as.integer(ncor),
+                as.integer(nv),
+                as.integer(maxmes),
+                as.integer(x$idiag),
+                as.integer(nwg),
+                as.integer(npm),
+                as.double(bdraw),
+                as.double(epsY),
+                as.integer(x$linktype),
+                as.integer(nbzitr),
+                as.double(x$linknodes),
+                as.integer(nsim),
+                as.integer(methInteg),
+                as.integer(x$Ydiscrete),
+                Ymarg=as.double(Ymarg))
+
 out$Ymarg[out$Ymarg==9999] <- NA
 ydraws <- cbind(ydraws,out$Ymarg)
 }

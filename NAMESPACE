@@ -1,5 +1,5 @@
 exportPattern("^[[:alpha:]]+")
-useDynLib(lcmm)
+useDynLib(lcmm, .registration = TRUE, .fixes = "C_")
 import(survival)
 importFrom("grDevices", "rainbow")
 importFrom("graphics", "axis", "hist", "lines", "matlines", "matplot",
@@ -99,6 +99,5 @@ S3method(print,Diffepoce)
 S3method(summary,Diffepoce)
 S3method(plot,Diffepoce)
 
-export(postprob,predictY,predictL,predictlink,estimates,VarCov,VarExpl,VarCovRE,fitY,WaldMult,gridsearch)
 
 

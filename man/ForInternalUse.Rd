@@ -12,6 +12,17 @@
 \alias{.plotlinkfunctionmult}
 \alias{.plotbaselinerisk}
 \alias{.plotsurvival}
+\alias{C_hetmixlin}
+\alias{C_hetmixcont}
+\alias{C_hetmixord}
+\alias{C_hetmixcontmult}
+\alias{C_jointhet}
+\alias{C_predictcont}
+\alias{C_predictmult}
+\alias{C_postprob2}
+\alias{C_cvpl}
+\alias{C_calculustransfo}
+
 
 
 

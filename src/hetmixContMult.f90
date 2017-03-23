@@ -33,7 +33,7 @@
 
 
                                           
-      subroutine hetmixContMult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
+      subroutine hetmixcontmult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
            ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
            ,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
            ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG &
@@ -496,7 +496,7 @@
 
      !write(*,*)'fin'
       return
-      end subroutine hetmixContMult
+      end subroutine hetmixcontmult
           
           
 
