@@ -50,6 +50,10 @@ best log-likelihood after \code{maxiter} iterations.
 4. running the optimization algorithm from these estimates for the final estimation.  
 }
 \references{
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
+
 Biernacki C, Celeux G, Govaert G (2003). Choosing Starting Values for
 the EM Algorithm for Getting the Highest Likelihood in Multivariate
 Gaussian Mixture models. Computational Statistics and Data Analysis, 41(3-4), 561-575.

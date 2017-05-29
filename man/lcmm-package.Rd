@@ -10,8 +10,8 @@ Functions for the estimation of latent class mixed models (LCMM), joint latent c
 \tabular{ll}{
 Package: \tab lcmm \cr
 Type: \tab Package \cr
-Version: \tab 1.7.5 \cr
-Date: \tab 2016-03-15\cr
+Version: \tab 1.7.8 \cr
+Date: \tab 2017-05-29\cr
 License: \tab GPL (>=2.0) \cr
 LazyLoad: \tab yes \cr
 }
@@ -32,10 +32,9 @@ Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
 }
 \references{
 
-Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv. http://arxiv.org/abs/1503.00890
-
-Commenges, Liquet and Proust-Lima (2012). Choice of prognostic estimators in joint models by estimating differences of
-expected conditional {K}ullback-{L}eibler risks. Biometrics 68(2), 380-7.
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
 
 Lin, Turnbull, McCulloch and Slate (2002). Latent class models for
 joint analysis of longitudinal biomarker and event process data: application to longitudinal

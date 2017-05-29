@@ -238,7 +238,9 @@ Cecile Proust-Lima, Amadou Diakite, Benoit Liquet and Viviane Philipps
 
 \references{
 
-Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
 
 Genz and Keister (1996). Fully symmetric interpolatory rules for multiple integrals over infinite regions with gaussian weight. Journal of Computational and Applied Mathematics 71: 299-309.
 

@@ -11,10 +11,10 @@ Plot of a fitted model
 This function produces different plots (residuals, goodness-of-fit, estimated link functions, estimated baseline risk/survival and posterior probabilities distributions) of a fitted object of class hlme, lcmm, multlcmm or Jointlcmm. 
 }
 \usage{
-\method{plot}{hlme}(x,which="residuals",var.time,break.times,marg,\dots)
-\method{plot}{lcmm}(x,which="residuals",var.time,break.times,marg,\dots)
-\method{plot}{Jointlcmm}(x,which="residuals",var.time,break.times,marg,event,\dots)
-\method{plot}{multlcmm}(x,which="residuals",var.time,break.times,marg,outcome,\dots)
+\method{plot}{hlme}(x,which="residuals",var.time,break.times,marg,subset,\dots)
+\method{plot}{lcmm}(x,which="residuals",var.time,break.times,marg,subset,\dots)
+\method{plot}{Jointlcmm}(x,which="residuals",var.time,break.times,marg,event,subset,\dots)
+\method{plot}{multlcmm}(x,which="residuals",var.time,break.times,marg,outcome,subset,\dots)
 }
 %- maybe also 'usage' for other objects documented here.
 
@@ -39,7 +39,11 @@ This function produces different plots (residuals, goodness-of-fit, estimated li
   \item{outcome}{for \code{which="fit"} and \code{multlcmm} objects only, the outcome to consider.}
   \item{event}{for \code{which="baselinerisk"} or \code{which="hazard"}
   only, an integer corresponding to the numeric code (in the indicator variable) of the event for which the baseline
- risk functions are to be plotted. By default, the first event is considered.}
+ risk functions are to be plotted. By default, the first event is
+ considered.}
+\item{subset}{for \code{which="fit"} only, a subset of the data used to
+  estimate the model, defining the data on which the fit is evaluated. By default,
+  all the data are used.}
   \item{\dots}{
     other parameters to be passed through to plotting functions
 %%     \item{legend.loc}{

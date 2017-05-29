@@ -21,9 +21,9 @@ Plot of predicted trajectories and link functions
 This function provides the class-specific predicted trajectories stemmed from a \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm} object.
 }
 \usage{
-\method{plot}{predictL}(x,legend.loc="topright",legend,add=FALSE,...)
-\method{plot}{predictY}(x,outcome=1,legend.loc="topright",legend,add=FALSE,...)
-\method{plot}{predictlink}(x,legend.loc="topleft",legend,add=FALSE,...)
+\method{plot}{predictL}(x,legend.loc="topright",legend,add=FALSE,shades=FALSE,...)
+\method{plot}{predictY}(x,outcome=1,legend.loc="topright",legend,add=FALSE,shades=FALSE,...)
+\method{plot}{predictlink}(x,legend.loc="topleft",legend,add=FALSE,shades=FALSE,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -46,6 +46,11 @@ character or expression to appear in the legend. If no legend should be added, \
   \item{add}{
 logical indicating if the curves should be added to an existing plot. Default to FALSE.
 }
+\item{shades}{
+logical indicating if confidence intervals should be represented with
+shades. Default to FALSE, the confidence intervals are represented with
+dotted lines.
+  }
   \item{\dots}{
 other parameters to be passed through to plotting functions or to legend 
 }

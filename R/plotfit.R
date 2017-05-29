@@ -1,4 +1,4 @@
-.plotfit <-function(x,var.time,break.times=NULL,marg=TRUE,legend.loc="bottomleft",legend,outcome=1,...)
+.plotfit <-function(x,var.time,break.times=NULL,marg=TRUE,legend.loc="bottomleft",legend,outcome=1,subset=NULL,...)
 {
     if(missing(x)) stop("Argument x should be specified")
     if(!(class(x) %in% c("hlme","lcmm","Jointlcmm","multlcmm"))) stop("Use with hlme, lcmm, multlcmm or Jointlcmm only")
@@ -22,6 +22,7 @@
             attributes(data)$terms <- NULL
         }
 
+
     
     if(class(x) %in% c("hlme","lcmm","Jointlcmm"))
         {
@@ -43,6 +44,21 @@
 
             if(length(linesNA)) data <- data[-linesNA,]
         }
+
+    
+    if(!is.null(subset))
+        {
+            # data pprob et pred a reduire
+            data <- model.frame(formula(paste("~",paste(colnames(data),collapse="+"))),subset=subset,data=data)
+
+            ids <- unique(data[,x$call$subject])
+            
+            xorig <- x
+            x$pprob <- xorig$pprob[which(xorig$pprob[,1] %in% ids),]
+            x$pred <- xorig$pred[which(xorig$pred[,1] %in% ids),]
+        }
+
+    
     
     times <- data[,var.time]
 

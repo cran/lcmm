@@ -9,6 +9,11 @@ Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models 
 http://arxiv.org/abs/1503.00890
 
 
+Changes in Version 1.7.8 :
+
+* shades in plot.predictlink/L/Y
+* subset in plot, which="fit"
+
 
 
 Changes in Version 1.7.6 (2016-12-12):

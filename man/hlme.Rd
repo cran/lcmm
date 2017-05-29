@@ -160,8 +160,9 @@ The list returned is:
 }
 \references{
 
-
-Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm,  Arxiv
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
 
 Verbeke G and Lesaffre E (1996). A linear mixed-effects model with heterogeneity in
 the random-effects population. Journal of the American Statistical Association 91, 217-21

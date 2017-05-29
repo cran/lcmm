@@ -1,5 +1,5 @@
 
-plot.hlme <- function(x,which="residuals",var.time,break.times,marg,...)
+plot.hlme <- function(x,which="residuals",var.time,break.times,marg,subset,...)
     {
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"hlme")) stop("Use with 'hlme' objects only")
@@ -15,8 +15,9 @@ plot.hlme <- function(x,which="residuals",var.time,break.times,marg,...)
                 if(missing(var.time)) stop("Argument var.time should be specified")
                 if(missing(break.times)) break.times <- NULL
                 if(missing(marg)) marg <- TRUE
+                if(missing(subset)) subset <- NULL
                 #legend.loc?add?
-                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,...)
+                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,subset=subset,...)
 
             }
 
@@ -25,7 +26,7 @@ plot.hlme <- function(x,which="residuals",var.time,break.times,marg,...)
 
 
 
-plot.lcmm <- function(x,which="residuals",var.time,break.times,marg,...)
+plot.lcmm <- function(x,which="residuals",var.time,break.times,marg,subset,...)
     {
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"lcmm")) stop("Use with 'lcmm' objects only")
@@ -44,15 +45,16 @@ plot.lcmm <- function(x,which="residuals",var.time,break.times,marg,...)
                 if(missing(var.time)) stop("Argument var.time should be specified")
                 if(missing(break.times)) break.times <- NULL
                 if(missing(marg)) marg <- TRUE
+                if(missing(subset)) subset <- NULL
 
-                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,...)
+                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,subset=subset,...)
             }
     }
 
 
 
 
-plot.multlcmm <- function(x,which="residuals",var.time,break.times,marg,outcome,...)
+plot.multlcmm <- function(x,which="residuals",var.time,break.times,marg,outcome,subset,...)
     {
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"multlcmm")) stop("Use with 'multlcmm' objects only")
@@ -70,9 +72,10 @@ plot.multlcmm <- function(x,which="residuals",var.time,break.times,marg,outcome,
                 if(missing(var.time)) stop("Argument var.time should be specified")
                 if(missing(break.times)) break.times <- NULL
                 if(missing(marg)) marg <- TRUE
+                if(missing(subset)) subset <- NULL
                 if(missing(outcome)) outcome <- 1
                 
-                .plotfit(x,var.time=var.time,break.times,outcome=outcome,marg=marg,...)
+                .plotfit(x,var.time=var.time,break.times,outcome=outcome,marg=marg,subset=subset,...)
             }
 
     }
@@ -80,7 +83,7 @@ plot.multlcmm <- function(x,which="residuals",var.time,break.times,marg,outcome,
 
 
 
-plot.Jointlcmm <- function(x,which="residuals",var.time,break.times,marg,event,...)
+plot.Jointlcmm <- function(x,which="residuals",var.time,break.times,marg,event,subset,...)
     {
         if(missing(x)) stop("The model should be specified")
         if(!inherits(x,"Jointlcmm")) stop("Use with 'Jointlcmm' objects only")
@@ -106,8 +109,9 @@ plot.Jointlcmm <- function(x,which="residuals",var.time,break.times,marg,event,.
                 if(missing(var.time)) stop("Argument var.time should be specified")
                 if(missing(break.times)) break.times <- NULL
                 if(missing(marg)) marg <- TRUE
+                if(missing(subset)) subset <- NULL
                 
-                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,...)
+                .plotfit(x,var.time=var.time,break.times,outcome=1,marg=marg,subset=subset,...)
             }
 
     }

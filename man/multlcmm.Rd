@@ -202,8 +202,9 @@ Cecile Proust-Lima and Viviane Philipps
 
 \references{
 
-
-Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
 
 Proust and Jacqmin-Gadda (2005). Estimation of linear mixed models with a mixture of distribution for the random-effects. Comput Methods Programs Biomed 78: 165-73.
 
@@ -216,8 +217,7 @@ model when evaluating risk factors of cognitive decline. Amer J Epidemiol 174(9)
 
 Proust-Lima, Amieva, Jacqmin-Gadda (2013). Analysis of multivariate mixed longitudinal data: A flexible latent process approach. Br J Math Stat Psychol 66(3): 470-87.
 
-Commenges, Proust-Lima, Samieri, Liquet (2012). A universal approximate cross-validation criterion and its
-asymptotic distribution, Arxiv.
+Commenges, Proust-Lima, Samieri, Liquet (2015). A universal approximate cross-validation criterion for regular risk functions. Int J Biostat. 2015 May; 11(1):51-67
 }
 
 

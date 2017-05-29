@@ -1,5 +1,5 @@
 
-plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...)
+plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,shades=FALSE,...)
     {
         if(missing(x)) stop("The argument \'x\' is missing.")
         if(!inherits(x,"predictY")) stop("use only with \'predictY\' object")
@@ -11,7 +11,7 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
         if(colx[1]=="Yname") #multlcmm
             {
                 if(is.numeric(outcome)) outcome <- unique(x$pred[,1])[outcome]
-                ng <- length(grep("Ypred_class",colx))             
+                ng <- length(grep("Ypred_50_",colx))
 
                 if(length(grep("_class2",colx))) #ng>1
                     {
@@ -55,14 +55,14 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
                     {
                         if(length(grep("Ypred_50",colx)) | length(grep("lower",colx)))
                             {
-                                ng <- length(colx)/3#length(grep("Ypred_class",colx))
+                                ng <- length(grep("Ypred_50_",colx))
                                 Ypred <- x$pred[,1:ng]
                                 lower <- x$pred[,ng+1:ng]
                                 upper <- x$pred[,ng+ng+1:ng]
                             }
                         else
                             {
-                                ng <- length(colx)#length(grep("Ypred_class",colx))
+                                ng <- length(grep("Ypred_class",colx))
                                 Ypred <- x$pred[,1:ng]
                                 lower <- NULL
                                 upper <- NULL
@@ -157,10 +157,20 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
 
                 if(!is.null(lower))
                     {
-                        if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
-                        if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
-                        else dots.plot$lty <- 2
-                        do.call("matlines",c(dots.plot[names(dots.plot)],list(x=x$times,y=cbind(lower,upper))))
+                        if(shades==FALSE)
+                            {
+                                if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
+                                if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
+                                else dots.plot$lty <- 2
+                                do.call("matlines",c(dots.plot[names(dots.plot)],list(x=x$times,y=cbind(lower,upper))))
+                            }
+                        else
+                            {
+                                rgbcols <- sapply(dots$col,col2rgb)/255
+                                cols <- apply(rgbcols,2,function(x) rgb(x[1],x[2],x[3],alpha=0.15))
+                                 
+                                sapply(1:ng,function(k,t,yl,yu,cols) polygon(x=unlist(c(t,rev(t))),y=c(yl[,k],rev(yu[,k])),col=cols[k],border=NA),t=unlist(x$times),yl=lower,yu=upper,cols=cols)
+                            }
                     }
 
                 if(!is.null(legend))
@@ -183,12 +193,22 @@ plot.predictY <- function(x,outcome=1,legend.loc="topright",legend,add=FALSE,...
                 
                 if(!is.null(lower))
                     {
-                        if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
-                        if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
-                        else dots.plot$lty <- 2
-                        do.call("matlines",c(dots.plot[setdiff(names(dots.plot),"lty")],list(x=x$times,y=cbind(lower,upper),lty=2)))
+                        if(shades==FALSE)
+                            {
+                                if(length(dots.plot$lwd)==3*ng | length(dots.plot$lwd)==2*ng) dots.plot$lwd <- dots.plot$lwd[(ng+1):length(dots.plot$lwd)]
+                                if(length(dots.plot$lty)==3*ng | length(dots.plot$lty)==2*ng) dots.plot$lty <- dots.plot$lty[(ng+1):length(dots.plot$lty)]
+                                else dots.plot$lty <- 2
+                                do.call("matlines",c(dots.plot[setdiff(names(dots.plot),"lty")],list(x=x$times,y=cbind(lower,upper),lty=2)))
+                            }
+                        else
+                            {
+                                rgbcols <- sapply(dots$col,col2rgb)/255
+                                cols <- apply(rgbcols,2,function(x) rgb(x[1],x[2],x[3],alpha=0.15))
+                                 
+                                sapply(1:ng,function(k,t,yl,yu,cols) polygon(x=unlist(c(t,rev(t))),y=c(yl[,k],rev(yu[,k])),col=cols[k],border=NA),t=unlist(x$times),yl=lower,yu=upper,cols=cols)
+                            }
                     }            
             }
 
-                
+        return(invisible(NULL))
     }

@@ -231,8 +231,9 @@ Cecile Proust Lima, Amadou Diakite and Viviane Philipps
 
 \references{
 
-
-Proust-Lima C, Philipps V, Liquet B (2015). Estimation of Extended Mixed Models Using Latent Classes and Latent Processes: the R package lcmm, Arxiv
+Proust-Lima C, Philipps V, Liquet B (2017). Estimation of Extended Mixed
+Models Using Latent Classes and Latent Processes: the R package lcmm.
+Journal of Statistical Software, 78(2), 1-56
 
 Lin, H., Turnbull, B. W., McCulloch, C. E. and Slate, E. H. (2002). Latent class models for
 joint analysis of longitudinal biomarker and event process data: application to longitudinal
