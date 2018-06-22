@@ -1,5 +1,6 @@
-
-
+#' @name plot.predict
+#' @rdname plot.predict
+#' @export
 plot.predictL <- function(x,legend.loc="topright",legend,add=FALSE,shades=FALSE,...)
     {
         if(missing(x)) stop("The argument \'x\' is missing.")

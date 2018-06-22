@@ -1,3 +1,5 @@
+#' @rdname plot.pred.accuracy
+#' @export
 plot.Diffepoce <- function(x,...)
 {
 	if (!inherits(x, "Diffepoce")) stop("use only with \"Diffepoce\" objects")

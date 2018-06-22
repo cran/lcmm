@@ -1,3 +1,5 @@
+#' @export
+#'
 predictL.Jointlcmm <- function(x,newdata,var.time,na.action=1,confint=FALSE,...)
 {
 if(missing(newdata)) stop("The argument newdata should be specified")
@@ -49,9 +51,17 @@ if(na.action==1){
 }
 
 ### pour les facteurs
+        ##donnees de l estimation
+        if(!is.null(x$data))
+        {
+            olddata <- x$data
+        }
+        else
+        {
+            olddata <- eval(x$call$data)
+        }
 
  #cas ou une variable du dataset est un facteur
- olddata <- eval(x$call$data)
   for(v in colnames(newdata1)[-1])
  {
   if (is.factor(olddata[,v]) & !(is.factor(newdata[,v])))

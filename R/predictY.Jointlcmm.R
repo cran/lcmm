@@ -1,3 +1,7 @@
+#' @name predictY
+#' @rdname predictY
+#' @export
+#'
 predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALSE,ndraws=2000,na.action=1,...)
 {
     if(missing(newdata)) stop("The argument newdata should be specified")
@@ -77,9 +81,17 @@ predictY.Jointlcmm <- function(x,newdata,var.time,methInteg=0,nsim=20,draws=FALS
 
 
 ### pour les facteurs
+    ##donnees de l estimation
+    if(!is.null(x$data))
+    {
+        olddata <- x$data
+    }
+    else
+    {
+        olddata <- eval(x$call$data)
+    }
 
             ##cas ou une variable du dataset est un facteur
-            olddata <- eval(x$call$data)
             for(v in Xnames2[-1])
                 {
                     if (is.factor(olddata[,v]))     
@@ -277,8 +289,8 @@ call_survival <- formula(paste("~",call_survival,sep=""))
             na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.survival,na.cor))
             if(length(na.action))
                 {
-                    newdata1 <- newdata1[-na.action,]
-                    times <- times[-na.action]
+                    newdata1 <- newdata1[-na.action,,drop=FALSE]
+                    times <- times[-na.action,,drop=FALSE]
                 }
             
 

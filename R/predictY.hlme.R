@@ -1,4 +1,6 @@
-
+#' @rdname predictY
+#' @export
+#'
 predictY.hlme <- function(x,newdata,var.time,draws=FALSE,na.action=1,...){
 
 if(missing(newdata)) stop("The argument newdata should be specified")
@@ -51,9 +53,17 @@ if(na.action==1){
 }
 
 ### pour les facteurs
+    ##donnees de l estimation
+    if(!is.null(x$data))
+    {
+        olddata <- x$data
+    }
+    else
+    {
+        olddata <- eval(x$call$data)
+    }
 
  #cas ou une variable du dataset est un facteur
- olddata <- eval(x$call$data)
   for(v in x$Xnames2[-1])
  {
   if (is.factor(olddata[,v]))
@@ -212,7 +222,7 @@ na.action <- unique(c(na.fixed,na.mixture,na.random,na.classmb,na.cor))
  
 if(length(na.action)){
 	newdata1 <- newdata1[-na.action,]
-        times <- times[-na.action]
+        times <- times[-na.action,,drop=FALSE]
 }
 
 

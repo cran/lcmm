@@ -1,4 +1,5 @@
-
+#' @export
+#'
 VarExpl.multlcmm <- function(x,values)
 {
  if(missing(x)) stop("The model should be specified")
@@ -25,9 +26,17 @@ VarExpl.multlcmm <- function(x,values)
    if(!all(vars %in% colnames(values))) stop(paste(c("values should give a value for each of the following covariates: ","\n",vars),collapse=" "))
 
    ### pour les facteurs
+    ##donnees de l estimation
+    if(!is.null(x$data))
+    {
+        olddata <- x$data
+    }
+    else
+    {
+        olddata <- eval(x$call$data)
+    }
 
    #cas ou une variable du dataset est un facteur
-   olddata <- eval(x$call$data)
    for(v in setdiff(vars,"intercept"))
    {
     if(is.factor(olddata[,v]))
@@ -126,6 +135,3 @@ VarExpl.multlcmm <- function(x,values)
 
  return(res)
 }
-
-
-VarExpl <- function(x,values) UseMethod("VarExpl")
