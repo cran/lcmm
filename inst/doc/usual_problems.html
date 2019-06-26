@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+<title>Usual problems encountered when using lcmm package</title>
+
+
+
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Usual problems encountered when using lcmm package</h1>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#why-my-model-did-not-converge">Why my model did not converge?</a></li>
+<li><a href="#how-to-choose-the-number-of-latent-classes">How to choose the number of latent classes?</a></li>
+<li><a href="#how-to-evaluate-the-quality-of-a-classification">How to evaluate the quality of a classification ?</a></li>
+<li><a href="#how-to-evaluate-the-fit-of-a-model">How to evaluate the fit of a model ?</a></li>
+<li><a href="#how-to-pre-normalize-a-variable-using-lcmm">How to pre-normalize a variable using lcmm ?</a></li>
+</ul>
+</div>
+
+<p> </p>
+<p>We list here some recurrent problems reported by users. Other issues, questions, concerns may have been reported in github: <a href="https://github.com/CecileProust-Lima/lcmm/issues/" class="uri">https://github.com/CecileProust-Lima/lcmm/issues/</a> .</p>
+<p><strong>Please refer to github, both closed and opened issues, before sending any question. And please ask the questions via github only.</strong></p>
+<p> </p>
+<div id="why-my-model-did-not-converge" class="section level1">
+<h1>Why my model did not converge?</h1>
+<p>It sometimes happens that a model does not converge correctly. This is due most of the time to the very stringent criterion based on the “derivatives”. This criterion uses both the first derivatives and the inverse of the matrix of the second derivatives (Hessian). It ensures that the program converges at a maximum. When it can’t be computed correctly (most of the time because the Hessian is not definite positive), the program reports “second derivatives = 1”.</p>
+<p><strong>There are several reasons that may induce a non convergence, e.g.:</strong></p>
+<ol style="list-style-type: decimal">
+<li><p>When the time variable (or more generally a variable with random effects) is in a unit which induces too small associated parameters (for very small changes per day). In that case, changing the scale (for instance with months or years) may solve the problem.</p></li>
+<li><p>In models with splines in the link function (lcmm, multlcmm, Jointlcmm) or with splines in the baseline risk function (Jointlcmm), a parameter associated with splines very close to zero may prevent for correct convergence as it is at the border of the parameter space. In that case, this parameter can be fixed to 0 and convergence should be reached immediately.</p></li>
+<li>When the data are not rich enough and/or the model is too complicated. In that case, this is a problem of numerical non identifiability. There are not many solutions (other than simplifying the model) but some directions may be :
+<ul>
+<li>Be patient, it happens that after some iterations the derivatives might be inversible and the model converges (you can change maxiter or rerun the program from the estimates at the non convergence point). But this is usually no necessary to specify more than 100 or 200 iterations. The iterative algorithm is used to converge in a few dozen of iterations.</li>
+<li>You can try to assume a less stringent threshold (e.g., 0.01) but be careful, convergence might be of lower quality.<br />
+</li>
+<li>Run the model from different initial values.</li>
+</ul></li>
+</ol>
+<p> </p>
+</div>
+<div id="how-to-choose-the-number-of-latent-classes" class="section level1">
+<h1>How to choose the number of latent classes?</h1>
+<p>Selection of the number of latent classes is a complex question. In some cases, the number is known. When not, different tools can be used to guide the decision:</p>
+<ul>
+<li>Several statistical criteria such as BIC, SABIC or Entropy</li>
+<li>Statistical tests when available: score test for conditional independence in joint models</li>
+<li>Discrimination power as described by the classification table using the command postprob</li>
+<li>Size of the classes (we can consider that classes should be larger than 1% or 5% depending on the context)</li>
+<li>Clinical aspects and interpretation should also be taken into account</li>
+</ul>
+<p>Finally, it can be useful to present and contrast models with different numbers of latent classes.</p>
+<p>The complexity of the selection of the optimal number of latent classes is illustrated in vignette: <a href="https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html" class="uri">https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html</a> . Indeed, all the criteria may not be concordant in practice.</p>
+<p> </p>
+</div>
+<div id="how-to-evaluate-the-quality-of-a-classification" class="section level1">
+<h1>How to evaluate the quality of a classification ?</h1>
+<p>Good discrimination of classes is usually sought when fitting latent class mixed models. Discriminatory power can be assessed using the entropy criterion (provided in summarytable) but also using the classification table (with command postprob). The description of the classes may also help comprehend the latent class structure.</p>
+<p>(see vignette <a href="https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html" class="uri">https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html</a> for further details)</p>
+<p> </p>
+</div>
+<div id="how-to-evaluate-the-fit-of-a-model" class="section level1">
+<h1>How to evaluate the fit of a model ?</h1>
+<p>Different techniques can be used in this package to evaluate the goodness of fit. As in mixed models, one can compare the subject-specific predictions with the observations or plot the subject-specific residuals.</p>
+<p>The comparison with more flexible models can also be useful (more flexible link functions, more flexible baseline risk functions, more flexible functions of time, etc.)</p>
+<p>Each vignette includes a section on the evaluation of the model.</p>
+<p> </p>
+</div>
+<div id="how-to-pre-normalize-a-variable-using-lcmm" class="section level1">
+<h1>How to pre-normalize a variable using lcmm ?</h1>
+<p>This is detailed in vignette on pre-normalizing: <a href="https://cran.r-project.org/package=lcmm/vignettes/pre_normalizing.html" class="uri">https://cran.r-project.org/package=lcmm/vignettes/pre_normalizing.html</a></p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
