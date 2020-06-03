@@ -11,10 +11,14 @@
 #' latent classes of trajectory). All the models are estimated in a maximum
 #' likelihood framework using an iterative algorithm. The package also provides
 #' various post fit functions.
+#'
 #' 
-#' \tabular{ll}{ Package: \tab lcmm \cr Type: \tab Package \cr Version: \tab
-#' 1.8.1 \cr Date: \tab 2019-06-25\cr License: \tab GPL (>=2.0) \cr LazyLoad:
-#' \tab yes \cr } The package includes for the moment the estimation of :
+#' \Sexpr[stage=build,results=hide]{descr <- packageDescription("lcmm")}
+#' \tabular{ll}{ Package: \tab lcmm \cr Type: \tab Package \cr 
+#' Version: \tab \Sexpr[stage=build]{descr$Version} \cr 
+#' Date: \tab \Sexpr[stage=build]{descr$Date}\cr 
+#' License: \tab GPL (>=2.0) \cr LazyLoad: \tab yes \cr }
+#' The package includes for the moment the estimation of :
 #' \itemize{ \item latent class mixed models for Gaussian longitudinal outcomes
 #' using \code{hlme} function, \item latent class mixed models for other
 #' quantitative, bounded quantitative (curvilinear) and discrete longitudinal
@@ -78,8 +82,9 @@
 #' @keywords package
 #' @importFrom graphics axis hist lines matlines matplot mtext par plot points segments polygon
 #' @importFrom grDevices rainbow rgb col2rgb n2mfrow
-#' @importFrom stats as.formula formula get_all_vars integrate median model.frame model.matrix na.fail na.omit na.pass pchisq pnorm qnorm quantile rnorm sd terms residuals vcov fitted coef update
+#' @importFrom stats as.formula formula get_all_vars integrate median model.frame model.matrix na.fail na.omit na.pass pchisq pnorm qnorm quantile rnorm sd terms residuals vcov fitted coef update reformulate
 #' @importFrom survival Surv untangle.specials
+#' @importFrom parallel makeCluster clusterExport stopCluster parLapply clusterEvalQ clusterSetRNGStream parSapply
 #' @useDynLib lcmm, .registration=TRUE, .fixes="C_"
 NULL
 

@@ -3,7 +3,6 @@ library(lcmm)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-  
 )
 
 ## ---- include=FALSE,echo=FALSE------------------------------------------------
@@ -66,8 +65,8 @@ plot(women, lwd=c(2,1), type="l", col=6, ylim=c(0,20), xlab="age in year",ylab="
 plot(men, add=TRUE, col=4, lwd=c(2,1), shades=TRUE)
 legend(x="topleft", bty="n", ncol=2, lty=c(1,1,2,2), col=c(6,4,6,4), legend=c("women","men", "95% CI", "95% CI"), lwd=c(2,2,1,1)) 
 
-## ----message=FALSE,eval=TRUE,  fig.height=5, fig.width=8----------------------
-plot(mspl5q, cex.main=0.9)
+## ----message=FALSE,eval=FALSE-------------------------------------------------
+#  plot(mspl5q, cex.main=0.9)
 
 ## ----message=FALSE,eval=TRUE,  fig.height=4, fig.width=6----------------------
 plot(mspl5q, which="fit", var.time="age65", bty="l", xlab="(age-65)/10", break.times=8, ylab="latent process", lwd=2, marg=FALSE, ylim=c(-1,2), shades=TRUE, col=2)

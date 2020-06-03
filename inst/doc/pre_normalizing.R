@@ -3,7 +3,6 @@ library(lcmm)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-  
 )
 
 ## ---- comment=''--------------------------------------------------------------
@@ -37,14 +36,14 @@ hist(paquid$normCESD, breaks=50, cex.main=0.9, main="Distribution of normCESD")
 ## ---- results='hide'----------------------------------------------------------
 normCESD <- hlme(normCESD ~ age65*male, random = ~ age65, subject = 'ID', data=paquid)
 
-## ---- fig.height=5, fig.width=7, comment=''-----------------------------------
-plot(normCESD, cex.main=0.8)
+## ---- eval=FALSE, comment=''--------------------------------------------------
+#  plot(normCESD, cex.main=0.8)
 
 ## ---- results='hide'----------------------------------------------------------
 CESD <- hlme(CESD ~ age65*male, random = ~ age65, subject = 'ID', data=paquid)
 
-## ---- fig.height=5, fig.width=7, comment=''-----------------------------------
-plot(CESD, cex.main=0.8)
+## ---- eval=FALSE, comment=''--------------------------------------------------
+#  plot(CESD, cex.main=0.8)
 
 ## ---- comment=''--------------------------------------------------------------
 m <- mean(paquid$normCESD[(paquid$visit==0) & (!is.na(paquid$normCESD))])

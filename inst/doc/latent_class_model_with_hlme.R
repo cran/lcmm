@@ -12,11 +12,6 @@ set.seed(1)
 library(NormPsy)
 paquid$normMMSE <- normMMSE(paquid$MMSE)
 
-## ----comment='', fig.height=4, fig.width=6------------------------------------
-library(lattice)
-color <- paquid$ID
-xyplot(normMMSE ~ age, paquid, groups = ID, col=color, lwd=2, type="l")
-
 ## ----message=FALSE------------------------------------------------------------
 paquid$age65 <- (paquid$age - 65)/10
 
@@ -78,8 +73,8 @@ plot(predG1, col=1, lty=1, lwd=2, ylab="normMMSE", legend=NULL, main="Predicted 
 plot(pred0, col=c("red","navy"), lty=1, lwd=2,ylab="normMMSE", legend=NULL, main="Predicted trajectories G=2", ylim=c(0,100))
 plot(predG3, col=2:4, lty=1, lwd=2, ylab="normMMSE", legend=NULL, main="Predicted trajectories G=3", ylim=c(0,100))
 
-## ---- fig.height=5, fig.width=8-----------------------------------------------
-plot(m2d, cex.main=0.8)
+## ---- eval=FALSE--------------------------------------------------------------
+#  plot(m2d, cex.main=0.8)
 
 ## ---- comment='',fig.height=4, fig.width=6------------------------------------
 plot(m2d, which="fit", var.time="age", marg=FALSE, shades = TRUE)

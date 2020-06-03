@@ -71,8 +71,10 @@ By default, ndraws=2000.}
 for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as
 'na.pass' or 'na.exclude' are not implemented in the current version.}
 
-\item{\dots}{further arguments to be passed to or from other methods.  They
-are ignored in this function.}
+\item{\dots}{further arguments to be passed to or from other methods. 
+Only the argument 'median' will be used, other are ignored. 'median' should
+be a logical indicating whether the median should be computed. By 
+default, the mean value is computed.}
 }
 \value{
 An object of class \code{predictY} with values :

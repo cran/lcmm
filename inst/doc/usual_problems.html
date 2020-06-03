@@ -14,19 +14,6 @@
 
 <title>Usual problems encountered when using lcmm package</title>
 
-<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
-// be compatible with the behavior of Pandoc < 2.8).
-document.addEventListener('DOMContentLoaded', function(e) {
-  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
-  var i, h, a;
-  for (i = 0; i < hs.length; i++) {
-    h = hs[i];
-    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
-    a = h.attributes;
-    while (a.length > 0) h.removeAttribute(a[0].name);
-  }
-});
-</script>
 
 
 
@@ -248,7 +235,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <ol style="list-style-type: decimal">
 <li><p>When the time variable (or more generally a variable with random effects) is in a unit which induces too small associated parameters (for very small changes per day). In that case, changing the scale (for instance with months or years) may solve the problem.</p></li>
 <li><p>In models with splines in the link function (lcmm, multlcmm, Jointlcmm) or with splines in the baseline risk function (Jointlcmm), a parameter associated with splines very close to zero may prevent for correct convergence as it is at the border of the parameter space. In that case, this parameter can be fixed to 0 and convergence should be reached immediately.</p></li>
-<li><p>When the data are not rich enough and/or the model is too complicated. In that case, this is a problem of numerical non identifiability. There are not many solutions (other than simplifying the model) but some directions may be :</p>
+<li>When the data are not rich enough and/or the model is too complicated. In that case, this is a problem of numerical non identifiability. There are not many solutions (other than simplifying the model) but some directions may be :
 <ul>
 <li>Be patient, it happens that after some iterations the derivatives might be inversible and the model converges (you can change maxiter or rerun the program from the estimates at the non convergence point). But this is usually no necessary to specify more than 100 or 200 iterations. The iterative algorithm is used to converge in a few dozen of iterations.</li>
 <li>You can try to assume a less stringent threshold (e.g., 0.01) but be careful, convergence might be of lower quality.<br />
