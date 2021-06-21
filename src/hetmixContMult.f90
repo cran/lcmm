@@ -339,27 +339,27 @@
      !  write(*,*)'NVC',nvc
 
 
-      if (idiag.eq.1) then
-         DO j=1,nvc
-            btot(nef+j)=dsqrt(abs(btot(nef+j)))
-         END DO
-      end if
+      ! if (idiag.eq.1) then
+      !    DO j=1,nvc
+      !       btot(nef+j)=dsqrt(abs(btot(nef+j)))
+      !    END DO
+      ! end if
 
 ! si idiag=0, on met dans le vecteur des parms, les parms
 ! de la transformee de Cholesky
 
-      if (idiag.eq.0) then
+      ! if (idiag.eq.0) then
 
-         mvc(1)=1.d0
-         DO j=1,nvc
-            mvc(1+j)=btot(nef+j)
-         END DO
+      !    mvc(1)=1.d0
+      !    DO j=1,nvc
+      !       mvc(1+j)=btot(nef+j)
+      !    END DO
 
-         CALL dmfsd(mvc,nea,EPS,IER)
-         DO j=1,nvc
-            btot(nef+j)=mvc(1+j)
-         END DO
-      end if
+      !    CALL dmfsd(mvc,nea,EPS,IER)
+      !    DO j=1,nvc
+      !       btot(nef+j)=mvc(1+j)
+      !    END DO
+      ! end if
       if (nwg.gt.0) then
          do i=1,nwg
             btot(nef+nvc+i)=abs(btot(nef+nvc+i))
@@ -404,7 +404,6 @@
 
       IF (npm.eq.1) then
          istop=10
-         go to 1589
       else
          ca=0.d0
          cb=0.d0
@@ -484,6 +483,8 @@
 
      !write(*,*)'avant deallocate'
 
+      deallocate(pbH)
+      
  1589 continue
 
       deallocate(Y,X,idprob,idea,idg,idcor,idcontr,nmes,prior,uniqueY,indiceY,ntrtot)
@@ -491,7 +492,7 @@
 
       deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL,epsY)
 
-      deallocate(pbH,fix,bfix)
+      deallocate(fix,bfix)
 
 
      !write(*,*)'fin'

@@ -470,21 +470,21 @@
       end if
 
       ! changer prm de B par prm a estimer
-      if (idiag.eq.1) then
-         DO j=1,nvc
-            btot(nprob+nrisqtot+nvarxevt+nef+j)=dsqrt(abs(btot(nprob+nrisqtot+nvarxevt+nef+j)))
-         END DO
-      end if
+      ! if (idiag.eq.1) then
+      !    DO j=1,nvc
+      !       btot(nprob+nrisqtot+nvarxevt+nef+j)=dsqrt(abs(btot(nprob+nrisqtot+nvarxevt+nef+j)))
+      !    END DO
+      ! end if
 
-      if (idiag.eq.0) then
-        DO j=1,nvc
-            mvc(j)=btot(nprob+nrisqtot+nvarxevt+nef+j)
-         END DO
-         CALL DMFSD(mvc,nea,EPS,IER)
-         DO j=1,nvc
-            btot(nprob+nrisqtot+nvarxevt+nef+j)=mvc(j)
-         END DO
-      end if
+      ! if (idiag.eq.0) then
+      !   DO j=1,nvc
+      !       mvc(j)=btot(nprob+nrisqtot+nvarxevt+nef+j)
+      !    END DO
+      !    CALL DMFSD(mvc,nea,EPS,IER)
+      !    DO j=1,nvc
+      !       btot(nprob+nrisqtot+nvarxevt+nef+j)=mvc(j)
+      !    END DO
+      ! end if
 
 
       if (nwg.gt.0) then
@@ -576,10 +576,6 @@
          end if
       end do
 
-
-      if(istop.eq.4 .or. istop.eq.12) then
-         goto 1589
-      end if
 
       ! calculs post-estimation
 
@@ -722,7 +718,7 @@
 
 
 
-      end if
+     end if
 
 
  1589 continue
@@ -738,6 +734,8 @@
               Tmmt2,Tmmt3,Timt,Timt1,Timt2,Timt3)
       endif
 
+      deallocate(pbH)
+
  1236 continue
 
       deallocate(Y,X,idprob,idea,idg,idcor,nmes,Tsurv0,Tsurv,Tsurvint &
@@ -746,7 +744,7 @@
      ,nxevtspec,nevtparx,nxcurr)
 
 
-      deallocate(pbH,bfix,fix)
+      deallocate(bfix,fix)
 
       return
 

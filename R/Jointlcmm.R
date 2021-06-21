@@ -186,6 +186,10 @@
 #' @param hazardnodes optional vector containing interior nodes if
 #' \code{splines} or \code{piecewise} is specified for the baseline hazard
 #' function in \code{hazard}.
+#' @param hazardrange optional vector indicating the range of the survival times (that is
+#' the minimum and maximum). By default, the range is defined according to the
+#' minimum and maximum observed values of the survival times. The option should be
+#' used only for piecewise constant and Splines hazard functions.
 #' @param TimeDepVar optional vector containing an intermediate time
 #' corresponding to a change in the risk of event. This time-dependent
 #' covariate can only take the form of a time variable with the assumption that
@@ -435,11 +439,11 @@
 #' 
 Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,
                       survival,hazard="Weibull",hazardtype="Specific",
-                      hazardnodes=NULL,TimeDepVar=NULL,link=NULL,intnodes=NULL,
-                      epsY=0.5,range=NULL,cor=NULL,data,B,convB=0.0001,
-                      convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior=NULL,
-                      logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,
-                      partialH=FALSE,verbose=TRUE,returndata=FALSE)
+                      hazardnodes=NULL,hazardrange=NULL,TimeDepVar=NULL,
+                      link=NULL,intnodes=NULL,epsY=0.5,range=NULL,
+                      cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,
+                      nsim=100,prior=NULL,logscale=FALSE,subset=NULL,na.action=1,
+                      posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE)
     {
         
         ptm<-proc.time()
@@ -466,7 +470,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
         if(nrow(data)==0) stop("Data should not be empty")
         if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")}
-        if(!is.numeric(data[,subject])) stop("The argument subject must be numeric")
+        if(!is.numeric(data[[subject]])) stop("The argument subject must be numeric")
         if(is.null(link)) link <- "NULL"
         if(any(link=="thresholds"))  stop("The link function thresholds is not available yet")
         if(link %in% c("linear","beta") & !is.null(intnodes)) stop("Intnodes should only be specified with splines links")
@@ -552,8 +556,9 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 
                 surv <- do.call("Surv",list(time=Tevent,event=Event,type="mstate")) 
             }
-        
-        if(length(surv)==4) #censure droite et troncature
+        else
+        {
+            if(length(surv)==4) #censure droite et troncature
             {
                 idtrunc <- 1 
                 
@@ -564,13 +569,17 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 noms.surv <-  c(as.character(surv[2]),as.character(surv[3]),as.character(surv[4]))   
                 
                 surv <- do.call("Surv",list(time=Tentry,time2=Tevent,event=Event,type="mstate"))   
-            }  
+            }
+        }
         
         ## nombre d'evenement concurrents
         nbevt <- length(attr(surv,"states"))
         
-        if(nbevt<1) stop("No observed event in the data")
-       
+        if(nbevt<1)
+        {
+            if(maxiter != 0) stop("No observed event in the data")
+            nbevt <- 1
+        }
         
         ##pour acces aux attributs des formules
         afixed <- terms(fixed)
@@ -994,7 +1003,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                         #if(nrow(data.surv) != ns0) stop("Subjects cannot have several times to event.")
         
         nmes <- as.vector(table(IND))
-        data.surv <- apply(matYXord[cumsum(nmes),c(5,6,7,8)],2,as.numeric)
+        data.surv <- sweep(matYXord[cumsum(nmes),c(5,6,7,8), drop=FALSE], MARGIN=1, STATS=0, FUN=function(x,y){as.numeric(x)+y})
         
         tsurv0 <- data.surv[,1] 
         tsurv <- data.surv[,2]
@@ -1099,9 +1108,6 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 minT1 <- min(tsurv,tsurv0)
                 maxT1 <- max(tsurv,tsurv0)
             }
-        ##??
-        #if(!(minT %in% tsurvevt)) tsurvevt <- c(minT,tsurvevt)
-        #if(!(maxT %in% tsurvevt)) tsurvevt <- c(tsurvevt,maxT)
 
         ## arrondir
         minT2 <- round(minT1,3)
@@ -1111,6 +1117,14 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         maxT2 <- round(maxT1,3)
         if(maxT1>maxT2) maxT2 <- maxT2+0.001
         maxT <- maxT2
+        
+        if(!is.null(hazardrange))
+        {
+            if(length(hazardrange) != (nbevt[which(hazard != "Weibull")]*2)) stop(paste("Vector hazardrange should be of length", (nbevt[which(hazard != "Weibull")]*2)))
+
+            if(any(hazardrange[seq(2,length(hazardrange), 2)] < maxT1) | any(hazardrange[seq(1,length(hazardrange), 2)] > minT1)) stop("The hazard range specified do not cover the entire range of the data")
+
+        }
         
         
         ii <- 0  
@@ -1123,15 +1137,24 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 else
                     {
                         ii <- ii+1
+
+                        minTii <- minT
+                        maxTii <- maxT
+
+                        if(!is.null(hazardrange))
+                        {
+                            minTii <- hazardrange[2*(ii-1) + 1]
+                            maxTii <- hazardrange[2*ii]
+                        }
                         
                         if(locnodes[ii]=="manual") 
                             {
-                                zi[1:nz[i],i] <- c(minT,hazardnodes[nb+1:(nz[i]-2)],maxT)
+                                zi[1:nz[i],i] <- c(minTii,hazardnodes[nb+1:(nz[i]-2)],maxTii)
                                 nb <- nb + nz[i]-2 
                             } 
                         if(locnodes[ii]=="equi")
                             {
-                                zi[1:nz[i],i] <- seq(minT,maxT,length.out=nz[i]) 
+                                zi[1:nz[i],i] <- seq(minTii,maxTii,length.out=nz[i]) 
                             }
                         if(locnodes[ii]=="quant")
                             {
@@ -1140,9 +1163,9 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                 #pi <- pi[-1]
                                 pi <- c(1:(nz[i]-2))/(nz[i]-1)
                                 qi <- quantile(tsurvevt,prob=pi)
-                                zi[1,i] <- minT
+                                zi[1,i] <- minTii
                                 zi[2:(nz[i]-1),i] <- qi
-                                zi[nz[i],i] <- maxT
+                                zi[nz[i],i] <- maxTii
                             }
                     }   
             }
@@ -1411,8 +1434,36 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
             {
                 if(is.vector(B))
                     {
-                        if (length(B)==NPM) b <- B
-                        else stop(paste("Vector B should be of length",NPM))
+                        if (length(B)==NPM)
+                        {
+                            b <- B
+
+                            if(nvc>0)
+                            {
+                                ## remplacer varcov des EA par les prm a estimer
+                                
+                                if(idiag==1)
+                                {
+                                    b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- sqrt(b[nprob+nrisqtot+nvarxevt+nef+1:nvc])
+                                }
+                                else
+                                {
+                                    varcov <- matrix(0,nrow=nea0,ncol=nea0)
+                                    varcov[upper.tri(varcov,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+nef+1:nvc]
+                                    varcov <- t(varcov)
+                                    varcov[upper.tri(varcov,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+nef+1:nvc]
+                                    
+                                    ch <- chol(varcov)
+                                    
+                                    b[nprob+nrisqtot+nvarxevt+nef+1:nvc] <- ch[upper.tri(ch,diag=TRUE)]
+                                    
+                                }
+                            }                                               
+                        }
+                        else
+                        {
+                            stop(paste("Vector B should be of length",NPM))
+                        }
                     }
                 else
                     {

@@ -37,8 +37,10 @@ m2c <- hlme(normMMSE ~ age65+I(age65^2)+CEP, random =~ age65+I(age65^2),subject 
 ## ---- comment='', results='hide', echo=FALSE----------------------------------
 load("gridsearch_hlme.RData")
 
-## ---- comment=''--------------------------------------------------------------
-summarytable(m1,m2,m2b,m2c, m2d, m3g, which = c("G", "loglik", "conv", "npm", "AIC", "BIC", "SABIC", "entropy", "%class"))
+## ---- comment='', fig.height=3, fig.width=7-----------------------------------
+summarytable(m1,m2,m2b,m2c, m2d  , m3g, which = c("G", "loglik", "conv", "npm", "AIC", "BIC", "SABIC", "entropy","ICL", "%class"))
+
+summaryplot(m1, m2, m3g, which = c("BIC", "entropy","ICL"))
 
 ## ---- comment=''--------------------------------------------------------------
 summary(m2d)
@@ -56,7 +58,7 @@ pred1 <- predictY(m2d, data_pred1, var.time = "age")
 ## ----comment='', fig.height=4, fig.width=6------------------------------------
 plot(pred0, col=c("red","navy"), lty=1,lwd=5,ylab="normMMSE",legend=NULL,  main="Predicted trajectories for normMMSE ",ylim=c(0,100))
 plot(pred1, col=c("red","navy"), lty=2,lwd=3,legend=NULL,add=TRUE)
-legend(x="topright",legend=c("class1 :","CEP-","CEP+","class2:","CEP-","CEP+"), col=c("red","navy"), lwd=2, lty=c(0,1,2,0,1,2), ncol=2, bty="n", cex = 0.7)
+legend(x="topright",legend=c("class1 :","CEP-","CEP+","class2:","CEP-","CEP+"), col=c(rep("red",3),rep("navy",3)), lwd=2, lty=c(0,1,2,0,1,2), ncol=2, bty="n", cex = 0.7)
 
 ## ----comment='', fig.height=4, fig.width=6------------------------------------
 predIC0 <- predictY(m2d, data_pred0, var.time = "age",draws=TRUE)

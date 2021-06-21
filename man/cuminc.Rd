@@ -4,7 +4,7 @@
 \alias{cuminc}
 \title{Predicted cumulative incidence of event according to a profile of covariates}
 \usage{
-cuminc(x, time, draws = FALSE, ndraws = 2000, ...)
+cuminc(x, time, draws = FALSE, ndraws = 2000, integrateOptions = NULL, ...)
 }
 \arguments{
 \item{x}{an object inheriting from class \code{Jointlcmm}}
@@ -21,6 +21,9 @@ draws=FALSE.}
 \item{ndraws}{if draws=TRUE, ndraws specifies the number of draws that
 should be generated to approximate the posterior distribution of the
 predicted cumulative incidence. By default, ndraws=2000.}
+
+\item{integrateOptions}{optional list specifying the subdivisions, rel.tol
+and stop.on.error options (see ?integrate).}
 
 \item{\dots}{further arguments, in particular values of the covariates
 specified in the survival part of the joint model.}

@@ -1,4 +1,4 @@
-#' Estimation of mutlivariate mixed-effect models and multivariate latent class
+#' Estimation of multivariate mixed-effect models and multivariate latent class
 #' mixed-effect models for multivariate longitudinal outcomes of possibly
 #' multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear)
 #' that measure the same underlying latent process.
@@ -374,7 +374,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
     if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
     if(nrow(data)==0) stop("Data should not be empty")
     if(missing(subject)){ stop("The argument subject must be specified")}
-    if(!is.numeric(data[,subject])) stop("The argument subject must be numeric")
+    if(!is.numeric(data[[subject]])) stop("The argument subject must be numeric")
     if(any(link=="thresholds"))  stop("The link function thresholds is not available in multivariate case")
     if(all(link %in% c("linear","beta")) & !is.null(intnodes)) stop("Intnodes should only be specified with splines links")
 
@@ -888,7 +888,8 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                 Brandom <- TRUE
                 B <- eval(cl$B[[2]])
 
-                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
+# CPL 9/9/20
+#                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
     
 ###valeurs initiales
@@ -898,6 +899,28 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                 {
                     if (length(B)==NPM) b <- B
                     else stop(paste("Vector B should be of length",NPM))
+
+                    if(nvc>0)
+                    {
+                        ## remplacer varcov des EA par les prm a estimer
+                        
+                        if(idiag==1)
+                        {
+                            b[nef+1:nvc] <- sqrt(b[nef+1:nvc])
+                        }
+                        else
+                        {
+                            varcov <- matrix(0,nrow=nea0,ncol=nea0)
+                            varcov[upper.tri(varcov,diag=TRUE)] <- c(1,b[nef+1:nvc])
+                            varcov <- t(varcov)
+                            varcov[upper.tri(varcov,diag=TRUE)] <- c(1,b[nef+1:nvc])
+                            
+                            ch <- chol(varcov)
+                            
+                            b[nef+1:nvc] <- (ch[upper.tri(ch,diag=TRUE)])[-1]
+                            
+                        }
+                    }                   
                 }
             else
                 {
@@ -1068,20 +1091,30 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                                         up <- vbb[upper.tri(vbb,diag=TRUE)]
                                         vbb <- t(vbb)
                                         vbb[upper.tri(vbb,diag=TRUE)] <- up
-                                        Chol <- chol(vbb)
-                                        Chol <- t(Chol)
+
+                                        # Chol <- chol(vbb)      # CPL 9/9/20
+                                        # Chol <- t(Chol)        # CPL 9/9/20 
 
                                         ## vecteur final b cree a partir de bb et vbb
                                         b <- rep(0,NPM)
                                         
                                         if(idg0[1]>1)
                                             {
-                                                b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
+                                            # print(b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)])
+                                            # print(bb)
+                                            # print(length(b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)]))
+                                            # print(length(bb))
+                                                b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)] <- rmvnorm(n=1,mean=bb,sigma = vbb)  # CPL 9/9/20
+                                                # b[c((nprob+ng):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(length(bb))   # CPL 9/9/20
                                                 b[nprob+1:(ng-1)] <- 0
                                             } 
                                         else
-                                            {                                        
-                                                b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(NPM-nprob-nw)
+                                            {   
+                                                print(bb)
+                                                print(b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)])
+
+                                                b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)] <- rmvnorm(n=1,mean=bb,sigma=vbb)  # CPL 9/9/20
+                                                # b[c((nprob+1):(nef+nvc),(nef+nvc+nw+1):NPM)] <- bb + Chol %*% rnorm(NPM-nprob-nw)  # CPL 9/9/20
                                             }
 
                                         ## les prm de classmb et nwg sont toujours initalises a 0 et 1

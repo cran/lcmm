@@ -30,7 +30,7 @@
 
     if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")} 
     if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")} 
-    if(!is.numeric(data[,subject])) stop("The argument subject must be numeric")
+    if(!is.numeric(data[[subject]])) stop("The argument subject must be numeric")
 ### ad 2/04/2012
     X0.names2 <- c("intercept")
 ### ad
@@ -502,7 +502,33 @@
                     if(length(B)!=NPM){
                         stop("The length of the vector B is not correct")
                     }
-                    else {b <-B}
+                    else
+                    {
+                        b <-B
+                        
+                        if(NVC>0)
+                        {
+                            ## remplacer varcov des EA par les prm a estimer
+                            
+                            if(idiag==1)
+                            {
+                                b[NPROB+NEF+1:NVC] <- sqrt(b[NPROB+NEF+1:NVC])
+                            }
+                            else
+                            {
+                                varcov <- matrix(0,nrow=nea0,ncol=nea0)
+                                varcov[upper.tri(varcov,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                varcov <- t(varcov)
+                                varcov[upper.tri(varcov,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                
+                                ch <- chol(varcov)
+                                
+                                b[NPROB+NEF+1:NVC] <- ch[upper.tri(ch,diag=TRUE)]
+                                
+                            }
+                        }                   
+                        
+                    }
                 }
             else
                 {

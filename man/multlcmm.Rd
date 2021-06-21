@@ -3,24 +3,72 @@
 \name{multlcmm}
 \alias{multlcmm}
 \alias{mlcmm}
-\title{Estimation of mutlivariate mixed-effect models and multivariate latent class
+\title{Estimation of multivariate mixed-effect models and multivariate latent class
 mixed-effect models for multivariate longitudinal outcomes of possibly
 multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear)
 that measure the same underlying latent process.}
 \usage{
-multlcmm(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE,
-  nwg = FALSE, randomY = FALSE, link = "linear", intnodes = NULL,
-  epsY = 0.5, cor = NULL, data, B, convB = 1e-04, convL = 1e-04,
-  convG = 1e-04, maxiter = 100, nsim = 100, prior, range = NULL,
-  subset = NULL, na.action = 1, posfix = NULL, partialH = FALSE,
-  verbose = TRUE, returndata = FALSE)
+multlcmm(
+  fixed,
+  mixture,
+  random,
+  subject,
+  classmb,
+  ng = 1,
+  idiag = FALSE,
+  nwg = FALSE,
+  randomY = FALSE,
+  link = "linear",
+  intnodes = NULL,
+  epsY = 0.5,
+  cor = NULL,
+  data,
+  B,
+  convB = 1e-04,
+  convL = 1e-04,
+  convG = 1e-04,
+  maxiter = 100,
+  nsim = 100,
+  prior,
+  range = NULL,
+  subset = NULL,
+  na.action = 1,
+  posfix = NULL,
+  partialH = FALSE,
+  verbose = TRUE,
+  returndata = FALSE
+)
 
-mlcmm(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE,
-  nwg = FALSE, randomY = FALSE, link = "linear", intnodes = NULL,
-  epsY = 0.5, cor = NULL, data, B, convB = 1e-04, convL = 1e-04,
-  convG = 1e-04, maxiter = 100, nsim = 100, prior, range = NULL,
-  subset = NULL, na.action = 1, posfix = NULL, partialH = FALSE,
-  verbose = TRUE, returndata = FALSE)
+mlcmm(
+  fixed,
+  mixture,
+  random,
+  subject,
+  classmb,
+  ng = 1,
+  idiag = FALSE,
+  nwg = FALSE,
+  randomY = FALSE,
+  link = "linear",
+  intnodes = NULL,
+  epsY = 0.5,
+  cor = NULL,
+  data,
+  B,
+  convB = 1e-04,
+  convL = 1e-04,
+  convG = 1e-04,
+  maxiter = 100,
+  nsim = 100,
+  prior,
+  range = NULL,
+  subset = NULL,
+  na.action = 1,
+  posfix = NULL,
+  partialH = FALSE,
+  verbose = TRUE,
+  returndata = FALSE
+)
 }
 \arguments{
 \item{fixed}{a two-sided linear formula object for specifying the

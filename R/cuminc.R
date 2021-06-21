@@ -16,6 +16,8 @@
 #' @param ndraws if draws=TRUE, ndraws specifies the number of draws that
 #' should be generated to approximate the posterior distribution of the
 #' predicted cumulative incidence. By default, ndraws=2000.
+#' @param integrateOptions optional list specifying the subdivisions, rel.tol
+#' and stop.on.error options (see ?integrate).
 #' @param \dots further arguments, in particular values of the covariates
 #' specified in the survival part of the joint model.
 #' @return An object of class \code{cuminc} containing as many matrices as
@@ -37,7 +39,7 @@
 #' @seealso
 #' \code{\link{Jointlcmm}}, \code{\link{plot.Jointlcmm}}, \code{\link{plot.cuminc}}
 #' @export
-cuminc <- function(x,time,draws=FALSE,ndraws=2000,...)
+cuminc <- function(x,time,draws=FALSE,ndraws=2000,integrateOptions=NULL,...)
     {   
         if(!inherits(x,"Jointlcmm")) stop("The argument 'x' must be a'Jointlcmm' object")
         if(isTRUE(draws) & x$conv!=1) stop("No confidence interval can be provided since the model did not converge properly") 
@@ -92,9 +94,12 @@ cuminc <- function(x,time,draws=FALSE,ndraws=2000,...)
         
         ## matrice avec 1 profil par ligne
         Xprofil <- do.call("expand.grid",Xdots)
-
+        if(nrow(Xprofil)==0) Xprofil <- matrix(0,1,1)
+        
         ## fonction d'integration
-        integrate2 <- function(...) return(integrate(...)$value)
+        io <- list(subdivisions=100L, rel.tol=.Machine$double.eps^0.25, stop.on.error=TRUE)
+        io[names(integrateOptions)] <- integrateOptions
+        integrate2 <- function(...) return(integrate(..., subdivisions=io$subdivisions, rel.tol=io$rel.tol, stop.on.error=io$stop.on.error)$value)
 
         calculincid <- function(idraw)
             { 
@@ -125,12 +130,12 @@ cuminc <- function(x,time,draws=FALSE,ndraws=2000,...)
                         bdraw <- x$best + Chol %*% bdraw
 
                         brisqtot <- as.vector(bdraw[x$N[1]+1:x$N[2]])
-                        bvarxevt <- as.vector(bdraw[sum(x$N[1:2])+1:x$N[3]]) 
+                        if(x$N[3]>0) bvarxevt <- as.vector(bdraw[sum(x$N[1:2])+1:x$N[3]]) 
                     }
                 else
                     {
                         brisqtot <- as.vector(x$best[x$N[1]+1:x$N[2]])
-                        bvarxevt <- as.vector(x$best[sum(x$N[1:2])+1:x$N[3]])
+                        if(x$N[3]>0) bvarxevt <- as.vector(x$best[sum(x$N[1:2])+1:x$N[3]])
                     }
                 
 

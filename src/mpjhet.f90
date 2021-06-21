@@ -714,10 +714,6 @@
       end do
 
 
-      if(istop.eq.4 .or. istop.eq.12) then
-         goto 1589
-      end if
-
       ! calculs post-estimation
 
       if(istop.eq.1 .or. istop.eq.2 .or. istop.eq.3) then 
@@ -849,8 +845,6 @@
 
 
       end if
-
- 1589 continue
 
 
 
@@ -1250,6 +1244,7 @@ double precision function vrais_mpj_i(b,npm,id,thi,jd,thj,i)
      sumparK=0
      sumnv=0
      do k=1,nbK
+        
         sumntr=0
 
         !! variance des effets aleatoires
@@ -1371,6 +1366,10 @@ double precision function vrais_mpj_i(b,npm,id,thi,jd,thj,i)
            sumntr = sumntr + ntr(sumny+yk) ! sert a incrementer tmp
         end do
 
+
+        if(nmesparK(i,k).eq.0) goto 100
+
+        
         ! matrice de variance de Yik
         P=0.d0
         P=MATMUL(Z,Ut)
@@ -1483,6 +1482,8 @@ double precision function vrais_mpj_i(b,npm,id,thi,jd,thj,i)
         !if(k.eq.1) vrais_Y1 = vrais_Y1 -nmesparK(i,k)*dlog(dble(2*3.14159265))-det-Y4
         !if(k.eq.2) vrais_Y2 = vrais_Y2 -nmesparK(i,k)*dlog(dble(2*3.14159265))-det-Y4
 
+100 continue
+        
         sumny = sumny + ny(k)
         tmp = tmp + nef(k)+ncontr(k)+nvc(k)+nw(k)+ncor(k)+nerr(k)+nalea(k)+sumntr
         sumparK = sumparK + nmesparK(i,k)
@@ -2756,7 +2757,7 @@ subroutine postprob_mpj(b,npm,ppi,ppiy)
               end do
            else if(idlink(sumny+yk).eq.-1) then
               do j=1,nmes(i,sumny+yk)
-                 Y1(sumMesYk+sumparK+j)=Y(sumMesYk+sumparK+j)
+                 Y1(sumMesYk+sumparK+j)=Y(it+sumMesYk+sumparK+j)
               end do
            end if
            sumntr = sumntr + ntr(sumny+yk)
@@ -3373,7 +3374,7 @@ subroutine residuals_mpj(b1,npm,ppi,resid_m,pred_m_g,resid_ss, &
               end do
            else if(idlink(sumny+yk).eq.-1) then
               do j=1,nmes(i,sumny+yk)
-                 Y1(sumMesYk+sumparK+j)=Y(sumMesYk+sumparK+j)
+                 Y1(sumMesYk+sumparK+j)=Y(it+sumMesYk+sumparK+j)
                  Yobs(it+sumparK+sumMesYk+j) = Y1(sumparK+sumMesYk+j)
               end do
            end if
