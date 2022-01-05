@@ -269,13 +269,14 @@
 #' parameters that should not be estimated. Default to NULL, all parameters are
 #' estimated.
 #' @param partialH optional logical for Piecewise and Splines baseline risk
-#' functions only. Indicates whether the parameters of the baseline risk
-#' functions can be dropped from the Hessian matrix to define convergence
-#' criteria.
+#' functions and Splines link functions only. Indicates whether the parameters of the
+#' baseline risk or link functions can be dropped from the Hessian matrix to
+#' define convergence criteria.
 #' @param verbose logical indicating if information about computation should be
 #' reported. Default to TRUE.
 #' @param returndata logical indicating if data used for computation should be
 #' returned. Default to FALSE, data are not returned.
+#' @param var.time optional character indicating the name of the time variable.
 #' @return The list returned is: \item{loglik}{log-likelihood of the model}
 #' \item{best}{vector of parameter estimates in the same order as specified in
 #' \code{B} and detailed in section \code{details}} \item{V}{vector containing
@@ -293,7 +294,9 @@
 #' (pred_ss) and subject-specific residuals (resid_ss) averaged over classes,
 #' the observation (obs) and finally the class-specific marginal and
 #' subject-specific predictions (with the number of the latent class:
-#' pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...)} \item{pprob}{table of
+#' pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). If \code{var.time}
+#' is specified, the corresponding measurement time is also included.}
+#' \item{pprob}{table of
 #' posterior classification and posterior individual class-membership
 #' probabilities based on the longitudinal data and the time-to-event data}
 #' \item{pprobY}{table of posterior classification and posterior individual
@@ -443,7 +446,8 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                       link=NULL,intnodes=NULL,epsY=0.5,range=NULL,
                       cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,
                       nsim=100,prior=NULL,logscale=FALSE,subset=NULL,na.action=1,
-                      posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE)
+                      posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE,
+                      var.time=NULL)
     {
         
         ptm<-proc.time()
@@ -497,7 +501,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         
         if(!(na.action %in% c(1,2))) stop("only 1 for 'na.omit' or 2 for 'na.fail' are required in na.action argument")
 
-        if(length(posfix) & missing(B)) stop("A set of initial parameters must be specified if some parameters are not estimated")
+        #if(length(posfix) & missing(B)) stop("A set of initial parameters must be specified if some parameters are not estimated")
 
 
         ## garder data tel quel pour le renvoyer
@@ -872,8 +876,15 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
 
 
         X0 <- as.matrix(X0)
-###X0 fini  
-
+###X0 fini
+        
+        timeobs <- rep(0, nrow(newdata))
+        if(!is.null(var.time))
+        {
+            timeobs <- newdata[,var.time]
+            if(any(is.na(timeobs))) stop(paste("Cannot use",var.time,"as time variable because it contains missing data"))
+        }
+        
 
 ###test de link
         if(link %in% c("splines","Splines"))
@@ -985,15 +996,16 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         #IDnum <- as.numeric(IND)
         if(is.null(nom.prior)) prior <- rep(0,length(Y0))  
         if(!length(indiceY0)) indiceY0 <- rep(0,length(Y0))  
-        matYX <- cbind(IND,prior,Y0,indiceY0,Tentry,Tevent,Event,Tint,X0)
+        matYX <- cbind(IND,timeobs,prior,Y0,indiceY0,Tentry,Tevent,Event,Tint,X0)
         matYXord <- matYX[order(IND),]
-        Y0 <- as.numeric(matYXord[,3])
-        X0 <- apply(matYXord[,-c(1:8),drop=FALSE],2,as.numeric)
+        Y0 <- as.numeric(matYXord[,4])
+        X0 <- apply(matYXord[,-c(1:9),drop=FALSE],2,as.numeric)
         #IDnum <- matYXord[,1]
         IND <- matYXord[,1]
-        indiceY0 <- as.numeric(matYXord[,4])
-        prior0 <- as.numeric(unique(matYXord[,c(1,2)])[,2])
+        indiceY0 <- as.numeric(matYXord[,5])
+        prior0 <- as.numeric(unique(matYXord[,c(1,3)])[,2])
         if(length(prior0)!=length(unique(IND))) stop("Please check 'prior' argument. Subjects can not have multiple assigned classes.")
+        timeobs <- matYXord[,2]
 
         ## nombre de sujets
         ns0 <- length(unique(IND))  
@@ -1003,7 +1015,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                         #if(nrow(data.surv) != ns0) stop("Subjects cannot have several times to event.")
         
         nmes <- as.vector(table(IND))
-        data.surv <- sweep(matYXord[cumsum(nmes),c(5,6,7,8), drop=FALSE], MARGIN=1, STATS=0, FUN=function(x,y){as.numeric(x)+y})
+        data.surv <- sweep(matYXord[cumsum(nmes),c(6,7,8,9), drop=FALSE], MARGIN=1, STATS=0, FUN=function(x,y){as.numeric(x)+y})
         
         tsurv0 <- data.surv[,1] 
         tsurv <- data.surv[,2]
@@ -1395,25 +1407,41 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
 
         
         ## pour H restreint
+        Hr0 <- as.numeric(partialH)
         pbH0 <- rep(0,NPM)
-        if(any(typrisq %in% c(1,3)))
+        if(is.logical(partialH))
+        {
+            if(partialH)
             {
-                for(k in 1:nbevt)
+                if(any(typrisq %in% c(1,3)))
+                {
+                    for(k in 1:nbevt)
                     {
                         if(typrisq[k] %in% c(1,3))
+                        {
+                            pbH0[nprob+sum(nrisq[1:k])-nrisq[k]+1:nrisq[k]] <- 1
+                            if(risqcom[k]==2)
                             {
-                                pbH0[nprob+sum(nrisq[1:k])-nrisq[k]+1:nrisq[k]] <- 1
-                                if(risqcom[k]==2)
-                                    {
-                                        pbH0[nprob+sum(nrisq[1:k])] <- 0
-                                    }
+                                pbH0[nprob+sum(nrisq[1:k])] <- 0
                             }
+                        }
                     }
+                }
+                
+                if(any(idlink==2))
+                {
+                    pbH0[nprob+nrisqtot+nvarxevt+nef+nvc+nw+ncor0+1:ntrtot0] <- 1
+                }
             }
-        pbH0[posfix] <- 0
-        Hr0 <- as.numeric(partialH)
-        if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined in the absence of baseline risk function approximated by splines or piecewise linear function")
-        
+            pbH0[posfix] <- 0
+            if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined in the absence of baseline risk function approximated by splines or piecewise linear function")
+        }
+        else
+        {
+            if(!all(Hr0 %in% 1:NPM)) stop("Indexes in partialH are not correct")
+            pbH0[Hr0] <- 1
+            pbH0[posfix] <- 0
+        }
     
         ## gestion de B=random(mod)
 
@@ -2600,16 +2628,15 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 classif <- rep(NA,ns0)
             }
         else
+        {
+            chooseClass <- function(ppi)
             {
-                classif <- apply(ppi,1,which.max)
-
-                if(any(!is.finite(ppi)))
-                    {
-                        classif <- rep(NA,ns0)
-                        iok <- which(is.finite(ppi[,1]))
-                        classif[iok] <- apply(ppi[iok,,drop=FALSE],1,which.max)
-                    }
+                res <- which.max(ppi)
+                if(!length(res)) res <- NA
+                return(res)
             }
+            classif <- apply(ppi,1,chooseClass)
+        }
 
         ppi <- data.frame(unique(IND),classif,ppi)
         temp <- paste("probYT",1:ng0,sep="")
@@ -2624,7 +2651,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
             }
         else
             {
-                classif <- apply(ppitest,1,which.max)
+                classif <- apply(ppitest,1,chooseClass)
 
                 if(any(!is.finite(ppitest)))
                     {
@@ -2660,6 +2687,11 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         temp<-paste("pred_m",1:ng0,sep="")
         temp1<-paste("pred_ss",1:ng0,sep="")
         colnames(pred)<-c(subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1)
+        if(!is.null(var.time))
+        {
+            pred <- data.frame(IND,pred_m,out$resid_m,pred_ss,out$resid_ss,out$Yobs,pred_m_g,pred_ss_g,timeobs)
+            colnames(pred)<-c(subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1,var.time)
+        }
 
 
 ### risques
@@ -2720,7 +2752,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                    scoretest=stats,na.action=linesNA,
                    AIC=2*(length(out$best)-length(posfix)-out$loglik),
                    BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,
-                   data=datareturn)
+                   data=datareturn,var.time=var.time)
 
         class(res) <-c("Jointlcmm")
 

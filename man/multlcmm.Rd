@@ -5,7 +5,7 @@
 \alias{mlcmm}
 \title{Estimation of multivariate mixed-effect models and multivariate latent class
 mixed-effect models for multivariate longitudinal outcomes of possibly
-multiple types (continuous Gaussian, continuous non-Gaussian - curvilinear)
+multiple types (continuous Gaussian, continuous non-Gaussian/curvilinear, ordinal)
 that measure the same underlying latent process.}
 \usage{
 multlcmm(
@@ -36,7 +36,10 @@ multlcmm(
   posfix = NULL,
   partialH = FALSE,
   verbose = TRUE,
-  returndata = FALSE
+  returndata = FALSE,
+  methInteg = "QMC",
+  nMC = NULL,
+  var.time = NULL
 )
 
 mlcmm(
@@ -67,7 +70,10 @@ mlcmm(
   posfix = NULL,
   partialH = FALSE,
   verbose = TRUE,
-  returndata = FALSE
+  returndata = FALSE,
+  methInteg = "QMC",
+  nMC = NULL,
+  var.time = NULL
 )
 }
 \arguments{
@@ -122,7 +128,9 @@ with parameterized variance are included.}
 \item{link}{optional vector of families of parameterized link functions to
 estimate (one by outcome). Option "linear" (by default) specifies a linear
 link function. Other possibilities include "beta" for estimating a link
-function from the family of Beta cumulative distribution functions and
+function from the family of Beta cumulative distribution functions,
+"thresholds" for using a threshold model to describe the correspondence
+between each level of an ordinal outcome and the underlying latent process and
 "Splines" for approximating the link function by I-splines. For this latter
 case, the number of nodes and the nodes location should be also specified.
 The number of nodes is first entered followed by \code{-}, then the location
@@ -200,7 +208,7 @@ for 'na.omit'. The alternative is 2 for 'na.fail'. Other options such as
 parameters that should not be estimated. Default to NULL, all parameters are
 estimated.}
 
-\item{partialH}{optional logical for Beta or Splines link functions only.
+\item{partialH}{optional logical for Splines link functions only.
 Indicates whether the parameters of the link functions can be dropped from
 the Hessian matrix to define convergence criteria.}
 
@@ -209,6 +217,15 @@ reported. Default to TRUE.}
 
 \item{returndata}{logical indicating if data used for computation should be
 returned. Default to FALSE, data are not returned.}
+
+\item{methInteg}{character indicating the type of integration if ordinal outcomes
+are considered. 'MCO' for ordinary Monte Carlo, 'MCA' for antithetic Monte Carlo,
+'QMC' for quasi Monte Carlo. Default to "QMC".}
+
+\item{nMC}{integer, number of Monte Carlo simulations. By default, 1000 points are used
+if at least one threshold link is specified.}
+
+\item{var.time}{optional character indicating the name of the time variable.}
 }
 \value{
 The list returned is: \item{ns}{number of grouping units in the
@@ -232,7 +249,8 @@ residuals (resid_m), subject-specific predictions (pred_ss) and
 subject-specific residuals (resid_ss) averaged over classes, the transformed
 observations in the latent process scale (obs) and finally the
 class-specific marginal and subject-specific predictions (with the number of
-the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...).}
+the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). If \code{var.time}
+is specified, the corresponding measurement time is also included.}
 \item{pprob}{table of posterior classification and posterior individual
 class-membership probabilities} \item{Xnames}{list of covariates included in
 the model} \item{predRE}{table containing individual predictions of the
@@ -253,16 +271,15 @@ This function constitutes a multivariate extension of function \code{lcmm}.
 It fits multivariate mixed models and multivariate latent class mixed models
 for multivariate longitudinal outcomes of different types. It handles
 continuous longitudinal outcomes (Gaussian or non-Gaussian, curvilinear) as
-well as bounded quantitative and discrete longitudinal outcomes. Next
-version will also handle ordinal outcomes.  The model assumes that all the
-outcomes measure the same underlying latent process defined as their common
-factor, and each outcome is related to this latent common factor by a
-specific parameterized link function.  At the latent process level, the
+well as ordinal longitudinal outcomes (with cumulative probit measurement model). 
+The model assumes that all the outcomes measure the same underlying latent process
+ defined as their common factor, and each outcome is related to this latent common
+ factor by a specific parameterized link function. At the latent process level, the
 model estimates a standard linear mixed model or a latent class linear mixed
 model when heterogeneity in the population is investigated (in the same way
-as in function \code{hlme}). Parameters of the nonlinear link functions and
-of the latent process mixed model are estimated simultaneously using a
-maximum likelihood method.
+as in functions \code{hlme} and \code{lcmm}). Parameters of the nonlinear link 
+functions and of the latent process mixed model are estimated simultaneously 
+using a maximum likelihood method.
 }
 \details{
 A. THE PARAMETERIZED LINK FUNCTIONS
@@ -292,8 +309,16 @@ parameters to be positive, except for b_1, the program estimates b_k^* (for
 k=2,...,n+2) so that b_k=(b_k^*)^2. This parameterization may lead in some
 cases to problems of convergence that we are currently addressing.
 
+4. With the "thresholds" link function for an ordinal outcome with levels
+0,...,C, C-1 parameters are required for the following transformation:
+Y(t)=c <=> b_c < L(t) <= b_{c+1} with b_0 = - infinity and b_{C+1}=+infinity.
+To constraint the parameters to be increasing, except for the first
+parameter b_1, the program estimates b_k^* (for k=2,...C-1) so that
+b_{k}=b_{k-1}+(b_k^*)^2.
+
 Details of these parameterized link functions can be found in the papers:
-Proust-Lima et al. (Biometrics 2006) and Proust-Lima et al. (BJMSP 2013).
+Proust-Lima et al. (Biometrics 2006), Proust-Lima et al. (BJMSP 2013),
+Proust-Lima et al. (arxiv 2021 - https://arxiv.org/abs/2109.13064)
 
 B. THE VECTOR OF PARAMETERS B
 
@@ -341,7 +366,7 @@ parameters that are too high or low (perfect classification). When
 identifiability of some parameters is suspected, the program can be run
 again from the former estimates by fixing the suspected parameters to their
 value with option posfix. This usually solves the problem. An alternative is
-to remove the parameters of the Beta of Splines link function from the
+to remove the parameters of the Beta or Splines link function from the
 inverse of the Hessian with option partialH.
 
 If not, the program should be run again with other initial values, with a
@@ -362,6 +387,17 @@ why several alternatives exist. The vector of initial values can be directly
 specified in \code{B} the initial values can be generated (automatically or
 randomly) from a model with \code{ng=}. Finally, function \code{gridsearch}
 performs an automatic grid search.
+
+D. NUMERICAL INTEGRATION WITH THE THRESHOLD LINK FUNCTION
+
+When dealing only with continuous outcomes, the computation of the likelihood does not
+require any numerical integration over the random-effects, so that the estimation
+procedure is relatively fast.
+When at least one ordinal outcome is modeled, a numerical integration over the
+random-effects is required in each computation of the individual contribution to the
+likelihood. This achieved using a Monte-Carlo procedure. We allow three options:
+the standard Monte-Carlo simulations, as well as antithetic Monte-Carlo and quasi
+Monte-Carlo methods as proposed in Philipson et al (2020).
 }
 \examples{
 
@@ -431,6 +467,14 @@ Psychol 66(3): 470-87.
 
 Commenges, Proust-Lima, Samieri, Liquet (2012). A universal approximate
 cross-validation criterion and its asymptotic distribution, Arxiv.
+
+Philipson, Hickey, Crowther, Kolamunnage-Dona (2020). Faster Monte Carlo estimation
+of semiparametric joint models of time-to-event and multivariate longitudinal data.
+Computational Statistics & Data Analysis 151.
+
+Proust-Lima, Philipps, Perrot, Blanchin, Sebille (2021). Modeling repeated 
+self-reported outcome data: a continuous-time longitudinal Item Response 
+Theory model. https://arxiv.org/abs/2109.13064
 }
 \seealso{
 \code{\link{postprob}}, \code{\link{plot.multlcmm}}, \code{\link{predictL}},

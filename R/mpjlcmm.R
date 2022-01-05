@@ -1,6 +1,6 @@
 #' Estimation of multi-process joint latent class mixed models
 #'
-#' @param longitudinal list of longitudinal models of the type hlme, lcmm or multlcmm
+#' @param longitudinal list of longitudinal models of type hlme, lcmm or multlcmm
 #' @param subject name of the covariate representing the grouping structure
 #' (called subject identifier)
 #' @param classmb optional one-sided formula describing the covariates in the
@@ -17,7 +17,7 @@
 #' @param TimeDepVar optional vector specifying the name of the time-depending
 #' covariate in the survival model
 #' @param data data frame containing all the variables used in the model
-#' @param B optional specification for the initial values for the parameters.
+#' @param B optional specification for the initial values of the parameters.
 #' Three options are allowed: (1) a vector of initial values is entered (the
 #' order in which the parameters are included is detailed in \code{details}
 #' section).  (2) nothing is specified. Initial values are extracted from the models
@@ -28,7 +28,7 @@
 #' local maxima, the \code{B} vector should be specified and several different
 #' starting points should be tried.
 #' @param convB optional threshold for the convergence criterion based on the
-#' parameter stabilit
+#' parameter stability
 #' @param convL optional threshold for the convergence criterion based on the
 #' log-likelihood stability
 #' @param convG optional threshold for the convergence criterion based on the
@@ -52,10 +52,11 @@
 #' parameters that should not be estimated. Default to NULL, all parameters are
 #' estimated
 #' @param partialH optional logical for Piecewise and Splines baseline risk
-#' functions only. Indicates whether the parameters of the baseline risk
-#' functions can be dropped from the Hessian matrix to define convergence
-#' criteria.
-#' @param verbose logical indicating if information about computation should be
+#' functions and Splines link functions only. Indicates whether the parameters of the
+#' baseline risk or link functions can be dropped from the Hessian matrix to define
+#' convergence criteria (can solve non convergence due to estimates at the boundary 
+#' of the parameter space - usually 0).
+#' @param verbose logical indicating whether information about computation should be
 #' reported. Default to TRUE.
 #' 
 #' @author Cecile Proust Lima and Viviane Philipps
@@ -203,7 +204,8 @@
 mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,
                     data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,
-                    prior,logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE)
+                    prior,logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,
+                    partialH=FALSE,verbose=TRUE)
     {
         
         ptm <- proc.time()
@@ -636,7 +638,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             Tentry <- 0
             ind_survint <- 0
         }
-        
+                
         ## Y0
         Y0 <- dataY$measureY
 
@@ -1111,7 +1113,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 if(hazardtype[ke]=="PH")
                 {
                     wBrandom <- c(wBrandom,nn+1:nprisq[ke],rep(0,ng-1))
-                    b0Brandom <- c(b0Brandom,rep(1,ng-1))
+                    b0Brandom <- c(b0Brandom,rep(0,ng-1))
                     nn <- nn + nprisq[ke]
                 }
                 if(hazardtype[ke]=="Specific")
@@ -1342,25 +1344,54 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
 
         
         ## pour H restreint
+        Hr <- as.numeric(partialH)
         pbH <- rep(0,NPM)
-        if(any(typrisq %in% c(1,3)))
+        if(is.logical(partialH))
+        {
+            if(partialH)
             {
-                for(k in 1:nbevt)
+                if(any(typrisq %in% c(1,3)))
+                {
+                    for(k in 1:nbevt)
                     {
                         if(typrisq[k] %in% c(1,3))
+                        {
+                            pbH[nprob+sum(nrisq[1:k])-nrisq[k]+1:nrisq[k]] <- 1
+                            if(risqcom[k]==2)
                             {
-                                pbH[nprob+sum(nrisq[1:k])-nrisq[k]+1:nrisq[k]] <- 1
-                                if(risqcom[k]==2)
-                                    {
-                                        pbH[nprob+sum(nrisq[1:k])] <- 0
-                                    }
+                                pbH[nprob+sum(nrisq[1:k])] <- 0
                             }
+                        }
                     }
+                }
+                if(any(idlink==2))
+                {
+                    sumnpm <- 0
+                    for(k in 1:K)
+                    {
+                        summ <- nef[k]+ncontr[k]+nvc[k]+nw[k]+ncor[k]+nerr[k]+nalea[k]
+                        for(m in 1:ny[k])
+                        {
+                            ym <- sum(ny[1:k])-ny[k]+m
+                            if(idlink[ym]==2)
+                            {
+                                pbH[nprob+nrisqtot+nvarxevt+sumnpm+summ+1:ntr[ym]] <- 1
+                            }
+                            summ <- summ+ntr[ym]
+                        }
+                        sumnpm <- sumnpm + npmtot[k]
+                    }
+                }
             }
-        pbH[posfix] <- 0
-        Hr <- as.numeric(partialH)
-        if(sum(pbH)==0 & Hr==1) stop("No partial Hessian matrix can be defined")
-        
+            pbH[posfix] <- 0
+            if(sum(pbH)==0 & Hr==1) stop("No partial Hessian matrix can be defined")
+        }
+        else
+        {
+            if(!all(Hr %in% 1:NPM)) stop("Indexes in partialH are not correct")
+            pbH[Hr] <- 1
+            pbH[posfix] <- 0
+        }
     
         ## gestion de B=random(mod)
 
@@ -1442,6 +1473,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                             if(nbevt>0) #survie
                             {
                                 w <- c(w,wBrandom)
+                                b0 <- c(b0, b0Brandom)
                             }
 
                             sumnpm <- 0
@@ -1489,7 +1521,6 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                             ww[which(w %in% fix1)] <- 0
                             theta1 <- theta0[setdiff(1:length(theta0),fix1)]
                             var1 <- var0[setdiff(1:length(B$best),fix1),setdiff(1:length(B$best),fix1)]
-
                             b <- Brandom(theta0=theta1,v0=var1,w=ww,b0=b0,chol=cholRandom,mult=multRandom)
 
                         } # fin random
@@ -1978,6 +2009,12 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         }
 
         ## proba des classes a posteroiri et classification
+        chooseClass <- function(ppi)
+        {
+            res <- which.max(ppi)
+            if(!length(res)) res <- NA
+            return(res)
+        }
         if(ng>1)
             {
                 ppi <- matrix(out$ppi,ncol=ng,nrow=ns,byrow=TRUE)
@@ -1995,14 +2032,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             }
         else
             {
-                classif <- apply(ppi,1,which.max)
-
-                if(any(!is.finite(ppi)))
-                    {
-                        classif <- rep(NA,ns)
-                        iok <- which(is.finite(ppi[,1]))
-                        classif[iok] <- apply(ppi[iok,,drop=FALSE],1,which.max)
-                    }
+                classif <- apply(ppi,1,chooseClass)
             }
 
         ppi <- data.frame(unique(IND),classif,ppi)
@@ -2017,14 +2047,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             }
         else
             {
-                classif <- apply(ppitest,1,which.max)
-
-                if(any(!is.finite(ppitest)))
-                    {
-                        classif <- rep(NA,ns)
-                        iok <- which(is.finite(ppitest[,1]))
-                        classif[iok] <- apply(ppitest[iok,,drop=FALSE],1,which.max)
-                    }
+                classif <- apply(ppitest,1,chooseClass)
             }
  
         ppitest <- data.frame(unique(IND),classif,ppitest)
@@ -2053,7 +2076,6 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         temp <- paste("pred_m",1:ng,sep="")
         temp1 <- paste("pred_ss",1:ng,sep="")
         colnames(pred) <- c(nom.subject,"Yname","pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1)
-
 
         ## risques
         if(nbevt>0)

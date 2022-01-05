@@ -64,6 +64,8 @@ gridsearch <- function(m,rep,maxiter,minit,cl=NULL)
     models <- vector(mode="list",length=rep)
     assign("minit",eval(minit))
 
+    if(minit$conv != 1) stop("The model minit did not converge")
+
     ncl <- NULL
     
     ## parallel version
@@ -116,7 +118,7 @@ gridsearch <- function(m,rep,maxiter,minit,cl=NULL)
         for(k in 1:rep)
         {
             mc$B <- substitute(random(minit),environment())
-            models[[k]] <- do.call(as.character(mc[[1]]),as.list(mc[-1]))
+            models[[k]] <- do.call(as.character(mc[[1]]),as.list(mc[-1]), envir=parent.frame())
         }
     }
     
@@ -127,7 +129,7 @@ gridsearch <- function(m,rep,maxiter,minit,cl=NULL)
     mc$B <- models[[kmax]]$best
     mc$maxiter <- match.call()$m$maxiter
     
-    return(do.call(as.character(mc[[1]]),as.list(mc[-1])))
+    return(do.call(as.character(mc[[1]]),as.list(mc[-1]), envir=parent.frame()))
 }
 
 

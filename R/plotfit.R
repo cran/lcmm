@@ -3,10 +3,7 @@
     if(missing(x)) stop("Argument x should be specified")
     if(!(class(x) %in% c("hlme","lcmm","Jointlcmm","multlcmm"))) stop("Use with hlme, lcmm, multlcmm or Jointlcmm only")
     if(missing(var.time)) stop("Argument var.time should be specified")
-    if(class(x)=="lcmm")
-        {
-            if(x$linktype==3) stop("This function is not available for thresholds mixed models")
-        }
+    if(any(x$linktype==3)) stop("This function is not available for thresholds mixed models")
     
     if(!is.null(x$data))
     {
@@ -90,7 +87,7 @@
     ntps <- length(break.times)-1
 
     numsg <- lapply(1:ng,function(g) x$pprob[which(x$pprob$class==g),1])
-    times <- data[,var.time]
+    if(length(x$var.time)) times <- x$pred[,ncol(x$pred)] else times <- data[,var.time]
     maxT <- sapply(numsg,function(y) max(times[which(data[,x$call$subject] %in% y)]))
 
 

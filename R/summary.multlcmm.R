@@ -54,6 +54,12 @@ summary.multlcmm <- function(object,...)
                     if (yk>1) cat("                     ")
                     cat("Quadratic I-splines with nodes", x$linknodes[1:x$nbnodes[numSPL],yk],"for",x$Ynames[yk], "\n")
                 }
+            if (x$linktype[yk]==3) 
+                {
+                    ntrtot[yk] <- x$nbmod[yk]-1
+                    if (yk>1) cat("                     ")
+                    cat("Thresholds for",x$Ynames[yk], "\n")
+                }
         }
 
     cat(" \n")
@@ -130,6 +136,9 @@ summary.multlcmm <- function(object,...)
                     sech <- format(as.numeric(sprintf("%.5f",se)),nsmall=5,scientific=FALSE)
                     waldch <- format(as.numeric(sprintf("%.3f",wald)),nsmall=3,scientific=FALSE)
                     pwaldch <- format(as.numeric(sprintf("%.5f",pwald)),nsmall=5,scientific=FALSE)
+                    sech[which(is.na(sqrt(x$V[indice])))] <- NA
+                    waldch[which(is.na(sqrt(x$V[indice])))] <- NA
+                    pwaldch[which(is.na(sqrt(x$V[indice])))] <- NA
                 }
             else
                 {
@@ -223,7 +232,7 @@ summary.multlcmm <- function(object,...)
                             Vcontr <- matrix(0,ny-1,ny-1)
                             Vcontr[upper.tri(Vcontr,diag=TRUE)] <- x$V[indV]
                             Vcontr <- t(Vcontr)
-                            Vcontr[upper.tri(Vcontr)] <- Vcontr[lower.tri(Vcontr)]
+                            Vcontr[upper.tri(Vcontr,diag=TRUE)] <- x$V[indV]
                             
                             vect.gamma <- coef[(nef-ncontr+(i-1)*(ny-1)+1):(nef-ncontr+i*(ny-1))]
                             if(any(c((nef-ncontr+(i-1)*(ny-1)+1):(nef-ncontr+i*(ny-1))) %in% posfix))
