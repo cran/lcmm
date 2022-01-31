@@ -87,7 +87,7 @@ subroutine hetmixmult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
   integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,id,yk,k1,k2,mi,nbfix  
   double precision::eps,ca,cb,dd,thi
   double precision,dimension(ns0,ng0)::PPI
-  double precision,dimension(npmtot0)::mvc,b
+  double precision,dimension(npmtot0)::b
   double precision,dimension(npmtot0*(npmtot0+3)/2)::V
   double precision,external::vrais_multo
 
@@ -582,7 +582,7 @@ double precision function vrais_multo_i(b,npm,id,thi,jd,thj,i)
   double precision,dimension(nvc+1)::mvc
 
   double precision :: vrais,eps,det,som,thi,thj,temp,eta0,vrais_Y
-  double precision ::Y4,expo,jacobien,beta_densite,ytemp
+  double precision ::Y4,jacobien,beta_densite,ytemp
   double precision,dimension(maxmes) :: mu,Y1,Y2,Y3,tcor
   double precision,dimension(ng) :: pi
   double precision,dimension(-1:maxval(ntrtot)-3)::splaa
@@ -696,7 +696,7 @@ double precision function vrais_multo_i(b,npm,id,thi,jd,thj,i)
      end do
 
      ! passer en cholesky si on a de l ordinal
-     if(any(idlink.eq.3)) then
+     if(any(idlink.eq.3) .or. nMC.ne.0) then
         jj=0
         Vi=0.d0
         do j=1,sum(nmes(i,:))
@@ -727,7 +727,7 @@ double precision function vrais_multo_i(b,npm,id,thi,jd,thj,i)
   do yk=1,ny
 
      ! si que du continu, ajouter alpha et sigma dans corr
-     if(all(idlink.ne.3)) then
+     if(all(idlink.ne.3) .and. nMC.eq.0) then
         do j1=1,nmes(i,yk)
            Corr(sumMesYk+j1,sumMesYk+j1) =  Corr(sumMesYk+j1,sumMesYk+j1)+b1(nprob+nef+ncontr+nvc+nwg+ncor+yk)**2 !variance de l'erreur k
            if (nalea.eq.ny) then
@@ -845,7 +845,7 @@ double precision function vrais_multo_i(b,npm,id,thi,jd,thj,i)
            if(j1.eq.j2) then
               varB(j1,j2) = Ut(j1,j2)*Ut(j1,j2)
            else
-              varB(j1,j2) = (exp(Ut(j1,j2))-1)/(exp(Ut(j1,j2)+1))
+              varB(j1,j2) = (exp(Ut(j1,j2))-1)/(exp(Ut(j1,j2))+1)
               varB(j2,j1) = varB(j1,j2)
            end if
         end do
@@ -1909,7 +1909,7 @@ end do
         double precision,dimension(maxmes)::wi,wsim
         double precision,dimension(ny)::asim
         double precision::ai,binf,bsup
-        double precision::SX,x22,div,vrais_l
+        double precision::SX,x22,vrais_l
         double precision,external::alnorm
         
 
@@ -2129,7 +2129,7 @@ end do
                     if(j1.eq.j2) then
                        varB(j1,j2) = Ut(j1,j2)*Ut(j1,j2)
                     else
-                       varB(j1,j2) = (exp(Ut(j1,j2))-1)/(exp(Ut(j1,j2)+1))
+                       varB(j1,j2) = (exp(Ut(j1,j2))-1)/(exp(Ut(j1,j2))+1)
                        varB(j2,j1) = varB(j1,j2)
                     end if
                  end do
