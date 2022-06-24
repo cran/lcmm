@@ -35,524 +35,6 @@ end module donnees_indivmo
 
 
 
-subroutine hetmixmult(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
-     ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
-     ,npmtot0,btot,Vopt,vrais,ni,istop,gconv,ppi0,resid_m &
-     ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y,convB,convL,convG &
-     ,maxiter0,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
-     ,nvalSPLORD0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv&
-     ,pbH0,fix0,methInteg0,nMC0,dimMC0,seqMC0,chol0)
-
-  use parameters
-  use communmo
-  use optim
-
-  IMPLICIT NONE
-
-  !Declaration des variables en entree
-  integer,intent(in)::nv0,maxiter0,Ydiscret,ny0,nMC0,methInteg0,dimMC0,chol0
-  integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,npmtot0,nea0,nsim0,ncor0,nalea0
-  double precision,dimension(ny0),intent(in)::epsY0
-  integer, dimension(ny0),intent(in)::idlink0,nbzitr0,nvalSPLORD0
-  double precision,dimension(maxval(nbzitr0),ny0),intent(in)::zitr0
-  integer,dimension(nobs0),intent(in)::indiceY0
-  double precision,dimension(sum(nvalSPLORD0(:))),intent(in)::uniqueY0
-  integer, dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0,idcontr0
-  integer, dimension(ns0),intent(in)::prior0
-  integer,dimension(ns0,ny0)::nmes0   
-  double precision,dimension(nobs0),intent(in)::Y0
-  double precision,dimension(nobs0*nv0),intent(in)::X0
-  double precision,intent(in)::convB,convL,convG
-  integer,dimension(npmtot0),intent(in)::pbH0,fix0
-  double precision,dimension(dimMC0*nMC0),intent(in)::seqMC0
-
-  !Declaration des variable en entree et sortie
-  double precision, dimension(npmtot0), intent(inout) :: btot
-
-  !Declaration des variables en sortie
-  double precision,intent(out)::vrais,vraisdiscret,UACV
-  double precision,dimension(3),intent(out)::gconv
-  double precision,dimension(ns0*ng0),intent(out)::ppi0
-  double precision,dimension(ns0),intent(out)::rlindiv
-  double precision,dimension(nobs0),intent(out)::resid_m,resid_ss,Yobs
-  double precision,dimension(nobs0*ng0),intent(out)::pred_m_g
-  double precision,dimension(nobs0*ng0),intent(out)::pred_ss_g
-  double precision,dimension(ns0*nea0),intent(out)::pred_RE ! commun sur proc latent
-  double precision,dimension(ns0*nalea0),intent(out)::pred_RE_Y ! effets specifiques
-  double precision,dimension(nsim0*ny0),intent(out)::marker,transfY 
-  double precision,dimension(npmtot0*(npmtot0+1)/2),intent(out)::Vopt
-  integer, intent(out)::ni,istop
-
-  !Variables locales
-  integer::jtemp,i,g,j,ij,npm,ier,k,ktemp,ig,id,yk,k1,k2,mi,nbfix  
-  double precision::eps,ca,cb,dd,thi
-  double precision,dimension(ns0,ng0)::PPI
-  double precision,dimension(npmtot0)::b
-  double precision,dimension(npmtot0*(npmtot0+3)/2)::V
-  double precision,external::vrais_multo
-
-
-  !      write(*,*)'indice entres',indiceY0
-
-  !          print*,"Y0=",Y0(1:10)
-  !          print*,"X0=",X0(nobs0-1:nobs+12)
-  !          print*,"zitr0=",zitr0
-
-  ! sorties initialisees
-
-  ppi0=0.d0
-  Vopt=0.d0
-  gconv=0.d0
-  pred_ss_g=0.d0
-  pred_m_g=0.d0
-  pred_RE=0.d0
-  pred_RE_Y=0.d0
-  marker=0.d0
-  transfY=0.d0
-  resid_m=0.d0
-  resid_ss=0.d0
-  vrais=0.d0
-  ni=0
-  Yobs=0.d0
-  vraisdiscret=0.d0
-  UACV=0.d0
-  rlindiv=0.d0
-
-
-
-  ! fin en prevision
-
-  maxmes=0
-  do i=1,ns0
-     mi=sum(nmes0(i,:))
-     !         mi=0 
-     !         do k=1,ny0
-     ! mi = mi+nmes0(i,k)
-     !         end do
-     if (mi.gt.maxmes) then
-        maxmes=mi
-     end if
-  end do
-
-  epsa=convB
-  epsb=convL
-  epsd=convG
-  maxiter=maxiter0
-
-  allocate(rangeY(ny0),minY(ny0),maxY(ny0),idlink(ny0),ntrtot(ny0),epsY(ny0))
-
-
-
-  nySPL=0
-  nyORD=0
-  rangeY=0
-  epsY=epsY0
-  do k=1,ny0
-     idlink(k)=idlink0(k)
-     minY(k)=zitr0(1,k)
-     maxY(k)=zitr0(nbzitr0(k),k)
-     if (Ydiscret.eq.1) rangeY(k)=maxY(k)-minY(k)
-     if (idlink(k).eq.2) then
-        nySPL=nySPL+1
-     end if
-     if (idlink(k).eq.3) then
-        nyORD=nyORD+1
-     end if
-  end do
-
-  !        print*,"min,max",minY,maxY
-  !      if (verbose==1) write(*,*)'nySPL',nySPL
-
-  if(nySPL.gt.0) then 
-     allocate(nvalSPL(nySPL))
-     nvalSPL=0
-  else
-     allocate(nvalSPL(1))
-     nvalSPL(1) = 0
-  end if
-
-  if(nyORD.gt.0) then
-     allocate(nvalORD(nyORD))
-     nvalORD=0
-  else
-     allocate(nvalORD(1))
-     nvalORD(1) = 0
-  end if
-
-  k1=0
-  k2=0
-  do k=1,ny0
-     if(idlink(k).eq.2) then
-        k1=k1+1
-        nvalSPL(k1)=nvalSPLORD0(k)
-     else if (idlink(k).eq.3) then
-        k2=k2+1
-        nvalORD(k2)=nvalSPLORD0(k)
-     end if
-  end do
-  ntotvalSPL=sum(nvalSPL(:))
-  ntotvalORD=sum(nvalORD(:))
-
-  methInteg = methInteg0
-  nMC = nMC0
-
-  if(all(idlink.ne.2)) then
-     allocate(zitr(1,1))
-     allocate(mm(1),mm1(1),mm2(1),im(1),im1(1),im2(1))
-     mm(1)=0.d0
-     mm1(1)=0.d0
-     mm2(1)=0.d0
-     im(1)=0.d0
-     im1(1)=0.d0
-     im2(1)=0.d0
-  else
-     allocate(zitr(-1:(maxval(nbzitr0)+2),nySPL))
-     allocate(mm(ntotvalSPL),mm1(ntotvalSPL),mm2(ntotvalSPL),im(ntotvalSPL),im1(ntotvalSPL),im2(ntotvalSPL))
-  end if
-
-
-  zitr=0.d0  
-  k1=0
-  k2=0
-  do k=1,ny0
-     if (idlink(k).eq.0) ntrtot(k)=2     
-     if (idlink(k).eq.1) ntrtot(k)=4
-     if (idlink(k).eq.2) then
-        k1=k1+1
-        ntrtot(k)=nbzitr0(k)+2
-
-        zitr(1:nbzitr0(k),k1)=zitr0(1:nbzitr0(k),k)
-        zitr(-1,k1)=zitr(1,k1)
-        zitr(0,k1)=zitr(1,k1)
-        zitr(ntrtot(k)-1,k1)=zitr(ntrtot(k)-2,k1)
-        zitr(ntrtot(k),k1)=zitr(ntrtot(k)-1,k1)
-     end if
-     if (idlink(k).eq.3) then
-        k2 = k2+1
-        ntrtot(k) = nvalORD(k2)-1
-     end if
-  end do
-
-  !if (verbose==1)       write(*,*)'zitr',zitr
-
-
-
-  allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0),uniqueY(ntotvalSPL+ntotvalORD) &
-       ,idea(nv0),idg(nv0),idcor(nv0),idcontr(nv0),nmes(ns0,ny0),prior(ns0) &
-       ,indiceY(nobs0))
-
-  eps=1.d-20
-
-  ! enregistrement pour les modules
-  ny=ny0
-  ns=ns0
-  ng=ng0
-  nv=nv0
-  nobs=nobs0
-  ncor=ncor0
-  nalea=nalea0
-  if (nwg0.eq.0) then
-     nwg=0
-  else
-     nwg=ng-1
-  end if
-
-  idiag=idiag0
-
-  !     if (verbose==1) write(*,*)'ntotvalSPL',ntotvalSPL
-
-  if (ntotvalSPL+ntotvalORD.gt.0) uniqueY(1:ntotvalSPL+ntotvalORD)=uniqueY0(1:ntotvalSPL+ntotvalORD)
-
-  nmes=0
-  Y=0.d0
-  X=0.d0
-  idprob=0
-  idea=0
-  idg=0
-  idcor=0
-  idcontr=0
-  ktemp=0
-
-
-
-  do k=1,nv
-     idprob(k)=idprob0(k)
-     idea(k)=idea0(k)
-     idg(k)=idg0(k)
-     idcor(k)=idcor0(k)
-     idcontr(k)=idcontr0(k)
-
-     jtemp=0
-     DO i=1,ns
-        do yk=1,ny            
-           if (k.eq.1) then
-              prior(i)=prior0(i)
-              nmes(i,yk)=nmes0(i,yk)   !dim(nmes)=ns*ny    
-              do j=1,nmes(i,yk)
-                 jtemp=jtemp+1
-                 Y(jtemp)=Y0(jtemp)
-                 indiceY(jtemp)=indiceY0(jtemp)
-                 ktemp=ktemp+1
-                 X(jtemp,k)=X0(ktemp)
-              end do
-           else
-              do j=1,nmes(i,yk)
-                 ktemp=ktemp+1
-                 jtemp=jtemp+1
-                 X(jtemp,k)=X0(ktemp)
-              end do
-           end if
-        end do
-     end do
-  end do
-  !         write(*,*)'X k:',X(1:50,k)
-
-
-  ! prm fixes
-  allocate(fix(npmtot0))
-  fix=0
-  fix(1:npmtot0)=fix0(1:npmtot0)
-  nbfix=sum(fix)
-  if(nbfix.eq.0) then
-     allocate(bfix(1))
-  else
-     allocate(bfix(nbfix))
-  end if
-  bfix=0.d0
-
-
-
-  ! creation des parametres
-
-  nea=0
-  ncg=0
-  ncssg=0
-  !nprob=ng-1 (a remettre si on remet idprob[1]=0)
-  nprob=0
-  !nvarprob=min(ng-1,1)  (a remettre si on remet idprob[1]=0)
-  nvarprob=0
-  ncontr=0
-  do k=1,nv
-     if (idg(k).eq.1) then
-        ncssg=ncssg+1      ! nb var. sans melange
-     else if (idg(k).eq.2) then
-        ncg=ncg+1      ! nb var. dans melange
-     end if
-     nea=nea+idea(k)
-     nprob=nprob+(idprob(k))*(ng-1)
-     nvarprob=nvarprob+idprob(k)
-     ncontr=ncontr+idcontr(k)*(ny-1) 
-  end do
-
-
-
-  !  nb effets fixes = nb effets fixes sans melange
-  !                  + ng fois le nb de var dans melange
-
-
-  if (idiag.eq.1) then
-     nvc=nea-1
-  else if(idiag.eq.0) then
-     nvc=(nea+1)*nea/2-1
-  end if
-
-  nef=ncssg+ncg*ng-1
-  npmtot=nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sum(ntrtot(:))
-  !print*,nprob,nef,ncontr,nvc,nwg,ncor,ny,nalea,ntrtot
-  !print*,"npmtot=",npmtot
-  !print*,"btot=",btot
-  ! if (verbose==1 ) write(*,*)"npm0=",npm0,"npm=",npm
-
-  !  write(*,*)'idlink',idlink
-  !  write(*,*)'idea',idea
-  !  write(*,*)'NVC',nvc
-
-
-!  if (idiag.eq.1) then
-!     DO j=1,nvc
-!        btot(nprob+nef+ncontr+j)=dsqrt(abs(btot(nprob+nef+ncontr+j)))
-!     END DO
-!  end if
-
-  chol=chol0
-
-  ! si idiag=0, on met dans le vecteur des parms, les parms
-  ! de la transformee de Cholesky
-
-!  if (idiag.eq.0) then
-!
-!     mvc(1)=1.d0
-!     DO j=1,nvc
-!        mvc(1+j)=btot(nprob+nef+ncontr+j)
-!     END DO
-!
-!     CALL dmfsd(mvc,nea,EPS,IER)
-!     DO j=1,nvc
-!        btot(nprob+nef+ncontr+j)=mvc(1+j)
-!     END DO
-!  end if
-  if (nwg.gt.0) then
-     do i=1,nwg
-        btot(nprob+nef+ncontr+nvc+i)=abs(btot(nprob+nef+ncontr+nvc+i))
-     end do
-  end if
-
-
-  ! points qmc
-  if(methInteg.ne.3) then 
-     allocate(seqMC(1))
-  else
-     allocate(seqMC(dimMC0*nMC))
-     seqMC = seqMC0(1:dimMC0*nMC) 
-  end if
-
-  
-  ! creation du vecteur b avec slt les prm a estimer
-  b=0.d0
-  npm=0
-  k=0
-  do j=1,npmtot
-     if(fix0(j).eq.0) then
-        npm=npm+1
-        b(npm)=btot(j)
-     end if
-     if(fix0(j).eq.1) then
-        k=k+1
-        bfix(k)=btot(j)
-     end if
-  end do
-
-  allocate(pbH(npm))
-  k=0
-  do j=1,npmtot
-     if(fix0(j).eq.0) then
-        k=k+1
-        pbH(k)=pbH0(j)
-     end if
-  end do
-
-
-  ! base de splines
-  if (any(idlink.eq.2)) then 
-     call design_splines_multo(ier)
-     if (ier.eq.-1) then
-        istop=9
-        go to 1589
-     end if
-  end if
-
-  !print*,"npmtot=",npmtot, " npm=",npm
-  !print*,"b=",b, " bfix=",bfix
-  ! lancement de l'optimisation
-  
-  if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
-     !      if(verbose==1) write(*,*)"ng",ng,"ncg",ncg,"nprob",nprob
-     istop=12
-     go to 1589
-  end if
-
-  IF (npm.eq.1) then
-     istop=10
-     go to 1589
-  else
-     ca=0.d0
-     cb=0.d0
-     dd=0.d0
-     !      write(*,*)"before optimisation",npm,b
-     !         if (verbose==1) write(*,*)"before optimisation",npm,b
-     call marq98(b,npm,ni,V,vrais,ier,istop,ca,cb,dd,vrais_multo)
-
-     !         if (verbose==1) write(*,*)"after optimisation",npm,b
-     !         write(*,*)
-     !      write(*,*)'    FIN OPTIMISATION  ..... '
-     ! if(verbose==1) write(*,*)'istop',istop,'vrais',vrais
-
-     gconv=0.d0
-     gconv(1)=ca
-     gconv(2)=cb
-     gconv(3)=dd
-     vopt(1:(npm*(npm+1)/2))=V(1:(npm*(npm+1)/2))
-
-     !  injecter le b estime dans btot
-     k=0
-     do j=1,npmtot
-        if(fix0(j).eq.0) then
-           k=k+1
-           btot(j)=b(k)
-        end if
-     end do
-
-
-     if (istop.eq.1.or.istop.eq.2.or.istop.eq.3) then  
-        !if (verbose==1) write(*,*)'avant transfo'
-        call transfos_estimees_2(btot,npmtot,nsim0,marker,transfY)
-        ! end if
-
-        !if (istop.eq.1) then
-        if (ng.gt.1) then
-           !                if(verbose==1)  write(*,*)'avant postprob'
-              call postprobmo(btot,npmtot,PPI)
-        end if
-
-
-
-        !            if(verbose==1) write(*,*)'avant residuals'
-
-        call residualsmo(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss &
-        ,pred_ss_g,pred_RE,pred_RE_Y,Yobs)
-
-
-        ig=0
-        ij=0
-        do i=1,ns
-           do g=1,ng0
-              ig=ig+1
-              ppi0(ig)=PPI(i,g)
-           end do
-        end do
-
-
-        if (Ydiscret.eq.1.and.ncor.eq.0) then
-           id=0
-           thi=0.d0
-           !call vrais_discret(b,npm,id,thi,id,thi,vraisdiscret)
-           !               write(*,*)'vrais_discret',vraisdiscret
-
-           !               call vrais_cont(b,npm,id,thi,id,thi,vraisdiscret)
-           !               write(*,*)'vrais_cont',vraisdiscret
-
-           !               write(*,*)'avant UACV'
-           ! computUACV(b,npm,rlindiv,vopt,UACV)
-           !               write(*,*)'arpes UACV'
-        end if
-
-     end if
-
-  end if
-
-
-  !write(*,*)'avant deallocate'
-
-  
-1589 continue
-
-  deallocate(Y,X,idprob,idea,idg,idcor,idcontr,nmes,prior,uniqueY,indiceY,ntrtot)
-
-
-  deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL,nvalORD,epsY)
-
-  deallocate(fix,bfix,pbH,seqMC)
-
-  !write(*,*)'fin'
-  return
-end subroutine hetmixmult
-
-
-
-
-
-
-
 !-----------------------------------------------------------
 !                       VRAIS_MULTO_i
 !------------------------------------------------------------
@@ -560,9 +42,9 @@ end subroutine hetmixmult
 
 double precision function vrais_multo_i(b,npm,id,thi,jd,thj,i) 
 
-  use parameters
+!  use parameters
   use communmo
-  use optim
+!  use optim
   use donnees_indivmo,only:nmescur
 
   IMPLICIT NONE
@@ -1883,7 +1365,7 @@ end do
       
       subroutine postprobmo(b,npm,PPI)
         use communmo
-        use optim
+!        use optim
         implicit none
 
         integer ::i,j,k,l,m,g,l2,m2,jj,npm,ier,nmoins,kk,ii,ll,j1,j2,nmescur
@@ -2733,11 +2215,11 @@ end do
        numSPL = numSPL+1
         splaa=0.d0
 
-        splaa(1)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
+        splaa(1)=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
         do kk=2,ntrtot(yk)
-           splaa(kk)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
+           splaa(kk)=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
         end do
-        
+
         !calcul de H(y) pour remplacer call estim_splines..
         do j=1,nsim
 ! ou se trouve la valeur
@@ -2811,32 +2293,31 @@ end do
 
         else if (idlink(yk).eq.1) then
 
-            aa1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
-            bb1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
+            aa1=exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
+             (1+exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
+            bb1=exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
+             (1+exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
             bb1=aa1*(1.d0-aa1)*bb1
-            cc1=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+3)
-            dd1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
+            cc1=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+3)
+            dd1=abs(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
 
             aa=aa1*aa1*(1-aa1)/bb1-aa1
             bb=aa*(1-aa1)/aa1
-
             do j=1,nsim
-                  ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
-                  transfY((yk-1)*nsim+j)=(betai(aa,bb,ytemp)-cc1)/dd1
-                  if (transfY((yk-1)*nsim+j).eq.999.d0) then
-!                    write(*,*)'problem'
-                  end if
-
-               end do
+               ytemp=(marker((yk-1)*nsim+j)-minY(yk)+epsY(yk))/(maxY(yk)-minY(yk)+2*epsY(yk))
+               transfY((yk-1)*nsim+j)=(betai(aa,bb,ytemp)-cc1)/dd1
+               if (transfY((yk-1)*nsim+j).eq.999.d0) then
+                  !                    write(*,*)'problem'
+               end if
+               
+            end do
 
 
         else if (idlink(yk).eq.0) then
 
                  do j=1,nsim
-                    transfY((yk-1)*nsim+j)=(marker((yk-1)*nsim+j)-b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)) &
-                    /abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
+                    transfY((yk-1)*nsim+j)=(marker((yk-1)*nsim+j)-b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1)) &
+                    /abs(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
                  end do
         end if
         sumntrtot = sumntrtot + ntrtot(yk)
@@ -2854,7 +2335,7 @@ end do
 
       use communmo
 
-      use optim
+!      use optim
 
       implicit none
       integer ::i,j,k,l,m,g,l2,m2,jj,npm,ll,ii,j1,j2,sumMesYk,q,yk
@@ -2897,7 +2378,7 @@ end do
          do j=2,nea
             do k=2,nea
                if (j.eq.k) then
-                  Ut(j,k)=b1(nef+j-1)
+                  Ut(j,k)=b1(nprob+nef+ncontr+j-1)
                else
                   Ut(j,k)=0.d0
                end if
@@ -2908,7 +2389,7 @@ end do
       If (idiag.eq.0) then
          do j=2,nea
             do k=1,j
-                 Ut(j,k)=b1(nef+k-1+j*(j-1)/2)
+                 Ut(j,k)=b1(nprob+nef+ncontr+k-1+j*(j-1)/2)
             end do
          end do
       end if
@@ -2960,10 +2441,12 @@ end do
          do j1=1,sum(nmes(i,:))
             do j2=1,sum(nmes(i,:))
                if (ncor.eq.1) then 
-                  Corr(j1,j2) = Corr(j1,j2)+b1(nef+nvc+nwg+ncor)*b1(nef+nvc+nwg+ncor)*min(tcor(j1),tcor(j2))
+                  Corr(j1,j2) = Corr(j1,j2)+b1(nprob+nef+ncontr+nvc+nwg+ncor)* &
+                       b1(nprob+nef+ncontr+nvc+nwg+ncor)*min(tcor(j1),tcor(j2))
                else if (ncor.eq.2) then
-                  Corr(j1,j2) = Corr(j1,j2)+b1(nef+nvc+nwg+ncor)*b1(nef+nvc+nwg+ncor)* &
-                                             exp(-b1(nef+nvc+nwg+1)*abs(tcor(j1)-tcor(j2)))
+                  Corr(j1,j2) = Corr(j1,j2)+b1(nprob+nef+ncontr+nvc+nwg+ncor)* &
+                       b1(nprob+nef+ncontr+nvc+nwg+ncor)* &
+                       exp(-b1(nprob+nef+ncontr+nvc+nwg+1)*abs(tcor(j1)-tcor(j2)))
                end if
             end do
          end do 
@@ -2979,11 +2462,11 @@ end do
       numSPL=0
       do yk=1,ny
          do j1=1,nmes(i,yk)
-            SigmaE(sumMesYk+j1,sumMesYk+j1) = b1(nef+nvc+nwg+ncor+yk)**2 !erreur du test yk
+            SigmaE(sumMesYk+j1,sumMesYk+j1) = b1(nprob+nef+ncontr+nvc+nwg+ncor+yk)**2 !erreur du test yk
          
             if (nalea.eq.ny) then
                do j2=1,nmes(i,yk)
-                  Valea(sumMesYk+j1,sumMesYk+j2) = b1(nef+nvc+nwg+ncor+ny+yk)**2
+                  Valea(sumMesYk+j1,sumMesYk+j2) = b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+yk)**2
               end do
          end if
       end do
@@ -2991,21 +2474,21 @@ end do
          if (idlink(yk).eq.0) then  ! Linear link
 
             do j=1,nmes(i,yk)
-               Y1(sumMesYk+j)=dble(Y(nmes_cur+sumMesYk+j)-b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1))&
-               /abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
+               Y1(sumMesYk+j)=dble(Y(nmes_cur+sumMesYk+j)-b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1))&
+               /abs(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2))
                Yobs(nmes_cur+sumMesYk+j)=Y1(sumMesYk+j)
             end do
 
          elseif (idlink(yk).eq.1) then  ! Beta link
 
 
-            aa1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
-            bb1=exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
-             (1+exp(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
+            aa1=exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1))/ &
+             (1+exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1)))
+            bb1=exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2))/ &
+             (1+exp(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+2)))
             bb1=aa1*(1.d0-aa1)*bb1
-            cc1=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+3)
-            dd1=abs(b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
+            cc1=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+3)
+            dd1=abs(b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+4))
 
             aa=aa1*aa1*(1-aa1)/bb1-aa1
             bb=aa*(1-aa1)/aa1
@@ -3045,10 +2528,11 @@ end do
            
            splaa=0.d0
            eta0=0.d0
-           eta0=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
+           eta0=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+1)
 
             do kk=2,ntrtot(yk)
-               splaa(kk-3)=b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)*b1(nef+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
+               splaa(kk-3)=b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)* &
+                    b1(nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sumntrtot+kk)
             end do
 
             do j=1,nmes(i,yk)
@@ -3195,10 +2679,10 @@ end do
                      sumMesYk=sumMesYk+nmes(i,yk)
 ! creation vecteur parms des contrastes: b01
                      if (yk<ny) THEN
-                        b01((m-1)*ny+yk)=b1(nef-ncontr+(m-1)*(ny-1)+yk)
+                        b01((m-1)*ny+yk)=b1(nprob+nef+(m-1)*(ny-1)+yk)
                      else
-                        b01((m-1)*ny+ny) =-sum(b1(nef-ncontr+(m-1)*(ny-1)+1 &
-                             :nef-ncontr+(m-1)*(ny-1)+ny-1))
+                        b01((m-1)*ny+ny) =-sum(b1(nprob+nef+(m-1)*(ny-1)+1 &
+                             :nprob+nef+(m-1)*(ny-1)+ny-1))
                      end if
                   end do                  
                end if
@@ -3315,9 +2799,9 @@ end do
                      sumMesYk=sumMesYk+nmes(i,yk)
 ! creation vecteur parms des contrastes: b01
                      if (yk<ny) THEN
-                        b01((q-1)*ny+yk)=b1(nef-ncontr+(q-1)*(ny-1)+yk)
+                        b01((q-1)*ny+yk)=b1(nprob+nef+(q-1)*(ny-1)+yk)
                      else
-                        b01((q-1)*ny+ny) =-sum(b1(nef-ncontr+(q-1)*(ny-1)+1 &
+                        b01((q-1)*ny+ny) =-sum(b1(nprob+nef+(q-1)*(ny-1)+1 &
                              :nef-ncontr+(q-1)*(ny-1)+ny-1))
                      end if
                   end do                  
@@ -3402,7 +2886,7 @@ end do
                   if (g.eq.ng) then
                      Ut1=Ut
                   else
-                     Ut1=Ut*b1(nef+nvc+g)
+                     Ut1=Ut*b1(nprob+nef+ncontr+nvc+g)
                   end if
                end if
                P=0.d0
@@ -3505,3 +2989,440 @@ end do
 !write(*,*)"fin boucle sujets","i = ",i
 
       end subroutine residualsmo
+
+
+
+      
+      subroutine loglikmultlcmm(Y0,X0,Prior0,idprob0,idea0,idg0,idcor0,idcontr0 &
+           ,ny0,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,nalea0&
+           ,npm0,b0,ppi0,resid_m &
+           ,resid_ss,pred_m_g,pred_ss_g,pred_RE,pred_RE_Y &
+           ,epsY0,idlink0,nbzitr0,zitr0,uniqueY0,indiceY0 &
+           ,nvalSPLORD0,marker,transfY,nsim0,Yobs,Ydiscret,vraisdiscret,UACV,rlindiv&
+           ,fix0,nfix0,bfix0,methInteg0,nMC0,dimMC0,seqMC0,chol0,estim0,vrais)
+
+        !use parameters
+        use communmo
+        !use optim
+
+        IMPLICIT NONE
+
+        !Declaration des variables en entree
+        integer,intent(in)::nv0,Ydiscret,ny0,nMC0,methInteg0,dimMC0,chol0,nfix0
+        integer, intent(in)::ns0,ng0,nobs0,idiag0,nwg0,nea0,nsim0,ncor0,nalea0,npm0
+        double precision,dimension(ny0),intent(in)::epsY0
+        integer, dimension(ny0),intent(in)::idlink0,nbzitr0,nvalSPLORD0
+        double precision,dimension(maxval(nbzitr0),ny0),intent(in)::zitr0
+        integer,dimension(nobs0),intent(in)::indiceY0
+        double precision,dimension(sum(nvalSPLORD0(:))),intent(in)::uniqueY0
+        integer, dimension(nv0),intent(in)::idea0,idg0,idprob0,idcor0,idcontr0
+        integer, dimension(ns0),intent(in)::prior0
+        integer,dimension(ns0,ny0)::nmes0   
+        double precision,dimension(nobs0),intent(in)::Y0
+        double precision,dimension(nobs0*nv0),intent(in)::X0
+        integer,dimension(npm0+nfix0),intent(in)::fix0
+        double precision,dimension(nfix0),intent(in)::bfix0
+        double precision,dimension(dimMC0*nMC0),intent(in)::seqMC0
+        integer,intent(in)::estim0 ! estim0=1 pour estimer ; estim0=0 pour faire le postfit
+
+        !Declaration des variable en entree et sortie
+        double precision, dimension(npm0), intent(inout) :: b0
+
+        !Declaration des variables en sortie
+        double precision,intent(out)::vrais,vraisdiscret,UACV
+        double precision,dimension(ns0*ng0),intent(out)::ppi0
+        double precision,dimension(ns0),intent(out)::rlindiv
+        double precision,dimension(nobs0),intent(out)::resid_m,resid_ss,Yobs
+        double precision,dimension(nobs0*ng0),intent(out)::pred_m_g
+        double precision,dimension(nobs0*ng0),intent(out)::pred_ss_g
+        double precision,dimension(ns0*nea0),intent(out)::pred_RE ! commun sur proc latent
+        double precision,dimension(ns0*nalea0),intent(out)::pred_RE_Y ! effets specifiques
+        double precision,dimension(nsim0*ny0),intent(out)::marker,transfY 
+
+        !Variables locales
+        integer::jtemp,i,g,j,ij,ier,k,ktemp,ig,id,yk,k1,k2,mi,nbfix,jd,npmtot0
+        double precision::thi,thj
+        double precision,dimension(npm0+nfix0)::btot
+        double precision,dimension(ns0,ng0)::PPI
+        double precision,external::vrais_multo
+
+
+        !      write(*,*)'indice entres',indiceY0
+
+        !          print*,"Y0=",Y0(1:10)
+        !          print*,"X0=",X0(nobs0-1:nobs+12)
+        !          print*,"zitr0=",zitr0
+
+        ! sorties initialisees
+
+        ppi0=0.d0
+        pred_ss_g=0.d0
+        pred_m_g=0.d0
+        pred_RE=0.d0
+        pred_RE_Y=0.d0
+        marker=0.d0
+        transfY=0.d0
+        resid_m=0.d0
+        resid_ss=0.d0
+        vrais=0.d0
+        Yobs=0.d0
+        vraisdiscret=0.d0
+        UACV=0.d0
+        rlindiv=0.d0
+
+
+
+        ! fin en prevision
+
+        maxmes=0
+        do i=1,ns0
+           mi=sum(nmes0(i,:))
+           !         mi=0 
+           !         do k=1,ny0
+           ! mi = mi+nmes0(i,k)
+           !         end do
+           if (mi.gt.maxmes) then
+              maxmes=mi
+           end if
+        end do
+
+
+        allocate(rangeY(ny0),minY(ny0),maxY(ny0),idlink(ny0),ntrtot(ny0),epsY(ny0))
+
+
+
+        nySPL=0
+        nyORD=0
+        rangeY=0
+        epsY=epsY0
+        do k=1,ny0
+           idlink(k)=idlink0(k)
+           minY(k)=zitr0(1,k)
+           maxY(k)=zitr0(nbzitr0(k),k)
+           if (Ydiscret.eq.1) rangeY(k)=maxY(k)-minY(k)
+           if (idlink(k).eq.2) then
+              nySPL=nySPL+1
+           end if
+           if (idlink(k).eq.3) then
+              nyORD=nyORD+1
+           end if
+        end do
+
+        !        print*,"min,max",minY,maxY
+        !      if (verbose==1) write(*,*)'nySPL',nySPL
+
+        if(nySPL.gt.0) then 
+           allocate(nvalSPL(nySPL))
+           nvalSPL=0
+        else
+           allocate(nvalSPL(1))
+           nvalSPL(1) = 0
+        end if
+
+        if(nyORD.gt.0) then
+           allocate(nvalORD(nyORD))
+           nvalORD=0
+        else
+           allocate(nvalORD(1))
+           nvalORD(1) = 0
+        end if
+
+        k1=0
+        k2=0
+        do k=1,ny0
+           if(idlink(k).eq.2) then
+              k1=k1+1
+              nvalSPL(k1)=nvalSPLORD0(k)
+           else if (idlink(k).eq.3) then
+              k2=k2+1
+              nvalORD(k2)=nvalSPLORD0(k)
+           end if
+        end do
+        ntotvalSPL=sum(nvalSPL(:))
+        ntotvalORD=sum(nvalORD(:))
+
+        methInteg = methInteg0
+        nMC = nMC0
+
+        if(all(idlink.ne.2)) then
+           allocate(zitr(1,1))
+           allocate(mm(1),mm1(1),mm2(1),im(1),im1(1),im2(1))
+           mm(1)=0.d0
+           mm1(1)=0.d0
+           mm2(1)=0.d0
+           im(1)=0.d0
+           im1(1)=0.d0
+           im2(1)=0.d0
+        else
+           allocate(zitr(-1:(maxval(nbzitr0)+2),nySPL))
+           allocate(mm(ntotvalSPL),mm1(ntotvalSPL),mm2(ntotvalSPL),im(ntotvalSPL),im1(ntotvalSPL),im2(ntotvalSPL))
+        end if
+
+
+        zitr=0.d0  
+        k1=0
+        k2=0
+        do k=1,ny0
+           if (idlink(k).eq.0) ntrtot(k)=2     
+           if (idlink(k).eq.1) ntrtot(k)=4
+           if (idlink(k).eq.2) then
+              k1=k1+1
+              ntrtot(k)=nbzitr0(k)+2
+
+              zitr(1:nbzitr0(k),k1)=zitr0(1:nbzitr0(k),k)
+              zitr(-1,k1)=zitr(1,k1)
+              zitr(0,k1)=zitr(1,k1)
+              zitr(ntrtot(k)-1,k1)=zitr(ntrtot(k)-2,k1)
+              zitr(ntrtot(k),k1)=zitr(ntrtot(k)-1,k1)
+           end if
+           if (idlink(k).eq.3) then
+              k2 = k2+1
+              ntrtot(k) = nvalORD(k2)-1
+           end if
+        end do
+
+        !if (verbose==1)       write(*,*)'zitr',zitr
+
+
+
+        allocate(Y(nobs0),idprob(nv0),X(nobs0,nv0),uniqueY(ntotvalSPL+ntotvalORD) &
+             ,idea(nv0),idg(nv0),idcor(nv0),idcontr(nv0),nmes(ns0,ny0),prior(ns0) &
+             ,indiceY(nobs0))
+
+        ! enregistrement pour les modules
+        ny=ny0
+        ns=ns0
+        ng=ng0
+        nv=nv0
+        nobs=nobs0
+        ncor=ncor0
+        nalea=nalea0
+        if (nwg0.eq.0) then
+           nwg=0
+        else
+           nwg=ng-1
+        end if
+
+        idiag=idiag0
+
+        !     if (verbose==1) write(*,*)'ntotvalSPL',ntotvalSPL
+
+        if (ntotvalSPL+ntotvalORD.gt.0) uniqueY(1:ntotvalSPL+ntotvalORD)=uniqueY0(1:ntotvalSPL+ntotvalORD)
+
+        nmes=0
+        Y=0.d0
+        X=0.d0
+        idprob=0
+        idea=0
+        idg=0
+        idcor=0
+        idcontr=0
+        ktemp=0
+
+
+
+        do k=1,nv
+           idprob(k)=idprob0(k)
+           idea(k)=idea0(k)
+           idg(k)=idg0(k)
+           idcor(k)=idcor0(k)
+           idcontr(k)=idcontr0(k)
+
+           jtemp=0
+           DO i=1,ns
+              do yk=1,ny            
+                 if (k.eq.1) then
+                    prior(i)=prior0(i)
+                    nmes(i,yk)=nmes0(i,yk)   !dim(nmes)=ns*ny    
+                    do j=1,nmes(i,yk)
+                       jtemp=jtemp+1
+                       Y(jtemp)=Y0(jtemp)
+                       indiceY(jtemp)=indiceY0(jtemp)
+                       ktemp=ktemp+1
+                       X(jtemp,k)=X0(ktemp)
+                    end do
+                 else
+                    do j=1,nmes(i,yk)
+                       ktemp=ktemp+1
+                       jtemp=jtemp+1
+                       X(jtemp,k)=X0(ktemp)
+                    end do
+                 end if
+              end do
+           end do
+        end do
+        !         write(*,*)'X k:',X(1:50,k)
+
+
+        ! prm fixes
+        npmtot0=npm0+nfix0
+        allocate(fix(npmtot0))
+        fix=0
+        fix(1:npmtot0)=fix0(1:npmtot0)
+        nbfix=sum(fix)
+        if(nbfix.eq.0) then
+           allocate(bfix(1))
+        else
+           allocate(bfix(nbfix))
+        end if
+        bfix(1:nbfix)=bfix0(1:nbfix)
+
+
+
+        ! creation des parametres
+
+        nea=0
+        ncg=0
+        ncssg=0
+        !nprob=ng-1 (a remettre si on remet idprob[1]=0)
+        nprob=0
+        !nvarprob=min(ng-1,1)  (a remettre si on remet idprob[1]=0)
+        nvarprob=0
+        ncontr=0
+        do k=1,nv
+           if (idg(k).eq.1) then
+              ncssg=ncssg+1      ! nb var. sans melange
+           else if (idg(k).eq.2) then
+              ncg=ncg+1      ! nb var. dans melange
+           end if
+           nea=nea+idea(k)
+           nprob=nprob+(idprob(k))*(ng-1)
+           nvarprob=nvarprob+idprob(k)
+           ncontr=ncontr+idcontr(k)*(ny-1) 
+        end do
+
+
+
+        !  nb effets fixes = nb effets fixes sans melange
+        !                  + ng fois le nb de var dans melange
+
+
+        if (idiag.eq.1) then
+           nvc=nea-1
+        else if(idiag.eq.0) then
+           nvc=(nea+1)*nea/2-1
+        end if
+
+        nef=ncssg+ncg*ng-1
+        npmtot=nprob+nef+ncontr+nvc+nwg+ncor+ny+nalea+sum(ntrtot(:))
+
+
+        chol=chol0
+        
+        !if (nwg.gt.0) then
+        !   do i=1,nwg
+        !      btot(nprob+nef+ncontr+nvc+i)=abs(btot(nprob+nef+ncontr+nvc+i))
+        !   end do
+        !end if !! le faire dans R !**
+
+
+        ! points qmc
+        if(methInteg.ne.3) then 
+           allocate(seqMC(1))
+        else
+           allocate(seqMC(dimMC0*nMC))
+           seqMC = seqMC0(1:dimMC0*nMC) 
+        end if
+
+
+        ! base de splines
+        if (any(idlink.eq.2)) then 
+           call design_splines_multo(ier)
+           if (ier.eq.-1) then
+              go to 1589
+           end if
+        end if
+
+        !print*,"npmtot=",npmtot, " npm=",npm
+        !print*,"b=",b, " bfix=",bfix
+        ! lancement de l'optimisation
+
+        if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
+           !      if(verbose==1) write(*,*)"ng",ng,"ncg",ncg,"nprob",nprob
+           go to 1589
+        end if
+
+
+        if (estim0.eq.1) then
+
+           IF (npm0.eq.1) then
+              go to 1589
+           else
+
+              id=0
+              jd=0
+              thi=0.d0
+              thj=0.d0
+              
+              vrais=vrais_multo(b0,npm0,id,thi,jd,thj)
+              
+           end if
+
+        else
+              
+           !  injecter le b estime dans btot
+           btot=0.d0
+           k=0
+           k2=0
+           do j=1,npmtot
+              if(fix0(j).eq.0) then
+                 k=k+1
+                 btot(j)=b0(k)
+              else
+                 k2=k2+1
+                 btot(j)=bfix0(k2)
+              end if
+           end do
+           
+              !if (verbose==1) write(*,*)'avant transfo'
+              call transfos_estimees_2(btot,npmtot,nsim0,marker,transfY)
+              ! end if
+
+              !if (istop.eq.1) then
+              if (ng.gt.1) then
+                 !                if(verbose==1)  write(*,*)'avant postprob'
+                 call postprobmo(btot,npmtot,PPI)
+              end if
+
+
+
+              !            if(verbose==1) write(*,*)'avant residuals'
+
+              call residualsmo(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss &
+                   ,pred_ss_g,pred_RE,pred_RE_Y,Yobs)
+
+
+              ig=0
+              ij=0
+              do i=1,ns
+                 do g=1,ng0
+                    ig=ig+1
+                    ppi0(ig)=PPI(i,g)
+                 end do
+              end do
+              
+           end if
+
+
+
+        !write(*,*)'avant deallocate'
+
+
+1589    continue
+
+        deallocate(Y,X,idprob,idea,idg,idcor,idcontr,nmes,prior,uniqueY,indiceY,ntrtot)
+
+
+        deallocate(zitr,mm,mm1,mm2,im,im1,im2,minY,maxY,rangeY,idlink,nvalSPL,nvalORD,epsY)
+
+        deallocate(fix,bfix,seqMC)
+
+        !write(*,*)'fin'
+        return
+      end subroutine loglikmultlcmm
+
+
+
+
+
+

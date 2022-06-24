@@ -41,7 +41,9 @@ Jointlcmm(
   partialH = FALSE,
   verbose = TRUE,
   returndata = FALSE,
-  var.time = NULL
+  var.time = NULL,
+  nproc = 1,
+  clustertype = NULL
 )
 
 jlcmm(
@@ -79,7 +81,9 @@ jlcmm(
   partialH = FALSE,
   verbose = TRUE,
   returndata = FALSE,
-  var.time = NULL
+  var.time = NULL,
+  nproc = 1,
+  clustertype = NULL
 )
 }
 \arguments{
@@ -284,15 +288,23 @@ reported. Default to TRUE.}
 returned. Default to FALSE, data are not returned.}
 
 \item{var.time}{optional character indicating the name of the time variable.}
+
+\item{nproc}{the number cores for parallel computation.
+Default to 1 (sequential mode).}
+
+\item{clustertype}{optional character indicating the type of cluster for parallel computation.}
 }
 \value{
 The list returned is: \item{loglik}{log-likelihood of the model}
 \item{best}{vector of parameter estimates in the same order as specified in
-\code{B} and detailed in section \code{details}} \item{V}{vector containing
+\code{B} and detailed in section \code{details}}
+\item{V}{if the model converged (conv=1 or 3), vector containing
 the upper triangle matrix of variance-covariance estimates of \code{Best}
 with exception for variance-covariance parameters of the random-effects for
 which \code{V} contains the variance-covariance estimates of the Cholesky
-transformed parameters displayed in \code{cholesky}} \item{gconv}{vector of
+transformed parameters displayed in \code{cholesky}.
+If conv=2, \code{V} contains the second derivatives of the log-likelihood.}
+\item{gconv}{vector of
 convergence criteria: 1. on the parameters, 2. on the likelihood, 3. on the
 derivatives} \item{conv}{status of convergence: =1 if the convergence
 criteria were satisfied, =2 if the maximum number of iterations was reached,

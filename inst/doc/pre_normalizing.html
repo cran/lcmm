@@ -15,8 +15,25 @@
 <title>Pre-normalizing a dependent variable using lcmm</title>
 
 
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
-<style type="text/css">code{white-space: pre;}</style>
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -102,6 +119,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -314,7 +332,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 </div>
 
 <p> </p>
-<p>Functions lcmm, multlcmm and jointlcmm handle dependent variables that are not necessarily Gaussian. These functions rely on the simultaneous normalization of the variable and estimation of the regression parameters using parameterized link functions (argument “link=”).</p>
+<p>Functions lcmm, multlcmm, Jointlcmm and mpjlcmm handle dependent variables that are not necessarily Gaussian. These functions rely on the simultaneous normalization of the variable and estimation of the regression parameters using parameterized link functions (argument “link=”).</p>
 <p>However in some cases, one may want to pre-normalize once for all a dependent variable so that standard methods for Gaussian outcomes can then be used without caution.</p>
 <p>The methodology has been fully described and validated for MMSE in Philipps et al. (2014) (see <a href="https://doi.org/10.1159/000365637" class="uri">https://doi.org/10.1159/000365637</a> )</p>
 <p>We describe here how this can be done using CES-D example.</p>
@@ -340,12 +358,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p> </p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">head</span>(mpreH<span class="op">$</span>pred)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  ID     pred_m   resid_m   pred_ss   resid_ss      obs    pred_m1  pred_ss1</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="dv">1</span>  <span class="dv">1</span> <span class="fl">0.11087801</span> <span class="fl">1.3084177</span> <span class="fl">0.9342098</span>  <span class="fl">0.4850859</span> <span class="fl">1.419296</span> <span class="fl">0.11087801</span> <span class="fl">0.9342098</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="dv">2</span>  <span class="dv">2</span> <span class="fl">0.06084656</span> <span class="fl">1.2129364</span> <span class="fl">1.4361551</span> <span class="fl">-0.1623721</span> <span class="fl">1.273783</span> <span class="fl">0.06084656</span> <span class="fl">1.4361551</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="dv">3</span>  <span class="dv">2</span> <span class="fl">0.13130626</span> <span class="fl">1.8192130</span> <span class="fl">1.5798633</span>  <span class="fl">0.3706559</span> <span class="fl">1.950519</span> <span class="fl">0.13130626</span> <span class="fl">1.5798633</span></a>
-<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="dv">4</span>  <span class="dv">2</span> <span class="fl">0.31339434</span> <span class="fl">1.9993094</span> <span class="fl">1.8557171</span>  <span class="fl">0.4569866</span> <span class="fl">2.312704</span> <span class="fl">0.31339434</span> <span class="fl">1.8557171</span></a>
-<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="dv">5</span>  <span class="dv">2</span> <span class="fl">0.82900547</span> <span class="fl">1.9299116</span> <span class="fl">2.2349518</span>  <span class="fl">0.5239653</span> <span class="fl">2.758917</span> <span class="fl">0.82900547</span> <span class="fl">2.2349518</span></a>
-<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="dv">7</span>  <span class="dv">3</span> <span class="fl">0.26327450</span> <span class="fl">0.8557631</span> <span class="fl">0.5912821</span>  <span class="fl">0.5277555</span> <span class="fl">1.119038</span> <span class="fl">0.26327450</span> <span class="fl">0.5912821</span></a></code></pre></div>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="dv">1</span>  <span class="dv">1</span> <span class="fl">0.11087827</span> <span class="fl">1.3084181</span> <span class="fl">0.9342107</span>  <span class="fl">0.4850857</span> <span class="fl">1.419296</span> <span class="fl">0.11087827</span> <span class="fl">0.9342107</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="dv">2</span>  <span class="dv">2</span> <span class="fl">0.06084672</span> <span class="fl">1.2129369</span> <span class="fl">1.4361554</span> <span class="fl">-0.1623718</span> <span class="fl">1.273784</span> <span class="fl">0.06084672</span> <span class="fl">1.4361554</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="dv">3</span>  <span class="dv">2</span> <span class="fl">0.13130656</span> <span class="fl">1.8192134</span> <span class="fl">1.5798638</span>  <span class="fl">0.3706562</span> <span class="fl">1.950520</span> <span class="fl">0.13130656</span> <span class="fl">1.5798638</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="dv">4</span>  <span class="dv">2</span> <span class="fl">0.31339488</span> <span class="fl">1.9993097</span> <span class="fl">1.8557179</span>  <span class="fl">0.4569867</span> <span class="fl">2.312705</span> <span class="fl">0.31339488</span> <span class="fl">1.8557179</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="dv">5</span>  <span class="dv">2</span> <span class="fl">0.82900611</span> <span class="fl">1.9299118</span> <span class="fl">2.2349532</span>  <span class="fl">0.5239648</span> <span class="fl">2.758918</span> <span class="fl">0.82900611</span> <span class="fl">2.2349532</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="dv">7</span>  <span class="dv">3</span> <span class="fl">0.26327499</span> <span class="fl">0.8557632</span> <span class="fl">0.5912826</span>  <span class="fl">0.5277556</span> <span class="fl">1.119038</span> <span class="fl">0.26327499</span> <span class="fl">0.5912826</span></a></code></pre></div>
 <p> </p>
 <p>The normalized variable (to be called for instance “normCESD”) can now be added to the dataset</p>
 <p> </p>

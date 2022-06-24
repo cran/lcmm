@@ -1,8 +1,3 @@
-###################### derniere mise a jour : 2012/03/16 ############"
-
-
-
-
 #' Estimation of latent class linear mixed models
 #' 
 #' This function fits linear mixed models and latent class linear mixed models
@@ -103,7 +98,7 @@
 #' specified with ''.
 #' @param classmb optional one-sided formula describing the covariates in the
 #' class-membership multinomial logistic model. Covariates included are
-#' separated by \code{+}.  No intercept should be included in this formula.
+#' separated by \code{+}. By default, classmb=~1 if ng>1.
 #' @param ng optional number of latent classes considered. If \code{ng=1} (by
 #' default) no \code{mixture} nor \code{classmb} should be specified. If
 #' \code{ng>1}, \code{mixture} is required.
@@ -146,6 +141,10 @@
 #' values in 0,1,...,ng. Value 0 indicates no prior for the subject while a
 #' value in 1,...,ng indicates that the subject belongs to the corresponding
 #' latent class.
+#' @param pprior optional vector specifying the names of the covariates containing the
+#' prior probabilities to belog to each latent class. These probabilities should be
+#' between 0 and 1 and should sum up to 1 for each subject. If pprior is specified, the
+#' multinomial logistic model should be removed with classmb=~-1.
 #' @param maxiter optional maximum number of iterations for the Marquardt
 #' iterative algorithm. By default, maxiter=500.
 #' @param subset a specification of the rows to be used: defaults to all rows.
@@ -164,22 +163,32 @@
 #' @param var.time optional character indicating the name of the time variable.
 #' @param partialH optional logical indicating if parameters can be dropped from the
 #' Hessian matrix to define convergence criteria.
-#' @return The list returned is: \item{ns}{number of grouping units in the
-#' dataset} \item{ng}{number of latent classes} \item{loglik}{log-likelihood of
-#' the model} \item{best}{vector of parameter estimates in the same order as
+#' @param nproc the number cores for parallel computation.
+#' Default to 1 (sequential mode).
+#' @param clustertype optional character indicating the type of cluster for parallel computation.
+#' @return The list returned is:
+#' \item{ns}{number of grouping units in the dataset}
+#' \item{ng}{number of latent classes}
+#' \item{loglik}{log-likelihood of the model} \
+#' item{best}{vector of parameter estimates in the same order as
 #' specified in \code{B} and detailed in section \code{details}}
-#' \item{V}{vector containing the upper triangle matrix of variance-covariance
-#' estimates of \code{Best} with exception for variance-covariance parameters
-#' of the random-effects for which \code{V} contains the variance-covariance
-#' estimates of the Cholesky transformed parameters displayed in
-#' \code{cholesky}} \item{gconv}{vector of convergence criteria: 1. on the
-#' parameters, 2. on the likelihood, 3. on the derivatives} \item{conv}{status
-#' of convergence: =1 if the convergence criteria were satisfied, =2 if the
-#' maximum number of iterations was reached, =4 or 5 if a problem occured
-#' during optimisation} \item{call}{the matched call} \item{niter}{number of
-#' Marquardt iterations} \item{N}{internal information
-#' used in related functions} \item{idiag}{internal information used in related
-#' functions} \item{pred}{table of individual predictions and residuals; it
+#' \item{V}{if the model converged (conv=1 or 3), vector containing the upper triangle
+#' matrix of variance-covariance estimates of \code{Best} with exception for
+#' variance-covariance parameters of the random-effects for which \code{V} contains
+#' the variance-covariance estimates of the Cholesky transformed parameters displayed in
+#' \code{cholesky}.
+#' If conv=2, \code{V} contains the second derivatives of the log-likelihood.}
+#' \item{gconv}{vector of convergence criteria: 1. on the parameters, 2. on the
+#' likelihood, 3. on the derivatives}
+#' \item{conv}{status of convergence: =1 if the convergence criteria were satisfied,
+#' =2 if the maximum number of iterations was reached, =3 if the convergence criteria were
+#' satisfied with a partial Hessian matrix, =4 or 5 if a problem occured
+#' during optimisation}
+#' \item{call}{the matched call}
+#' \item{niter}{number of Marquardt iterations}
+#' \item{N}{internal information used in related functions}
+#' \item{idiag}{internal information used in related functions}
+#' \item{pred}{table of individual predictions and residuals; it
 #' includes marginal predictions (pred_m), marginal residuals (resid_m),
 #' subject-specific predictions (pred_ss) and subject-specific residuals
 #' (resid_ss) averaged over classes, the observation (obs) and finally the
@@ -187,12 +196,12 @@
 #' the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). If \code{var.time}
 #' is specified, the corresponding measurement time is also included.}
 #' \item{pprob}{table of posterior classification and posterior individual
-#' class-membership probabilities} \item{Xnames}{list of covariates included in
-#' the model} 
+#' class-membership probabilities}
+#' \item{Xnames}{list of covariates included in the model} 
 #' \item{predRE}{table containing individual predictions of the random-effects
-#' : a column per random-effect, a line per subject} \item{cholesky}{vector
-#' containing the estimates of the Cholesky transformed parameters of the
-#' variance-covariance matrix of the random-effects}
+#' : a column per random-effect, a line per subject}
+#' \item{cholesky}{vector containing the estimates of the Cholesky transformed
+#' parameters of the variance-covariance matrix of the random-effects}
 #' \item{data}{the original data set (if returndata is TRUE)}
 #' @author Cecile Proust-Lima, Benoit Liquet and Viviane Philipps
 #' 
@@ -285,10 +294,9 @@
 #' 
 #' 
 hlme <-
-    function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,prior,maxiter=500,subset=NULL,na.action=1,posfix=NULL,verbose=TRUE,returndata=FALSE,var.time=NULL,partialH=FALSE){
+    function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,prior,pprior=NULL,maxiter=500,subset=NULL,na.action=1,posfix=NULL,verbose=TRUE,returndata=FALSE,var.time=NULL,partialH=FALSE,nproc=1,clustertype=NULL){
 
         ptm<-proc.time()
-        if(verbose==TRUE) cat("Be patient, hlme is running ... \n")
 
         cl <- match.call()
         args <- as.list(match.call(hlme))[-1]
@@ -302,15 +310,16 @@ hlme <-
         if(!missing(classmb) & ng==1) stop("No classmb can be specified with ng=1")
         if(missing(random)) random <- ~-1
         if(missing(fixed)) stop("The argument Fixed must be specified in any model")
-        if(missing(classmb)) classmb <- ~-1
+        if(missing(classmb) & ng==1) classmb <- ~-1
+        if(missing(classmb) & ng>1) classmb <- ~1
         if(missing(mixture)) mixture <- ~-1
         if(ng==1&nwg==TRUE) stop ("The argument nwg should be FALSE for ng=1")
 
 
-        if(class(fixed)!="formula") stop("The argument fixed must be a formula")
-        if(class(mixture)!="formula") stop("The argument mixture must be a formula")
-        if(class(random)!="formula") stop("The argument random must be a formula")
-        if(class(classmb)!="formula") stop("The argument classmb must be a formula")
+        if(!inherits(fixed,"formula")) stop("The argument fixed must be a formula")
+        if(!inherits(mixture,"formula")) stop("The argument mixture must be a formula")
+        if(!inherits(random,"formula")) stop("The argument random must be a formula")
+        if(!inherits(classmb,"formula")) stop("The argument classmb must be a formula")
         if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
         if(nrow(data)==0) stop("Data should not be empty") 
         if(missing(subject)){ stop("The argument subject must be specified in any model even without random-effects")}
@@ -359,7 +368,6 @@ hlme <-
         int.fixed <- 0
         int.mixture <- 0
         int.random <- 0
-        int.classmb <- 0
                                         #7/05/2012
 ### Traitement des donnees manquantes
                                         # fixed
@@ -505,14 +513,10 @@ hlme <-
             if(any(colnames(X_classmb)=="(Intercept)")){
                 ii <- which(colnames(X_classmb)=="(Intercept)")
                 colnames(X_classmb)[ii] <- "intercept"
-                int.classmb <- 1
             }
             id.X_classmb <- 1
-            if(int.classmb>0) inddepvar.classmb <- colnames(X_classmb)[-ii]
-            inddepvar.classmb.nom <- colnames(X_classmb)
 	}
         else{
-            inddepvar.classmb <- inddepvar.classmb.nom <- "intercept"
             id.X_classmb <- 0
 	}	
         
@@ -670,6 +674,23 @@ hlme <-
         }
 ####
 
+        ##pprior : proba d'appartenance a chaque classe
+        if(is.null(pprior))
+        {
+            pprior0 <- matrix(0, length(IND), ng)            
+        }
+        else
+        {
+            if(ng==1) stop("pprior is only useful if ng>1")
+            if(classmb != ~-1) stop("classmb should be ~-1 if pprior is specified")
+            if(!is.character(pprior)) stop("pprior should be a character vector")
+            if(length(pprior) != ng) stop("pprior should be of length ng")
+            if(!all(pprior %in% colnames(newdata))) stop("pprior variables should be included in data")
+
+            pprior0 <- newdata[,pprior]
+        }
+
+        
         ng0 <- ng
         idiag0 <- as.integer(idiag)
         nwg0 <- as.integer(nwg)
@@ -697,12 +718,6 @@ hlme <-
         idcor0 <- rep(0,length(z.X0))  
         if (ncor0!=0) idcor0 <- as.numeric(nom.X0 %in% cor.var.time) 
 
-                                        #if((int.fixed+int.random)>0) idprob0[1] <- 0     
-        if(("intercept" %in% nom.X0) | ("(Intercept)" %in% nom.X0))
-            {
-                ii <- which(nom.X0 %in% c("intercept","(Intercept)"))
-                idprob0[ii] <- 0  
-            }
 
 
                                         # on ordonne les donn es suivants la variable IND
@@ -713,10 +728,10 @@ hlme <-
         #IDnum <- matYXord[,1]
         #IND <- matYXord[,2]
 
-        matYX <- cbind(IND,timeobs,PRIOR,Y0,X0)
+        matYX <- cbind(IND,timeobs,PRIOR,pprior0,Y0,X0)
         matYXord <- matYX[sort.list(matYX[,1]),]
-        Y0 <- as.numeric(matYXord[,4])
-        X0 <- apply(matYXord[,-c(1,2,3,4),drop=FALSE],2,as.numeric)
+        Y0 <- as.numeric(matYXord[,4+ng])
+        X0 <- apply(matYXord[,-c(1:(4+ng)),drop=FALSE],2,as.numeric)
         IND <- matYXord[,1]
         timeobs <- matYXord[,2]
 
@@ -747,6 +762,22 @@ hlme <-
         if (!(all(prior0  %in% seqnG))) stop ("The argument prior should contain integers between 0 and ng")
 #####
 
+        ## pprior de dim ns
+        if(!is.null(pprior))
+        {
+            pprior0 <- matYX[cumsum(nmes0),3+1:ng, drop=FALSE]
+            if(any(is.na(pprior0))) stop("pprior contains missing values")
+            if(any(pprior0 < 0)) stop("pprior should be non negative")
+            if(any(pprior0 > 1)) stop("pprior should be < 1")
+            if(!all.equal(as.numeric(apply(pprior0,1,sum)), rep(1,ns0))) stop("pprior should sum up to 1 for all subjects")
+        }
+        else
+        {
+            pprior0 <- matrix(0, ns0, ng0)
+        }
+        pprior0 <- t(pprior0)       
+        
+
 
         loglik <- as.double(0)
         ni <- 0
@@ -771,7 +802,7 @@ hlme <-
         Brandom <- FALSE
         if(length(cl$B)==2)
             {
-                if(class(eval(cl$B[[2]]))!="hlme") stop("The model specified in B should be of class hlme")
+                if(!inherits(eval(cl$B[[2]]),"hlme")) stop("The model specified in B should be of class hlme")
                 if(as.character(cl$B[1])!="random") stop("Please use random() to specify random initial values")
                 
                 Brandom <- TRUE
@@ -815,8 +846,8 @@ hlme <-
 
 #####cas 2 : ng>=2
         if(ng0>1){
-            NPROB <- (sum(idprob0==1)+1)*(ng0-1)
-            b[1:NPROB] <- 0
+            NPROB <- (sum(idprob0==1))*(ng0-1)
+            if(NPROB>0) b[1:NPROB] <- 0
             NEF <- sum(idg0==1)+(sum(idg0==2))*ng0
             if(idiag0==1) NVC <- sum(idea0==1)
             if(idiag0==0){
@@ -858,102 +889,55 @@ hlme <-
             pbH0[Hr0] <- 1
             pbH0[posfix] <- 0
         }
+        indexHr <- NULL
+        if(sum(pbH0)>0) indexHr <- which(pbH0==1)
         
         if(missing(B)){
 
-            if(ng0>1){
-                idea2 <- idea0
-                idprob2 <- rep(0,nv0)  
-                idg2 <- rep(0,nv0) 
-                idg2[idg0!=0] <- 1
-                NEF2<-sum(idg2==1)
-                NPM2<-NEF2+NVC+ncor0+1
-                nwg2<-0
-                ng2<-1
-                ppi2<- rep(0,ns0)
-                pred_m_g2 <- rep(0,nobs0)
-                pred_ss_g2 <- rep(0,nobs0)
-                maxiter2 <- min(75,maxiter)
-                convB2 <- max(0.01,convB)
-                convL2 <- max(0.01,convL)
-                convG2 <- max(0.01,convG)
-
-                V2 <- rep(0,NPM2*(NPM2+1)/2)
-                best <- rep(0,NPM2)
-                
-                init <- .Fortran(C_hetmixlin,
-                                 as.double(Y0),
-                                 as.double(X0),
-                                 as.integer(prior2),
-                                 as.integer(idprob2),
-                                 as.integer(idea2),
-                                 as.integer(idg2),
-                                 as.integer(idcor0),
-                                 as.integer(ns0),
-                                 as.integer(ng2),
-                                 as.integer(nv0),
-                                 as.integer(nobs0),
-                                 as.integer(nea0),
-                                 as.integer(nmes0),
-                                 as.integer(idiag0),
-                                 as.integer(nwg2),
-                                 as.integer(ncor0),
-                                 npm=as.integer(NPM2),
-                                 best=as.double(b1),
-                                 V=as.double(V2),
-                                 loglik=as.double(loglik),
-                                 niter=as.integer(ni),
-                                 conv=as.integer(istop),
-                                 gconv=as.double(gconv),
-                                 ppi2=as.double(ppi2),
-                                 resid_m=as.double(resid_m),
-                                 resid_ss=as.double(resid_ss),
-                                 pred_m_g=as.double(pred_m_g2),
-                                 pred_ss_g=as.double(pred_ss_g2),
-                                 predRE=as.double(predRE),
-                                 as.double(convB2),
-                                 as.double(convL2),
-                                 as.double(convG2),
-                                 as.integer(maxiter2),
-                                 as.integer(fix0),
-                                 as.integer(pbH0))
-
-                k <- NPROB
-                l <- 0
-                t<- 0
-                for (i in 1:nvar.exp)    {
-                    if(idg0[i]==1){
-                        l <- l+1
-                        t <- t+1
-                        b[k+t] <- init$best[l]
-                    }
-                    if(idg0[i]==2){
-                        l <- l+1
-                        for (g in 1:ng){
-                            t <- t+1
-                            if(init$conv==1) b[k+t] <- init$best[l]+(g-(ng+1)/2)*sqrt(init$V[l*(l+1)/2])
-                            else b[k+t] <- init$best[l]+(g-(ng+1)/2)*init$best[l]
-                        }
-                    }
-                }
-                b[(NPROB+NEF+1):(NPROB+NEF+NVC)] <- init$best[(NEF2+1):(NEF2+NVC)]
-                if (ncor0>0) {b[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- init$best[(NPM2-ncor0):(NPM2-1)]}
-                b[NPROB+NEF+NVC+NW+ncor0+1] <- init$best[NPM2]
-            } 
             if(ng0==1 ){
                 b <- b1
+            } else {
+                stop("Please specify initial values with argument 'B'")
             }
         }
         else
             {
                 if(is.vector(B))
                     {
-                        if(length(B)!=NPM) stop(paste("Vector B should be of length",NPM))
-                        else {b <-B}
+                        if(length(B)!=NPM)
+                        {
+                            stop(paste("Vector B should be of length",NPM))
+                        }
+                        else
+                        {
+                            b <-B
+                            
+                            if(NVC>0)
+                            {
+                                ## remplacer varcov des EA par les prm a estimer
+                                
+                                if(idiag0==1)
+                                {
+                                    b[NPROB+NEF+1:NVC] <- sqrt(b[NPROB+NEF+1:NVC])
+                                }
+                                else
+                                {
+                                    varcov <- matrix(0,nrow=nea0,ncol=nea0)
+                                    varcov[upper.tri(varcov,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                    varcov <- t(varcov)
+                                    varcov[upper.tri(varcov,diag=TRUE)] <- b[NPROB+NEF+1:NVC]
+                                    
+                                    ch <- chol(varcov)
+                                    
+                                    b[NPROB+NEF+1:NVC] <- ch[upper.tri(ch,diag=TRUE)]
+                                    
+                                }
+                            }    
+                        }
                     }
                 else
                     { 
-                        if(class(B)!="hlme") stop("B should be either a vector or an object of class hlme")
+                        if(!inherits(B,"hlme")) stop("B should be either a vector or an object of class hlme")
 
                         ## B est le meme modele mais pr ng=1 :
                         if(ng>1 & B$ng==1)
@@ -1070,7 +1054,7 @@ hlme <-
                                         
                                         b[c((NPROB+1):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(NPM-NPROB-NW)
 
-                                        b[1:NPROB] <- 0
+                                        if(NPROB>0) b[1:NPROB] <- 0
                                         if(NW>0) b[NPROB+NEF+NVC+1:NW] <- 1
                                    
                                     } 
@@ -1083,7 +1067,8 @@ hlme <-
         NPM2 <- NEF2+NVC+ncor0+1
 
         wRandom <- rep(0,NPM)
-        b0Random <- rep(0,ng-1) # nprob 
+        b0Random <- NULL
+        if(NPROB>0) b0Random <- rep(0,ng-1) # nprob 
         
         l <- 0
         t <- 0
@@ -1124,8 +1109,8 @@ hlme <-
         ##--------------------------------------------
 
 
-        if(ng0>=2){
-            nom <-rep(c("intercept",nom.X0[idprob0==1]),each=ng0-1)
+        if(ng0>=2 & NPROB>0){
+            nom <-rep(nom.X0[idprob0==1],each=ng0-1)
             nom1 <- paste(nom," class",c(1:(ng0-1)),sep="")
             names(b)[1:NPROB]<-nom1
         }
@@ -1145,6 +1130,24 @@ hlme <-
         if(NW!=0)names(b)[(NPROB+NEF+NVC+1):(NPROB+NEF+NVC+NW)] <- paste("varprop class",c(1:(ng0-1)))
         names(b)[NPM] <- "stderr"
         if(ncor0!=0) {names(b)[(NPROB+NEF+NVC+NW+1):(NPROB+NEF+NVC+NW+ncor0)] <- paste("cor",1:ncor0,sep="") }
+        names_best <- names(b)
+
+        ## pas de nprob si pprior
+        ## if(!is.null(pprior))
+        ## {
+        ##     if(NPROB>0)
+        ##     {
+        ##         b <- b[-c(1:NPROB)]
+        ##         names_best <- names_best[-c(1:NPROB)]
+        ##         fix0 <- fix0[-c(1:NPROB)]
+        ##         pbH0 <- pbH0[-c(1:NPROB)]
+        ##         NPM <- NPM - NPROB
+        ##         indexHr <- NULL
+        ##         if(sum(pbH0)>0) indexHr <- which(pbH0==1)
+        ##     }
+        ##     NPROB <- 0
+        ## }
+            
 
         N <- NULL
         N[1] <- NPROB
@@ -1160,45 +1163,114 @@ hlme <-
 
 ################ Sortie ###########################
 
-        out <- .Fortran(C_hetmixlin,
-                        as.double(Y0),
-                        as.double(X0),
-                        as.integer(prior0),
-                        as.integer(idprob0),
-                        as.integer(idea0),
-                        as.integer(idg0),
-                        as.integer(idcor0),
-                        as.integer(ns0),
-                        as.integer(ng0),
-                        as.integer(nv0),
-                        as.integer(nobs0),
-                        as.integer(nea0),
-                        as.integer(nmes0),
-                        as.integer(idiag0),
-                        as.integer(nwg0),
-                        as.integer(ncor0),
-                        as.integer(NPM),
-                        best=as.double(b),
-                        V=as.double(V),
-                        loglik=as.double(loglik),
-                        niter=as.integer(ni),
-                        conv=as.integer(istop),
-                        gconv=as.double(gconv),
-                        ppi2=as.double(ppi0),
-                        resid_m=as.double(resid_m),
-                        resid_ss=as.double(resid_ss),
-                        pred_m_g=as.double(pred_m_g),
-                        pred_ss_g=as.double(pred_ss_g),
-                        predRE=as.double(predRE),
-                        as.double(convB),
-                        as.double(convL),
-                        as.double(convG),
-                        as.integer(maxiter),
-                        as.integer(fix0),
-                        as.integer(pbH0))
+
+            
+        nfix <- sum(fix0)
+        bfix <- 0
+        if(nfix>0)
+        {
+            bfix <- b[which(fix0==1)]
+            b <- b[which(fix0==0)]
+            NPM <- NPM-nfix
+        }
+        
+        if(maxiter==0)
+        {
+            vrais <- loglikhlme(b,Y0,X0,prior0,pprior0,idprob0,idea0,idg0,idcor0,
+                                ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0,
+                                NPM,fix0,nfix,bfix)
+            
+            out <- list(conv=2, V=rep(NA, NPM*(NPM+1)/2), best=b,
+                        ppi2=rep(NA,ns0*ng0), predRE=rep(NA,ns0*nea0),
+                        resid_m=rep(NA,nobs0), resid_ss=rep(NA,nobs0),
+                        pred_m_g=rep(NA,nobs0*ng0), pred_ss_g=rep(NA,nobs0*ng0),
+                        gconv=rep(NA,3), niter=0, loglik=vrais)
+        }
+        else
+        {  
+            res <- mla(b=b, m=length(b), fn=loglikhlme,
+                       clustertype=clustertype,.packages=NULL,
+                       epsa=convB,epsb=convL,epsd=convG,partialH=indexHr,
+                       digits=8,print.info=verbose,blinding=FALSE,
+                       multipleTry=25,file="",
+                       nproc=nproc,maxiter=maxiter,minimize=FALSE,
+                       Y0=Y0,X0=X0,prior0=prior0,pprior0=pprior0,idprob0=idprob0,idea0=idea0,
+                       idg0=idg0,idcor0=idcor0,ns0=ns0,ng0=ng0,nv0=nv0,nobs=nobs0,
+                       nea0=nea0,nmes0=nmes0,idiag=idiag0,nwg0=nwg0,ncor0=ncor0,
+                       npm0=NPM,fix0=fix0,nfix0=nfix,bfix0=bfix)
+            
+            out <- list(conv=res$istop, V=res$v, best=res$b,
+                        ppi2=rep(NA,ns0*ng0), predRE=rep(NA,ns0*nea0),
+                        resid_m=rep(NA,nobs0), resid_ss=rep(NA,nobs0),
+                        pred_m_g=rep(NA,nobs0*ng0), pred_ss_g=rep(NA,nobs0*ng0),
+                        gconv=c(res$ca, res$cb, res$rdm), niter=res$ni,
+                        loglik=res$fn.value)
+        }
+            
+        if(out$conv %in% c(1,2,3))
+        {
+            estim0 <- 0
+            ll <- 0
+            ppi0 <- rep(0,ns0*ng0)
+            resid_m <- rep(0,nobs0)
+            resid_ss <- rep(0,nobs0)
+            pred_m_g <- rep(0,nobs0*ng0)
+            pred_ss_g <- rep(0,nobs0*ng0)
+            predRE <- rep(0,ns0*nea0)
+            
+            post <- .Fortran(C_loglikhlme,
+                             as.double(Y0),
+                             as.double(X0),
+                             as.integer(prior0),
+                             as.double(pprior0),
+                             as.integer(idprob0),
+                             as.integer(idea0),
+                             as.integer(idg0),
+                             as.integer(idcor0),
+                             as.integer(ns0),
+                             as.integer(ng0),
+                             as.integer(nv0),
+                             as.integer(nobs0),
+                             as.integer(nea0),
+                             as.integer(nmes0),
+                             as.integer(idiag0),
+                             as.integer(nwg0),
+                             as.integer(ncor0),
+                             as.integer(NPM),
+                             as.double(out$best),
+                             ppi=as.double(ppi0),
+                             resid_m=as.double(resid_m),
+                             resid_ss=as.double(resid_ss),
+                             pred_m_g=as.double(pred_m_g),
+                             pred_ss_g=as.double(pred_ss_g),
+                             predRE=as.double(predRE),
+                             as.integer(fix0),
+                             as.integer(nfix),
+                             as.double(bfix),
+                             as.integer(estim0),
+                             loglik=as.double(ll))
+            
+            out$ppi2 <- post$ppi
+            out$predRE <- post$predRE
+            out$resid_m <- post$resid_m
+            out$resid_ss <- post$resid_ss
+            out$pred_m_g <- post$pred_m_g
+            out$pred_ss_g <- post$pred_ss_g
+        }
+        
+        
+        
+        ## creer best a partir de b et bfix
+        best <- rep(NA,length(fix0))
+        best[which(fix0==0)] <- out$best
+        best[which(fix0==1)] <- bfix
+        names(best) <- names_best
+        out$best <- best
+        NPM <- NPM+nfix
+        
         
     ### mettre 0 pr les prm fixes
-    if(length(posfix))
+        if(length(posfix))
         {
             if(out$conv==3)
             {
@@ -1265,7 +1337,7 @@ hlme <-
 
 ####################################################
         if (nea0>0) {
-            predRE <- matrix(out$predRE,ncol=nea0,byrow=T)
+            predRE <- matrix(out$predRE,ncol=nea0,byrow=TRUE)
             predRE <- data.frame(INDuniq,predRE)
             colnames(predRE) <- c(nom.subject,nom.X0[idea0!=0])
         }
@@ -1312,9 +1384,6 @@ hlme <-
             colnames(pred)<-c(nom.subject,"pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1,var.time)
         }
 
-        names(out$best)<-names(b)
-        btest <- out$best[1:length(inddepvar.fixed.nom)]
-        names(btest) <-inddepvar.fixed.nom
         
 ### ad 2/04/2012
         if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
@@ -1372,11 +1441,13 @@ hlme <-
         levels <- list(levelsdata=levelsdata, levelsfixed=levelsfixed, levelsrandom=levelsrandom,
                        levelsmixture=levelsmixture, levelsclassmb=levelsclassmb)
         
-        res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,na.action=na.action,AIC=2*(length(out$best)-length(posfix)-out$loglik),BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,data=datareturn,wRandom=wRandom,b0Random=b0Random, levels=levels, var.time=var.time)
-        class(res) <-c("hlme") 
         cost<-proc.time()-ptm
-        if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
+        
+        res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=idcor0,loglik=out$loglik,best=out$best,V=V,gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,N=N,idiag=idiag0,pred=pred,pprob=ppi,predRE=predRE,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,na.action=na.action,AIC=2*(length(out$best)-length(posfix)-out$loglik),BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,data=datareturn,wRandom=wRandom,b0Random=b0Random, levels=levels, var.time=var.time, runtime=cost[3])
+        class(res) <-c("hlme") 
 
+        if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")
         
         res
     }
+

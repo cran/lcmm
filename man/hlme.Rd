@@ -20,6 +20,7 @@ hlme(
   convL = 1e-04,
   convG = 1e-04,
   prior,
+  pprior = NULL,
   maxiter = 500,
   subset = NULL,
   na.action = 1,
@@ -27,7 +28,9 @@ hlme(
   verbose = TRUE,
   returndata = FALSE,
   var.time = NULL,
-  partialH = FALSE
+  partialH = FALSE,
+  nproc = 1,
+  clustertype = NULL
 )
 }
 \arguments{
@@ -54,7 +57,7 @@ specified with ''.}
 
 \item{classmb}{optional one-sided formula describing the covariates in the
 class-membership multinomial logistic model. Covariates included are
-separated by \code{+}.  No intercept should be included in this formula.}
+separated by \code{+}. By default, classmb=~1 if ng>1.}
 
 \item{ng}{optional number of latent classes considered. If \code{ng=1} (by
 default) no \code{mixture} nor \code{classmb} should be specified. If
@@ -108,6 +111,11 @@ values in 0,1,...,ng. Value 0 indicates no prior for the subject while a
 value in 1,...,ng indicates that the subject belongs to the corresponding
 latent class.}
 
+\item{pprior}{optional vector specifying the names of the covariates containing the
+prior probabilities to belog to each latent class. These probabilities should be
+between 0 and 1 and should sum up to 1 for each subject. If pprior is specified, the
+multinomial logistic model should be removed with classmb=~-1.}
+
 \item{maxiter}{optional maximum number of iterations for the Marquardt
 iterative algorithm. By default, maxiter=500.}
 
@@ -133,24 +141,36 @@ returned. Default to FALSE, data are not returned.}
 
 \item{partialH}{optional logical indicating if parameters can be dropped from the
 Hessian matrix to define convergence criteria.}
+
+\item{nproc}{the number cores for parallel computation.
+Default to 1 (sequential mode).}
+
+\item{clustertype}{optional character indicating the type of cluster for parallel computation.}
 }
 \value{
-The list returned is: \item{ns}{number of grouping units in the
-dataset} \item{ng}{number of latent classes} \item{loglik}{log-likelihood of
-the model} \item{best}{vector of parameter estimates in the same order as
+The list returned is:
+\item{ns}{number of grouping units in the dataset}
+\item{ng}{number of latent classes}
+\item{loglik}{log-likelihood of the model} \
+item{best}{vector of parameter estimates in the same order as
 specified in \code{B} and detailed in section \code{details}}
-\item{V}{vector containing the upper triangle matrix of variance-covariance
-estimates of \code{Best} with exception for variance-covariance parameters
-of the random-effects for which \code{V} contains the variance-covariance
-estimates of the Cholesky transformed parameters displayed in
-\code{cholesky}} \item{gconv}{vector of convergence criteria: 1. on the
-parameters, 2. on the likelihood, 3. on the derivatives} \item{conv}{status
-of convergence: =1 if the convergence criteria were satisfied, =2 if the
-maximum number of iterations was reached, =4 or 5 if a problem occured
-during optimisation} \item{call}{the matched call} \item{niter}{number of
-Marquardt iterations} \item{N}{internal information
-used in related functions} \item{idiag}{internal information used in related
-functions} \item{pred}{table of individual predictions and residuals; it
+\item{V}{if the model converged (conv=1 or 3), vector containing the upper triangle
+matrix of variance-covariance estimates of \code{Best} with exception for
+variance-covariance parameters of the random-effects for which \code{V} contains
+the variance-covariance estimates of the Cholesky transformed parameters displayed in
+\code{cholesky}.
+If conv=2, \code{V} contains the second derivatives of the log-likelihood.}
+\item{gconv}{vector of convergence criteria: 1. on the parameters, 2. on the
+likelihood, 3. on the derivatives}
+\item{conv}{status of convergence: =1 if the convergence criteria were satisfied,
+=2 if the maximum number of iterations was reached, =3 if the convergence criteria were
+satisfied with a partial Hessian matrix, =4 or 5 if a problem occured
+during optimisation}
+\item{call}{the matched call}
+\item{niter}{number of Marquardt iterations}
+\item{N}{internal information used in related functions}
+\item{idiag}{internal information used in related functions}
+\item{pred}{table of individual predictions and residuals; it
 includes marginal predictions (pred_m), marginal residuals (resid_m),
 subject-specific predictions (pred_ss) and subject-specific residuals
 (resid_ss) averaged over classes, the observation (obs) and finally the
@@ -158,12 +178,12 @@ class-specific marginal and subject-specific predictions (with the number of
 the latent class: pred_m_1,pred_m_2,...,pred_ss_1,pred_ss_2,...). If \code{var.time}
 is specified, the corresponding measurement time is also included.}
 \item{pprob}{table of posterior classification and posterior individual
-class-membership probabilities} \item{Xnames}{list of covariates included in
-the model} 
+class-membership probabilities}
+\item{Xnames}{list of covariates included in the model} 
 \item{predRE}{table containing individual predictions of the random-effects
-: a column per random-effect, a line per subject} \item{cholesky}{vector
-containing the estimates of the Cholesky transformed parameters of the
-variance-covariance matrix of the random-effects}
+: a column per random-effect, a line per subject}
+\item{cholesky}{vector containing the estimates of the Cholesky transformed
+parameters of the variance-covariance matrix of the random-effects}
 \item{data}{the original data set (if returndata is TRUE)}
 }
 \description{

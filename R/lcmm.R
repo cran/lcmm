@@ -262,16 +262,20 @@
 #' reported. Default to TRUE.
 #' @param returndata logical indicating if data used for computation should be
 #' returned. Default to FALSE, data are not returned.
-#' @param var.time optional character indicating the name of the time variable.   
+#' @param var.time optional character indicating the name of the time variable.
+#' @param nproc the number cores for parallel computation.
+#' Default to 1 (sequential mode).
+#' @param clustertype optional character indicating the type of cluster for parallel computation.
 #' @return The list returned is: \item{ns}{number of grouping units in the
 #' dataset} \item{ng}{number of latent classes} \item{loglik}{log-likelihood of
 #' the model} \item{best}{vector of parameter estimates in the same order as
 #' specified in \code{B} and detailed in section \code{details}} 
-#' \item{V}{vector containing the upper triangle matrix of variance-covariance
-#' estimates of \code{Best} with exception for variance-covariance parameters
-#' of the random-effects for which \code{V} contains the variance-covariance
-#' estimates of the Cholesky transformed parameters displayed in
-#' \code{cholesky}} \item{gconv}{vector of convergence criteria: 1. on the
+#' \item{V}{if the model converged (conv=1 or 3), vector containing the upper triangle
+#' matrix of variance-covariance estimates of \code{Best} with exception for
+#' variance-covariance parameters of the random-effects for which \code{V} contains the
+#' variance-covariance estimates of the Cholesky transformed parameters displayed in
+#' \code{cholesky}.  If conv=2, \code{V} contains the second derivatives of the
+#' log-likelihood.}\item{gconv}{vector of convergence criteria: 1. on the
 #' parameters, 2. on the likelihood, 3. on the derivatives} \item{conv}{status
 #' of convergence: =1 if the convergence criteria were satisfied, =2 if the
 #' maximum number of iterations was reached, =4 or 5 if a problem occured
@@ -433,7 +437,7 @@
 #' 
 #' 
 #' 
-lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE,var.time=NULL)
+lcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE,var.time=NULL,nproc=1,clustertype=NULL)
 {
 
 mm <- match.call()
@@ -466,7 +470,7 @@ if (!is.null(cor.char))
 
         if(length(mm$B)==2)
             {
-                if(class(eval(mm$B[[2]]))!="lcmm") stop("The model specified in B should be of class lcmm")
+                if(!inherits(eval(mm$B[[2]]),"lcmm")) stop("The model specified in B should be of class lcmm")
                 if(as.character(mm$B[1])!="random") stop("Please use random() to specify random initial values")
                 B <- eval(mm$B[[2]])   
                 B$Brandom <- TRUE
@@ -492,7 +496,7 @@ if(na.action==1){
 ### Traitement des donnees manquantes
 # fixed
 if(missing(fixed)) stop("The argument Fixed must be specified in any model")
-if(class(fixed)!="formula") stop("The argument fixed must be a formula")
+if(!inherits(fixed,"formula")) stop("The argument fixed must be a formula")
 m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 m$formula <- terms(fixed)
 m$na.action <- na.action
@@ -502,7 +506,7 @@ na.fixed <- attr(m,"na.action")
 
 # mixture
 if(!missing(mixture)){
-	if(class(mixture)=="formula"){	
+	if(inherits(mixture,"formula")){	
 	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 	m$formula <- terms(mixture)
 	m$na.action <- na.action
@@ -516,7 +520,7 @@ if(!missing(mixture)){
 
 # random
 if(!missing(random)){
-	if(class(random)=="formula"){	
+	if(inherits(random,"formula")){	
 	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]
 	m$formula <- terms(random)
 	m$na.action <- na.action
@@ -530,7 +534,7 @@ if(!missing(random)){
 
 # classmb
 if(!missing(classmb)){ 
-	if(class(classmb)=="formula"){	
+	if(inherits(classmb,"formula")){	
 	m <- match.call()[c(1,match(c("data","subset","na.action"),names(match.call()),0))]	
 	m$formula <- terms(classmb)
 	m$na.action <- na.action
@@ -764,13 +768,13 @@ if(!(idlink0 %in% c(1,2)) & isTRUE(partialH)) stop("No partial Hessian can be de
 link <- as.character(link)
 ### appel des differents modeles selon la valeur de l'argument link
 result <- switch(link
-,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time)
+,"linear"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time,nproc=nproc,clustertype=clustertype)
 
-,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time)
+,"beta"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time,nproc=nproc,clustertype=clustertype)
 
-,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time)
+,"splines"=.Contlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,cor=cor.char,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,epsY=epsY,idlink0=idlink0,ntrtot0=ntrtot0,nbzitr0=nbzitr0,zitr=zitr,nsim=nsim,call=mm,Ydiscrete,subset=subset,na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time,nproc=nproc,clustertype=clustertype)
                  
-,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,subset=subset,na.action=na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time))
+,"thresholds"=.Ordlcmm(fixed=fixed,mixture=mixture,random=random,subject=subject,classmb=classmb,ng=ng,idiag=idiag,nwg=nwg,data=data,B=B,convB=convB,convL=convL,convG=convG,prior=prior,maxiter=maxiter,zitr=zitr,ide=ide0,call=mm,Ydiscrete,subset=subset,na.action=na.action,posfix=posfix,partialH=partialH,verbose=verbose,returndata=returndata,var.time=var.time,nproc=nproc,clustertype=clustertype))
   
 return(result)
 }

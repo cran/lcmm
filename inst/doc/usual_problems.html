@@ -15,8 +15,25 @@
 <title>Usual problems encountered when using lcmm package</title>
 
 
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
-<style type="text/css">code{white-space: pre;}</style>
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
@@ -102,6 +119,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -304,9 +322,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <ul>
 <li><a href="#why-my-model-did-not-converge">Why my model did not converge?</a></li>
 <li><a href="#how-to-choose-the-number-of-latent-classes">How to choose the number of latent classes?</a></li>
-<li><a href="#how-to-evaluate-the-quality-of-a-classification">How to evaluate the quality of a classification ?</a></li>
-<li><a href="#how-to-evaluate-the-fit-of-a-model">How to evaluate the fit of a model ?</a></li>
-<li><a href="#how-to-pre-normalize-a-variable-using-lcmm">How to pre-normalize a variable using lcmm ?</a></li>
+<li><a href="#how-to-evaluate-the-quality-of-a-classification">How to evaluate the quality of a classification?</a></li>
+<li><a href="#how-to-evaluate-the-fit-of-a-model">How to evaluate the fit of a model?</a></li>
+<li><a href="#how-to-pre-normalize-a-variable-using-lcmm">How to pre-normalize a variable using lcmm?</a></li>
 <li><a href="#how-to-change-the-latent-class-in-reference">How to change the latent class in reference?</a></li>
 <li><a href="#how-to-make-predictions-on-external-data">How to make predictions on external data?</a></li>
 </ul>
@@ -322,10 +340,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p><strong>There are several reasons that may induce a non convergence, e.g.:</strong></p>
 <ol style="list-style-type: decimal">
 <li><p>When the time variable (or more generally a variable with random effects) is in a unit which induces too small associated parameters (for very small changes per day). In that case, changing the scale (for instance with months or years) may solve the problem.</p></li>
-<li><p>In models with splines in the link function (lcmm, multlcmm, Jointlcmm) or with splines in the baseline risk function (Jointlcmm), a parameter associated with splines very close to zero may prevent for correct convergence as it is at the border of the parameter space. In that case, this parameter can be fixed to 0 and convergence should be reached immediately.</p></li>
+<li><p>In models with splines in the link function (lcmm, multlcmm, Jointlcmm, mpjlcmm) or with splines in the baseline risk function (Jointlcmm, mpjlcmm), a parameter associated with splines very close to zero may prevent for correct convergence as it is at the border of the parameter space. In that case, this parameter can be fixed to 0 and convergence should be reached immediately.</p></li>
 <li>When the data are not rich enough and/or the model is too complicated. In that case, this is a problem of numerical non identifiability. There are not many solutions (other than simplifying the model) but some directions may be :
 <ul>
-<li>Be patient, it happens that after some iterations the derivatives might be inversible and the model converges (you can change maxiter or rerun the program from the estimates at the non convergence point). But this is usually no necessary to specify more than 100 or 200 iterations. The iterative algorithm is used to converge in a few dozen of iterations.</li>
+<li>Be patient, it happens that after some iterations the derivatives might be invertible and the model converges (you can change maxiter or rerun the program from the estimates at the non convergence point). But this is usually no necessary to specify more than 100 or 200 iterations. The iterative algorithm is used to converge in a few dozen of iterations.</li>
 <li>You can try to assume a less stringent threshold (e.g., 0.01) but be careful, convergence might be of lower quality.<br />
 </li>
 <li>Run the model from different initial values.</li>
@@ -348,20 +366,20 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p> </p>
 </div>
 <div id="how-to-evaluate-the-quality-of-a-classification" class="section level1">
-<h1>How to evaluate the quality of a classification ?</h1>
+<h1>How to evaluate the quality of a classification?</h1>
 <p>Good discrimination of classes is usually sought when fitting latent class mixed models. Discriminatory power can be assessed using the entropy criterion (provided in summarytable) but also using the classification table (with command postprob). The description of the classes may also help comprehend the latent class structure.</p>
 <p>(see vignette <a href="https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html" class="uri">https://cran.r-project.org/package=lcmm/vignettes/latent_class_model_with_hlme.html</a> for further details)</p>
 <p> </p>
 </div>
 <div id="how-to-evaluate-the-fit-of-a-model" class="section level1">
-<h1>How to evaluate the fit of a model ?</h1>
+<h1>How to evaluate the fit of a model?</h1>
 <p>Different techniques can be used in this package to evaluate the goodness of fit. As in mixed models, one can compare the subject-specific predictions with the observations or plot the subject-specific residuals.</p>
 <p>The comparison with more flexible models can also be useful (more flexible link functions, more flexible baseline risk functions, more flexible functions of time, etc.)</p>
 <p>Each vignette includes a section on the evaluation of the model.</p>
 <p> </p>
 </div>
 <div id="how-to-pre-normalize-a-variable-using-lcmm" class="section level1">
-<h1>How to pre-normalize a variable using lcmm ?</h1>
+<h1>How to pre-normalize a variable using lcmm?</h1>
 <p>This is detailed in vignette on pre-normalizing: <a href="https://cran.r-project.org/package=lcmm/vignettes/pre_normalizing.html" class="uri">https://cran.r-project.org/package=lcmm/vignettes/pre_normalizing.html</a></p>
 <p> </p>
 </div>
@@ -390,10 +408,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb2-16" data-line-number="16"> </a>
 <a class="sourceLine" id="cb2-17" data-line-number="17">Iteration process<span class="op">:</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb2-18" data-line-number="18"><span class="st">     </span>Convergence criteria satisfied </a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">     Number of iterations<span class="op">:</span><span class="st">  </span><span class="dv">16</span> </a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">     Convergence criteria<span class="op">:</span><span class="st"> </span>parameters=<span class="st"> </span><span class="fl">1.2e-08</span> </a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">                         <span class="op">:</span><span class="st"> </span>likelihood=<span class="st"> </span><span class="fl">3.1e-09</span> </a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">                         <span class="op">:</span><span class="st"> </span>second derivatives=<span class="st"> </span><span class="fl">5.5e-15</span> </a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">     Number of iterations<span class="op">:</span><span class="st">  </span><span class="dv">27</span> </a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">     Convergence criteria<span class="op">:</span><span class="st"> </span>parameters=<span class="st"> </span><span class="fl">1.4e-05</span> </a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">                         <span class="op">:</span><span class="st"> </span>likelihood=<span class="st"> </span><span class="fl">3.5e-06</span> </a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">                         <span class="op">:</span><span class="st"> </span>second derivatives=<span class="st"> </span><span class="fl">6.8e-11</span> </a>
 <a class="sourceLine" id="cb2-23" data-line-number="23"> </a>
 <a class="sourceLine" id="cb2-24" data-line-number="24">Goodness<span class="op">-</span>of<span class="op">-</span>fit statistics<span class="op">:</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb2-25" data-line-number="25"><span class="st">     </span>maximum log<span class="op">-</span>likelihood<span class="op">:</span><span class="st"> </span><span class="fl">-6010.69</span>  </a>
@@ -407,25 +425,25 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb2-33" data-line-number="33">(the class of reference is the last class) </a>
 <a class="sourceLine" id="cb2-34" data-line-number="34"></a>
 <a class="sourceLine" id="cb2-35" data-line-number="35">                     coef      Se    Wald p<span class="op">-</span>value</a>
-<a class="sourceLine" id="cb2-36" data-line-number="36">intercept class1  <span class="fl">2.82685</span> <span class="fl">1.02130</span>   <span class="fl">2.768</span> <span class="fl">0.00564</span></a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">CEP class1       <span class="fl">-3.37139</span> <span class="fl">0.99981</span>  <span class="fl">-3.372</span> <span class="fl">0.00075</span></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">intercept class1  <span class="fl">2.82683</span> <span class="fl">1.02233</span>   <span class="fl">2.765</span> <span class="fl">0.00569</span></a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">CEP class1       <span class="fl">-3.37138</span> <span class="fl">1.00112</span>  <span class="fl">-3.368</span> <span class="fl">0.00076</span></a>
 <a class="sourceLine" id="cb2-38" data-line-number="38"></a>
 <a class="sourceLine" id="cb2-39" data-line-number="39">Fixed effects <span class="cf">in</span> the longitudinal model<span class="op">:</span></a>
 <a class="sourceLine" id="cb2-40" data-line-number="40"></a>
-<a class="sourceLine" id="cb2-41" data-line-number="41"><span class="st">                             </span>coef      Se    Wald p<span class="op">-</span>value</a>
-<a class="sourceLine" id="cb2-42" data-line-number="42">intercept class1         <span class="fl">25.54344</span> <span class="fl">0.49499</span>  <span class="fl">51.604</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb2-43" data-line-number="43">intercept class2         <span class="fl">32.93897</span> <span class="fl">0.54794</span>  <span class="fl">60.115</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb2-44" data-line-number="44"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init) class1 <span class="fl">-0.51254</span> <span class="fl">0.05011</span> <span class="fl">-10.229</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb2-45" data-line-number="45"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init) class2 <span class="fl">-0.57198</span> <span class="fl">0.04883</span> <span class="fl">-11.714</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb2-41" data-line-number="41"><span class="st">                     </span>coef      Se    Wald p<span class="op">-</span>value</a>
+<a class="sourceLine" id="cb2-42" data-line-number="42">intercept class1 <span class="fl">25.54344</span> <span class="fl">0.49570</span>  <span class="fl">51.530</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb2-43" data-line-number="43">intercept class2 <span class="fl">32.93898</span> <span class="fl">0.54910</span>  <span class="fl">59.988</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb2-44" data-line-number="44"><span class="kw">I</span>(...) class1    <span class="fl">-0.51254</span> <span class="fl">0.05031</span> <span class="fl">-10.188</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb2-45" data-line-number="45"><span class="kw">I</span>(...) class2    <span class="fl">-0.57198</span> <span class="fl">0.04930</span> <span class="fl">-11.601</span> <span class="fl">0.00000</span></a>
 <a class="sourceLine" id="cb2-46" data-line-number="46"></a>
 <a class="sourceLine" id="cb2-47" data-line-number="47"></a>
 <a class="sourceLine" id="cb2-48" data-line-number="48">Variance<span class="op">-</span>covariance matrix of the random<span class="op">-</span>effects<span class="op">:</span></a>
 <a class="sourceLine" id="cb2-49" data-line-number="49"><span class="st">                  </span>intercept <span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init)</a>
-<a class="sourceLine" id="cb2-50" data-line-number="50">intercept          <span class="fl">10.89147</span>                  </a>
+<a class="sourceLine" id="cb2-50" data-line-number="50">intercept          <span class="fl">10.89142</span>                  </a>
 <a class="sourceLine" id="cb2-51" data-line-number="51"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init)   <span class="fl">0.03929</span>           <span class="fl">0.09386</span></a>
 <a class="sourceLine" id="cb2-52" data-line-number="52"></a>
 <a class="sourceLine" id="cb2-53" data-line-number="53">                             coef      Se</a>
-<a class="sourceLine" id="cb2-54" data-line-number="54">Residual standard error<span class="op">:</span><span class="st">  </span><span class="fl">3.36817</span> <span class="fl">0.06754</span></a></code></pre></div>
+<a class="sourceLine" id="cb2-54" data-line-number="54">Residual standard error<span class="op">:</span><span class="st">  </span><span class="fl">3.36817</span> <span class="fl">0.06757</span></a></code></pre></div>
 <p>The order of the latent classes can be changed by running:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">mhlme2perm &lt;-<span class="st"> </span><span class="kw">permut</span>(mhlme2, <span class="dt">order=</span><span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">1</span>))</a></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">summary</span>(mhlme2)</a>
@@ -446,10 +464,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb4-16" data-line-number="16"> </a>
 <a class="sourceLine" id="cb4-17" data-line-number="17">Iteration process<span class="op">:</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb4-18" data-line-number="18"><span class="st">     </span>Convergence criteria satisfied </a>
-<a class="sourceLine" id="cb4-19" data-line-number="19">     Number of iterations<span class="op">:</span><span class="st">  </span><span class="dv">16</span> </a>
-<a class="sourceLine" id="cb4-20" data-line-number="20">     Convergence criteria<span class="op">:</span><span class="st"> </span>parameters=<span class="st"> </span><span class="fl">1.2e-08</span> </a>
-<a class="sourceLine" id="cb4-21" data-line-number="21">                         <span class="op">:</span><span class="st"> </span>likelihood=<span class="st"> </span><span class="fl">3.1e-09</span> </a>
-<a class="sourceLine" id="cb4-22" data-line-number="22">                         <span class="op">:</span><span class="st"> </span>second derivatives=<span class="st"> </span><span class="fl">5.5e-15</span> </a>
+<a class="sourceLine" id="cb4-19" data-line-number="19">     Number of iterations<span class="op">:</span><span class="st">  </span><span class="dv">27</span> </a>
+<a class="sourceLine" id="cb4-20" data-line-number="20">     Convergence criteria<span class="op">:</span><span class="st"> </span>parameters=<span class="st"> </span><span class="fl">1.4e-05</span> </a>
+<a class="sourceLine" id="cb4-21" data-line-number="21">                         <span class="op">:</span><span class="st"> </span>likelihood=<span class="st"> </span><span class="fl">3.5e-06</span> </a>
+<a class="sourceLine" id="cb4-22" data-line-number="22">                         <span class="op">:</span><span class="st"> </span>second derivatives=<span class="st"> </span><span class="fl">6.8e-11</span> </a>
 <a class="sourceLine" id="cb4-23" data-line-number="23"> </a>
 <a class="sourceLine" id="cb4-24" data-line-number="24">Goodness<span class="op">-</span>of<span class="op">-</span>fit statistics<span class="op">:</span><span class="st"> </span></a>
 <a class="sourceLine" id="cb4-25" data-line-number="25"><span class="st">     </span>maximum log<span class="op">-</span>likelihood<span class="op">:</span><span class="st"> </span><span class="fl">-6010.69</span>  </a>
@@ -463,25 +481,25 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb4-33" data-line-number="33">(the class of reference is the last class) </a>
 <a class="sourceLine" id="cb4-34" data-line-number="34"></a>
 <a class="sourceLine" id="cb4-35" data-line-number="35">                     coef      Se    Wald p<span class="op">-</span>value</a>
-<a class="sourceLine" id="cb4-36" data-line-number="36">intercept class1  <span class="fl">2.82685</span> <span class="fl">1.02130</span>   <span class="fl">2.768</span> <span class="fl">0.00564</span></a>
-<a class="sourceLine" id="cb4-37" data-line-number="37">CEP class1       <span class="fl">-3.37139</span> <span class="fl">0.99981</span>  <span class="fl">-3.372</span> <span class="fl">0.00075</span></a>
+<a class="sourceLine" id="cb4-36" data-line-number="36">intercept class1  <span class="fl">2.82683</span> <span class="fl">1.02233</span>   <span class="fl">2.765</span> <span class="fl">0.00569</span></a>
+<a class="sourceLine" id="cb4-37" data-line-number="37">CEP class1       <span class="fl">-3.37138</span> <span class="fl">1.00112</span>  <span class="fl">-3.368</span> <span class="fl">0.00076</span></a>
 <a class="sourceLine" id="cb4-38" data-line-number="38"></a>
 <a class="sourceLine" id="cb4-39" data-line-number="39">Fixed effects <span class="cf">in</span> the longitudinal model<span class="op">:</span></a>
 <a class="sourceLine" id="cb4-40" data-line-number="40"></a>
-<a class="sourceLine" id="cb4-41" data-line-number="41"><span class="st">                             </span>coef      Se    Wald p<span class="op">-</span>value</a>
-<a class="sourceLine" id="cb4-42" data-line-number="42">intercept class1         <span class="fl">25.54344</span> <span class="fl">0.49499</span>  <span class="fl">51.604</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb4-43" data-line-number="43">intercept class2         <span class="fl">32.93897</span> <span class="fl">0.54794</span>  <span class="fl">60.115</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb4-44" data-line-number="44"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init) class1 <span class="fl">-0.51254</span> <span class="fl">0.05011</span> <span class="fl">-10.229</span> <span class="fl">0.00000</span></a>
-<a class="sourceLine" id="cb4-45" data-line-number="45"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init) class2 <span class="fl">-0.57198</span> <span class="fl">0.04883</span> <span class="fl">-11.714</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb4-41" data-line-number="41"><span class="st">                     </span>coef      Se    Wald p<span class="op">-</span>value</a>
+<a class="sourceLine" id="cb4-42" data-line-number="42">intercept class1 <span class="fl">25.54344</span> <span class="fl">0.49570</span>  <span class="fl">51.530</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb4-43" data-line-number="43">intercept class2 <span class="fl">32.93898</span> <span class="fl">0.54910</span>  <span class="fl">59.988</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb4-44" data-line-number="44"><span class="kw">I</span>(...) class1    <span class="fl">-0.51254</span> <span class="fl">0.05031</span> <span class="fl">-10.188</span> <span class="fl">0.00000</span></a>
+<a class="sourceLine" id="cb4-45" data-line-number="45"><span class="kw">I</span>(...) class2    <span class="fl">-0.57198</span> <span class="fl">0.04930</span> <span class="fl">-11.601</span> <span class="fl">0.00000</span></a>
 <a class="sourceLine" id="cb4-46" data-line-number="46"></a>
 <a class="sourceLine" id="cb4-47" data-line-number="47"></a>
 <a class="sourceLine" id="cb4-48" data-line-number="48">Variance<span class="op">-</span>covariance matrix of the random<span class="op">-</span>effects<span class="op">:</span></a>
 <a class="sourceLine" id="cb4-49" data-line-number="49"><span class="st">                  </span>intercept <span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init)</a>
-<a class="sourceLine" id="cb4-50" data-line-number="50">intercept          <span class="fl">10.89147</span>                  </a>
+<a class="sourceLine" id="cb4-50" data-line-number="50">intercept          <span class="fl">10.89142</span>                  </a>
 <a class="sourceLine" id="cb4-51" data-line-number="51"><span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init)   <span class="fl">0.03929</span>           <span class="fl">0.09386</span></a>
 <a class="sourceLine" id="cb4-52" data-line-number="52"></a>
 <a class="sourceLine" id="cb4-53" data-line-number="53">                             coef      Se</a>
-<a class="sourceLine" id="cb4-54" data-line-number="54">Residual standard error<span class="op">:</span><span class="st">  </span><span class="fl">3.36817</span> <span class="fl">0.06754</span></a></code></pre></div>
+<a class="sourceLine" id="cb4-54" data-line-number="54">Residual standard error<span class="op">:</span><span class="st">  </span><span class="fl">3.36817</span> <span class="fl">0.06757</span></a></code></pre></div>
 <p>The models in objects mhlme2 and mhlme2perm are the same except for the permutation of the classes as shown with the cross-table:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">xclass</span>(mhlme2perm,mhlme2)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">   </a>
@@ -500,7 +518,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>For instance, using the 2-class model estimated above, the posterior probabilities and classification can be computed for the newdata, here the data of the second subject of paquid dataset:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">predictClass</span>(mhlme2, <span class="dt">newdata=</span>paquid[<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>,])</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  ID class     prob1     prob2</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="dv">1</span>  <span class="dv">2</span>     <span class="dv">1</span> <span class="fl">0.5508846</span> <span class="fl">0.4491154</span></a></code></pre></div>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="dv">1</span>  <span class="dv">2</span>     <span class="dv">1</span> <span class="fl">0.5508848</span> <span class="fl">0.4491152</span></a></code></pre></div>
 <p> </p>
 </div>
 <div id="random-effects-with-predictre" class="section level3">
@@ -508,7 +526,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>predictRE function computes the predicted random-effects of any model estimated within lcmm package for a new subject whose data (i.e., covariates and outcomes) are provided in newdata:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">predictRE</span>(mhlme2, <span class="dt">newdata=</span>paquid[<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>,])</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  ID  intercept <span class="kw">I</span>(age <span class="op">-</span><span class="st"> </span>age_init)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="dv">6</span>  <span class="dv">2</span> <span class="fl">-0.9514829</span>       <span class="fl">-0.07391964</span></a></code></pre></div>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="dv">6</span>  <span class="dv">2</span> <span class="fl">-0.9514805</span>       <span class="fl">-0.07391964</span></a></code></pre></div>
 <p> </p>
 </div>
 <div id="predictions-of-outcomes-in-their-natural-scale-using-predicty-and-predictycond" class="section level3">
@@ -518,11 +536,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">predss &lt;-<span class="st"> </span><span class="kw">predictY</span>(mhlme2, paquid[<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>,], <span class="dt">marg=</span><span class="ot">FALSE</span>)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">predss<span class="op">$</span>pred</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">  ID  pred_ss pred_ss1 pred_ss2</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="dv">2</span>  <span class="dv">2</span> <span class="fl">27.25200</span> <span class="fl">26.21337</span> <span class="fl">28.52597</span></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="dv">3</span>  <span class="dv">2</span> <span class="fl">25.96443</span> <span class="fl">25.05767</span> <span class="fl">27.07667</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="dv">4</span>  <span class="dv">2</span> <span class="fl">23.07531</span> <span class="fl">22.46442</span> <span class="fl">23.82463</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="dv">5</span>  <span class="dv">2</span> <span class="fl">16.73827</span> <span class="fl">16.77635</span> <span class="fl">16.69156</span></a>
-<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="dv">6</span>  <span class="dv">2</span> <span class="fl">14.93028</span> <span class="fl">15.15351</span> <span class="fl">14.65646</span></a></code></pre></div>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="dv">2</span>  <span class="dv">2</span> <span class="fl">27.25200</span> <span class="fl">26.21337</span> <span class="fl">28.52598</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="dv">3</span>  <span class="dv">2</span> <span class="fl">25.96443</span> <span class="fl">25.05766</span> <span class="fl">27.07668</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="dv">4</span>  <span class="dv">2</span> <span class="fl">23.07531</span> <span class="fl">22.46442</span> <span class="fl">23.82464</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="dv">5</span>  <span class="dv">2</span> <span class="fl">16.73826</span> <span class="fl">16.77635</span> <span class="fl">16.69155</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="dv">6</span>  <span class="dv">2</span> <span class="fl">14.93028</span> <span class="fl">15.15352</span> <span class="fl">14.65646</span></a></code></pre></div>
 <p>Predictions of the outcomes can also be directly computed for a latent process value. This is useful when nonlinear link functions are used in the models. This is obtained with function predictYcond.</p>
 </div>
 </div>

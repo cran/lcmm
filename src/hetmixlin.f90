@@ -79,6 +79,7 @@
       double precision,dimension(:,:),allocatable,save ::X
       integer,dimension(:),allocatable,save ::idea,idg,idprob,idcor
       integer,dimension(:),allocatable,save :: nmes,prior
+      double precision,dimension(:,:),allocatable,save ::pprior
       integer,dimension(:),allocatable,save::fix
       double precision,dimension(:),allocatable,save::bfix
       end module commun
@@ -88,337 +89,6 @@
 
 !*************************************************************
 
-!================ SUBROUTINES ================================
-
-      subroutine hetmixlin(Y0,X0,Prior0, idprob0,idea0,idg0,idcor0  &
-          ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0   &
-          ,npmtot0,btot,vopt,vrais,ni,istop,gconv,ppi0,resid_m0,resid_ss0 &
-          ,pred_m_g0,pred_ss_g0,pred_RE,convB,convL,convG,maxiter0,fix0,pbH0)
-
-      use commun
-      use parameters
-      use optim
-
-      IMPLICIT NONE
-
-
-        !D claration des variables en entree
-      integer,intent(in):: nv0,maxiter0,nea0
-      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npmtot0,ncor0
-      integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0,idcor0
-      integer, dimension(ns0), intent(in) :: nmes0,Prior0
-      double precision, dimension(nobs0), intent(in) :: Y0
-      double precision, dimension(nobs0*nv0), intent(in) :: X0
-      double precision, intent(in) :: convB, convL, convG
-      integer,dimension(npmtot0),intent(in)::fix0,pbH0
-
-        !D claration des variable en entr e et sortie
-      double precision, dimension(npmtot0), intent(inout) :: btot
-
-        !D claration des variables en sortie
-      double precision, intent(out) :: vrais
-      double precision, dimension(3), intent(out) :: gconv
-      double precision, dimension(ns0*ng0), intent(out) :: ppi0
-      double precision, dimension(nobs0), intent(out) :: resid_m0
-      double precision, dimension(nobs0), intent(out) :: resid_ss0
-      double precision, dimension(nobs0*ng0), intent(out) :: pred_m_g0
-      double precision, dimension(nobs0*ng0), intent(out) :: pred_ss_g0
-      double precision, dimension(npmtot0*(npmtot0+1)/2),intent(out) :: vopt
-      double precision, dimension(npmtot0*(npmtot0+3)/2) :: v
-      integer, intent(out) :: ni, istop
-
-        !Variables locales
-      integer :: jtemp,nef,i,g,j,ij,npm,ier,k,ktemp,ig,nmestot,it,nbfix
-      double precision :: eps, ca, cb, dd
-      double precision, dimension(ns0,ng0) :: PPI
-      double precision, dimension(npmtot0) :: mvc,b
-      double precision, dimension(ns0*nea0), intent(out)::pred_RE
-      double precision, dimension(nobs0) :: resid_m, resid_ss
-      double precision, dimension(nobs0,ng0):: pred_m_g, pred_ss_g
-      double precision,external::funcpa
-
-
-      !write(*,*)'B',npm0,b
-      !write(*,*)'ncor0',ncor0
-
-
-      maxmes=0
-      do i=1,ns0
-         if (nmes0(i).gt.maxmes) then
-            maxmes=nmes0(i)
-         end if
-      end do
-
-      epsa=convB
-      epsb=convL
-      epsd=convG
-      maxiter=maxiter0
-
-      ! pas de H restreint pr hlme
-         
-      allocate(Y(ns0*maxmes),idprob(nv0),X(ns0*maxmes,nv0)    &
-     ,idea(nv0),idg(nv0),nmes(ns0),prior(ns0),idcor(nv0))
-
-
-
-      ppi0=1.d0
-      resid_m0=0.d0
-      resid_ss0=0.d0
-      pred_m_g0=0.d0
-      pred_ss_g0=0.d0
-      pred_re=0.d0
-
-      eps=1.d-20
-!enrigstrement pour les modules
-      ns=ns0
-      ng=ng0
-      nv=nv0
-      nobs=nobs0
-      if (nwg0.eq.0) then
-         nwg=0
-      else
-         nwg=ng-1
-      end if
-          ncor=ncor0
-
-      idiag=idiag0
-      prior=0
-      nmes=0
-      Y=0.d0
-      X=0.d0
-      idprob=0
-      idea=0
-      idg=0
-          idcor=0
-      nmestot=0
-      ktemp=0
-      do k=1,nv
-         idprob(k)=idprob0(k)
-         idea(k)=idea0(k)
-         idg(k)=idg0(k)
-             idcor(k) = idcor0(k)
-         jtemp=0
-         it=0
-         DO i=1,ns
-            if (k.eq.1) then
-               nmes(i)=nmes0(i)
-                   prior(i)=prior0(i)
-               do j=1,nmes(i)
-                  nmestot=nmestot+1
-                  jtemp=jtemp+1
-                          Y(jtemp)=Y0(jtemp)
-               end do
-            end if
-
-            do j=1,nmes(i)
-               ktemp=ktemp+1
-                       it=it+1
-               X(it,k)=X0(ktemp)
-            end do
-         end do
-      end do
-
-! prm fixes
-      allocate(fix(npmtot0))
-      fix=0
-      fix(1:npmtot0)=fix0(1:npmtot0)
-      nbfix=sum(fix)
-      if(nbfix.eq.0) then
-         allocate(bfix(1))
-      else
-         allocate(bfix(nbfix))
-      end if
-      bfix=0.d0
-      
-
-!creation des parametres
-
-      nea=nea0
-      ncg=0
-      ncssg=0
-      nprob=ng-1
-      nvarprob=min(ng-1,1)
-      do k=1,nv
-         if (idg(k).eq.1) then
-            ncssg=ncssg+1      ! nb var. sans melange
-         else if (idg(k).eq.2) then
-            ncg=ncg+1      ! nb var. dans melange
-         end if
-         nprob=nprob+(idprob(k))*(ng-1)
-         nvarprob=nvarprob+idprob(k)
-      end do
-
-      if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
-         istop=12
-         go to 1589
-      end if
-
-
-! nb effets fixes = nb effets fixes sans melange
-!                 + ng fois le nb de var dans melange
-
-
-      if (idiag.eq.1) then
-         nvc=nea
-      else if(idiag.eq.0) then
-         nvc=nea*(nea+1)/2
-      end if
-
-      nef=nprob+ncssg+ncg*ng
-      npmtot=nef+nvc+nwg+ncor+1
-
-      if (idiag.eq.1) then
-         DO j=1,nvc
-            btot(nef+j)=dsqrt(abs(btot(nef+j)))
-         END DO
-      end if
-
-!si idiag=0, on met dans le vecteur des parms, les parms
-!de la transformee de Cholesky
-
-      if (idiag.eq.0) then
-
-
-         DO j=1,nvc
-            mvc(j)=btot(nef+j)
-         END DO
-
-         CALL DMFSD(mvc,nea,EPS,IER)
-         DO j=1,nvc
-            btot(nef+j)=mvc(j)
-         END DO
-      end if
-      if (nwg.gt.0) then
-         do i=1,nwg
-            btot(nef+nvc+i)=abs(btot(nef+nvc+i))
-         end do
-      end if
-
-! creation du vecteur b avec slt les prm a estimer
-      b=0.d0
-      npm=0
-      k=0
-      do j=1,npmtot
-        if(fix0(j).eq.0) then
-           npm=npm+1
-           b(npm)=btot(j)
-        end if
-        if(fix0(j).eq.1) then
-           k=k+1
-           bfix(k)=btot(j)
-        end if
-      end do
-
-
-      allocate(pbH(npm))
-      pbH(1:npm)=0 
-      k=0
-      do j=1,npmtot
-         if(fix0(j).eq.0) then
-            k=k+1
-            pbH(k)=pbH0(j)
-         end if
-      end do
-
-!lancement de l'optimisation
-
-        IF (npm.eq.1) then
-          istop=12
-
-        else
-
-
-         ca=0.d0
-         cb=0.d0
-         dd=0.d0
-
-         call marq98(b,npm,ni,V,vrais,ier,istop,ca,cb,dd,funcpa)
-
-!        write(*,*)
-!        write(*,*)'    FIN OPTIMISATION  ..... '
-!        write(*,*)'istop',istop,'vrais',vrais
-
-         gconv=0.d0
-         gconv(1)=ca
-         gconv(2)=cb
-         gconv(3)=dd
-
-
-         vopt=0.d0
-         vopt(1:npm*(npm+1)/2)=v(1:npm*(npm+1)/2)
-
-!  injecter le b estime dans btot
-         k=0
-         do j=1,npmtot
-            if(fix0(j).eq.0) then
-               k=k+1
-               btot(j)=b(k)
-            end if
-         end do
-                 
-
-!probas posteriori
-
-         if (istop.eq.1.or.istop.eq.2.or.istop.eq.3) then
-            if (ng.gt.1) then
-               call postprob(btot,npmtot,PPI)
-            end if
-                        
-            call residuals(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss  &
-                ,pred_ss_g,pred_RE)
-
-            ig=0
-            ij=0
-            do i=1,ns
-                if (ng.gt.1) then
-                    do g=1,ng0
-                        ig=ig+1
-                        ppi0(ig)=PPI(i,g)
-                    end do
-                end if
-               do j=1,nmes(i)
-                  ij=ij+1
-                  resid_ss0(ij)=resid_ss(ij)
-                  resid_m0(ij)=resid_m(ij)
-                  do g=1,ng0
-                     pred_ss_g0(ij+nmestot*(g-1))=pred_ss_g(ij,g)
-                     pred_m_g0(ij+nmestot*(g-1))=pred_m_g(ij,g)
-                  end do
-               end do
-            end do
-
-         else
-            ig=0
-            ij=0
-            do i=1,ns
-               do g=1,ng0
-                  ig=ig+1
-                  ppi0(ig)=0.d0
-               end do
-               do j=1,nmes(i)
-                  ij=ij+1
-                  resid_ss0(ij)=0.d0
-                  resid_m0(ij)=0.d0
-                  do g=1,ng0
-                     pred_ss_g0(ij+nmestot*(g-1))=0.d0
-                     pred_m_g0(ij+nmestot*(g-1))=0.d0
-                  end do
-               end do
-            end do
-
-         end if
-
-      end if
-
-      deallocate(pbH)
-
- 1589 continue
-
-      deallocate(Y,X,idprob,idea,idg,nmes,prior,idcor)
-      deallocate(fix,bfix)
-
-      return
-      end subroutine hetmixlin
 
 
 
@@ -430,7 +100,7 @@
       double precision function funcpa(b,npm,id,thi,jd,thj)
 
       use commun
-      use optim
+!      use optim
 
       IMPLICIT NONE
 
@@ -633,37 +303,48 @@
             if (prior(i).ne.0) then
                 pi=0.d0
                 pi(prior(i))=1.d0
-            else
-! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
-               Xprob=0.d0
-               Xprob(1)=1
-               l=0
-               do k=1,nv
-                 if (idprob(k).eq.1) then
-                   l=l+1
-                   Xprob(1+l)=X(it+1,k)
+             else
+                if(nprob.eq.0) then
+                   !! on prend pprior
+                   pi=0.d0
+                   do g=1,ng
+                      pi(g) = pprior(i,g)
+                   end do
+                   
+                else
+                   
+                   ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
+                   Xprob=0.d0
+                   !Xprob(1)=1
+                   l=0
+                   do k=1,nv
+                      if (idprob(k).eq.1) then
+                         l=l+1
+                         Xprob(l)=X(it+1,k)
+                      end if
+                   end do
+                   pi=0.d0
+                   temp=0.d0
+                   Do g=1,ng-1
+                      bprob=0.d0
+                      do k=1,nvarprob
+                         bprob(k)=b1((k-1)*(ng-1)+g)
+                      end do
+                      
+                      temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
+                      
+                      pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
+                      
+                   end do
+                   
+                   pi(ng)=1/(1+temp)
+                   
+                   do g=1,ng-1
+                      pi(g)=pi(g)*pi(ng)
+                   end do
                 end if
-              end do
-               pi=0.d0
-               temp=0.d0
-               Do g=1,ng-1
-                 bprob=0.d0
-                 do k=1,nvarprob
-                    bprob(k)=b1((k-1)*(ng-1)+g)
-                 end do
+             end if
 
-                 temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
-
-                 pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
-
-              end do
-
-              pi(ng)=1/(1+temp)
-
-              do g=1,ng-1
-                 pi(g)=pi(g)*pi(ng)
-              end do
-           end if
 ! creation des vecteurs de variables explicatives
             l=0
             m=0
@@ -800,7 +481,7 @@
 
 
       use commun
-       use optim
+!       use optim
 
 
       implicit none
@@ -955,37 +636,48 @@
           pi=0.d0
           pi(prior(i))=1.d0
        else
-! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
-       Xprob=0.d0
-       Xprob(1)=1
-       l=0
-       do k=1,nv
-          if (idprob(k).eq.1) then
-             l=l+1
-             Xprob(1+l)=X(it+1,k)
+
+          if(nprob.eq.0) then
+             
+             !! on prend pprior
+             pi=0.d0
+             do g=1,ng
+                pi(g) = pprior(i,g)
+             end do
+
+          else
+             ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
+             Xprob=0.d0
+             !Xprob(1)=1
+             l=0
+             do k=1,nv
+                if (idprob(k).eq.1) then
+                   l=l+1
+                   Xprob(l)=X(it+1,k)
+                end if
+             end do
+             !     write(*,*)'l apres Xprob',l,(Xprob(j),j=1,10)
+             pi=0.d0
+             temp=0.d0
+             Do g=1,ng-1
+                bprob=0.d0
+                do k=1,nvarprob
+                   bprob(k)=b1((k-1)*(ng-1)+g)
+                end do
+                
+                temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
+                
+                pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
+                
+             end do
+             
+             pi(ng)=1/(1+temp)
+             
+             do g=1,ng-1
+                pi(g)=pi(g)*pi(ng)
+             end do
           end if
-       end do
-!     write(*,*)'l apres Xprob',l,(Xprob(j),j=1,10)
-       pi=0.d0
-       temp=0.d0
-       Do g=1,ng-1
-          bprob=0.d0
-          do k=1,nvarprob
-             bprob(k)=b1((k-1)*(ng-1)+g)
-          end do
-
-          temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
-
-          pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
-
-       end do
-
-       pi(ng)=1/(1+temp)
-
-       do g=1,ng-1
-          pi(g)=pi(g)*pi(ng)
-       end do
-      endif
+       endif
 !     write(*,*)'pi',(pi(g),g=1,ng)
 
 !     creation des vecteurs de variables explicatives
@@ -1109,7 +801,7 @@
         pred_ss_g,pred_RE)
 
       use commun
-      use optim
+!      use optim
 
       implicit none
       integer ::i,j,k,l,m,g,l2,m2,jj,npm,nef,j1,j2
@@ -1340,40 +1032,51 @@
          else
 
             if (prior(i).ne.0) then
-                   pi=0.d0
+               pi=0.d0
                pi(prior(i))=1.d0
             else
-!     transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
-            Xprob=0.d0
-            Xprob(1)=1.d0
-            l=0
-            do k=1,nv
-               if (idprob(k).eq.1) then
-                  l=l+1
-                  Xprob(1+l)=X(nmes_cur+1,k)
+
+               if(nprob.eq.0) then
+
+                   !! on prend pprior
+                   pi=0.d0
+                   do g=1,ng
+                      pi(g) = pprior(i,g)
+                   end do
+
+               else
+                  !     transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
+                  Xprob=0.d0
+                  !Xprob(1)=1.d0
+                  l=0
+                  do k=1,nv
+                     if (idprob(k).eq.1) then
+                        l=l+1
+                        Xprob(l)=X(nmes_cur+1,k)
+                     end if
+                  end do
+                  !     write(*,*)'l apres Xprob',l,(Xprob(j),j=1,10)
+                  pi=0.d0
+                  temp=0.d0
+                  Do g=1,ng-1
+                     bprob=0.d0
+                     do k=1,nvarprob
+                        bprob(k)=b1((k-1)*(ng-1)+g)
+                     end do
+                     
+                     !     write(*,*)'g=',g,'nvarprob',nvarprob,'bprob='
+                     !     &,(bprob(k),k=1,nvarprob)
+
+                     temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
+                     pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
+                     
+                  end do
+                  pi(ng)=1.d0/(1.d0+temp)
+                  do g=1,ng-1
+                     pi(g)=pi(g)*pi(ng)
+                  end do
                end if
-            end do
-!     write(*,*)'l apres Xprob',l,(Xprob(j),j=1,10)
-            pi=0.d0
-            temp=0.d0
-            Do g=1,ng-1
-               bprob=0.d0
-               do k=1,nvarprob
-                  bprob(k)=b1((k-1)*(ng-1)+g)
-               end do
-
-!     write(*,*)'g=',g,'nvarprob',nvarprob,'bprob='
-!     &,(bprob(k),k=1,nvarprob)
-
-               temp=temp+exp(DOT_PRODUCT(bprob,Xprob))
-               pi(g)=exp(DOT_PRODUCT(bprob,Xprob))
-
-            end do
-            pi(ng)=1.d0/(1.d0+temp)
-            do g=1,ng-1
-               pi(g)=pi(g)*pi(ng)
-            end do
-          end if
+            end if
 !     write(*,*)'pi',(pi(g),g=1,ng)
 
 !     creation des vecteurs de variables explicatives
@@ -1534,5 +1237,243 @@
 
 
 
+
+
+
+      subroutine loglikhlme(Y0,X0,Prior0,pprior0,idprob0,idea0,idg0,idcor0  &
+          ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0   &
+          ,npm0,b0,ppi0,resid_m0,resid_ss0 &
+          ,pred_m_g0,pred_ss_g0,pred_RE,fix0,nfix0,bfix0,estim0,loglik)
+
+      use commun
+
+      IMPLICIT NONE
+
+
+        !D claration des variables en entree
+      integer,intent(in):: nv0,nea0,nfix0,estim0
+      integer, intent(in) :: ns0, ng0, nobs0, idiag0, nwg0, npm0,ncor0
+      integer, dimension(nv0), intent(in) :: idea0,idg0,idprob0,idcor0
+      integer, dimension(ns0), intent(in) :: nmes0,Prior0
+      double precision, dimension(ns0*ng0), intent(in) :: pprior0
+      double precision, dimension(nobs0), intent(in) :: Y0
+      double precision, dimension(nobs0*nv0), intent(in) :: X0
+      integer,dimension(npm0+nfix0),intent(in)::fix0
+      double precision, dimension(nfix0), intent(in) :: bfix0
+      double precision, dimension(npm0), intent(in) :: b0
+
+        !D claration des variables en sortie
+      double precision, intent(out) :: loglik
+      double precision, dimension(ns0*ng0), intent(out) :: ppi0
+      double precision, dimension(nobs0), intent(out) :: resid_m0
+      double precision, dimension(nobs0), intent(out) :: resid_ss0
+      double precision, dimension(nobs0*ng0), intent(out) :: pred_m_g0
+      double precision, dimension(nobs0*ng0), intent(out) :: pred_ss_g0
+
+        !Variables locales
+      integer :: jtemp,nef,i,g,j,ij,k,ktemp,ig,nmestot,it,nbfix,k2
+      integer::npmtot0,id,jd
+      double precision::thi,thj
+      double precision, dimension(ns0,ng0) :: PPI
+      double precision, dimension(npm0+nfix0)::btot
+      double precision, dimension(ns0*nea0), intent(out)::pred_RE
+      double precision, dimension(nobs0) :: resid_m, resid_ss
+      double precision, dimension(nobs0,ng0):: pred_m_g, pred_ss_g
+      double precision,external::funcpa
+
+
+      !write(*,*)'B',npm0,b
+      !write(*,*)'ncor0',ncor0
+
+
+      maxmes=0
+      do i=1,ns0
+         if (nmes0(i).gt.maxmes) then
+            maxmes=nmes0(i)
+         end if
+      end do
+
+      ! pas de H restreint pr hlme
+         
+      allocate(Y(ns0*maxmes),idprob(nv0),X(ns0*maxmes,nv0)    &
+     ,idea(nv0),idg(nv0),nmes(ns0),prior(ns0),pprior(ns0,ng0),idcor(nv0))
+
+
+
+      ppi0=1.d0
+      resid_m0=0.d0
+      resid_ss0=0.d0
+      pred_m_g0=0.d0
+      pred_ss_g0=0.d0
+      pred_re=0.d0
+
+!enrigstrement pour les modules
+      ns=ns0
+      ng=ng0
+      nv=nv0
+      nobs=nobs0
+      if (nwg0.eq.0) then
+         nwg=0
+      else
+         nwg=ng-1
+      end if
+      ncor=ncor0
+
+      idiag=idiag0
+      prior=0
+      pprior=0.d0
+      nmes=0
+      Y=0.d0
+      X=0.d0
+      idprob=0
+      idea=0
+      idg=0
+      idcor=0
+      nmestot=0
+      ktemp=0
+      do k=1,nv
+         idprob(k)=idprob0(k)
+         idea(k)=idea0(k)
+         idg(k)=idg0(k)
+         idcor(k) = idcor0(k)
+         jtemp=0
+         it=0
+         DO i=1,ns
+            if (k.eq.1) then
+               nmes(i)=nmes0(i)
+               prior(i)=prior0(i)
+               do j=1,nmes(i)
+                  nmestot=nmestot+1
+                  jtemp=jtemp+1
+                  Y(jtemp)=Y0(jtemp)
+               end do
+               do g=1,ng                 
+                  pprior(i,g)=pprior0((i-1)*ng+g)
+               end do
+            end if
+            
+            do j=1,nmes(i)
+               ktemp=ktemp+1
+               it=it+1
+               X(it,k)=X0(ktemp)
+            end do
+         end do
+      end do
+
+      ! prm fixes
+      npmtot0=npm0+nfix0
+      allocate(fix(npmtot0))
+      fix=0
+      fix(1:npmtot0)=fix0(1:npmtot0)
+      nbfix=sum(fix)
+      if(nbfix.eq.0) then
+         allocate(bfix(1))
+      else
+         allocate(bfix(nbfix))
+      end if
+      bfix(1:nbfix)=bfix0(1:nbfix)
+      
+
+!creation des parametres
+
+      nea=nea0
+      ncg=0
+      ncssg=0
+      nprob=0 !ng-1
+      nvarprob=0 !min(ng-1,1)
+      do k=1,nv
+         if (idg(k).eq.1) then
+            ncssg=ncssg+1      ! nb var. sans melange
+         else if (idg(k).eq.2) then
+            ncg=ncg+1      ! nb var. dans melange
+         end if
+         nprob=nprob+(idprob(k))*(ng-1)
+         nvarprob=nvarprob+idprob(k)
+      end do
+
+      if((ng.eq.1.and.ncg.gt.0).or.(ng.eq.1.and.nprob.gt.0)) then
+         go to 1589
+      end if
+
+
+! nb effets fixes = nb effets fixes sans melange
+!                 + ng fois le nb de var dans melange
+
+
+      if (idiag.eq.1) then
+         nvc=nea
+      else if(idiag.eq.0) then
+         nvc=nea*(nea+1)/2
+      end if
+
+      nef=nprob+ncssg+ncg*ng
+      npmtot=nef+nvc+nwg+ncor+1
+
+
+
+        IF (estim0.eq.1) then
+
+           id=0
+           jd=0
+           thi=0.d0
+           thj=0.d0
+
+           loglik=funcpa(b0,npm0,id,thi,jd,thj)
+
+        else
+           !  injecter le b estime dans btot
+           btot=0.d0
+           k=0
+           k2=0
+           do j=1,npmtot
+              if(fix0(j).eq.0) then
+                 k=k+1
+                 btot(j)=b0(k)
+              else
+                 k2=k2+1
+                 btot(j)=bfix0(k2)
+              end if
+           end do
+                 
+
+!probas posteriori
+           if (ng.gt.1) then
+                 call postprob(btot,npmtot,PPI)
+            end if
+                        
+            call residuals(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss  &
+                ,pred_ss_g,pred_RE)
+
+            ig=0
+            ij=0
+            do i=1,ns
+                if (ng.gt.1) then
+                    do g=1,ng0
+                        ig=ig+1
+                        ppi0(ig)=PPI(i,g)
+                    end do
+                end if
+               do j=1,nmes(i)
+                  ij=ij+1
+                  resid_ss0(ij)=resid_ss(ij)
+                  resid_m0(ij)=resid_m(ij)
+                  do g=1,ng0
+                     pred_ss_g0(ij+nmestot*(g-1))=pred_ss_g(ij,g)
+                     pred_m_g0(ij+nmestot*(g-1))=pred_m_g(ij,g)
+                  end do
+               end do
+            end do
+
+         
+         end if
+
+
+ 1589 continue
+
+      deallocate(Y,X,idprob,idea,idg,nmes,prior,pprior,idcor)
+      deallocate(fix,bfix)
+
+      return
+      end subroutine loglikhlme
 
 
