@@ -382,7 +382,7 @@
 #' 
 #' @export
 #' 
-multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE,methInteg="QMC",nMC=NULL,var.time=NULL,nproc=1,clustertype=NULL)
+multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=FALSE,randomY=FALSE,link="linear",intnodes=NULL,epsY=0.5,cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,prior,range=NULL,subset=NULL,na.action=1,posfix=NULL,partialH=FALSE,verbose=FALSE,returndata=FALSE,methInteg="QMC",nMC=NULL,var.time=NULL,nproc=1,clustertype=NULL)
 {
     ptm<-proc.time()
 
@@ -976,7 +976,7 @@ multlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=F
                 
                 Brandom <- TRUE
                 B <- eval(cl$B[[2]])
-
+                if(B$conv != 1) stop("Model in argument B did not converge properly")
                 #if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
     

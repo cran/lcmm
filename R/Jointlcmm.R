@@ -452,7 +452,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                       link=NULL,intnodes=NULL,epsY=0.5,range=NULL,
                       cor=NULL,data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,
                       nsim=100,prior=NULL,logscale=FALSE,subset=NULL,na.action=1,
-                      posfix=NULL,partialH=FALSE,verbose=TRUE,returndata=FALSE,
+                      posfix=NULL,partialH=FALSE,verbose=FALSE,returndata=FALSE,
                       var.time=NULL,nproc=1,clustertype=NULL)
     {
         
@@ -1061,6 +1061,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         nprisq <- rep(2,nbevt) 
 
         nbnodes <- 0 #longueur de hazardnodes
+        nbrange <- 0 #longueur de hazardrange
         ii <- 0
         dejaspl <- 0
         if(any(hazard!="Weibull"))
@@ -1086,7 +1087,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                         if(length(arghaz)>1 | i==1 )
                                             {
                                                 nbnodes <- nbnodes + nz[i]-2
-
+                                                nbrange <- nbrange + 2
                                             }
                                     }
                                 if(typrisq[i]==3) dejaspl <- 1
@@ -1137,10 +1138,14 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         
         if(!is.null(hazardrange))
         {
-            if(length(hazardrange) != (nbevt[which(hazard != "Weibull")]*2)) stop(paste("Vector hazardrange should be of length", (nbevt[which(hazard != "Weibull")]*2)))
+            if(length(hazardrange) != nbrange) stop(paste("Vector hazardrange should be of length", nbrange))
 
             if(any(hazardrange[seq(2,length(hazardrange), 2)] < maxT1) | any(hazardrange[seq(1,length(hazardrange), 2)] > minT1)) stop("The hazard range specified do not cover the entire range of the data")
 
+            if(nbevt>1 & length(arghaz)==1)
+            {
+                hazardrange <- rep(hazardrange,length.out=nbrange*nbevt)
+            }
         }
         
         
@@ -1438,17 +1443,21 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                     pbH0[nprob+nrisqtot+nvarxevt+nef+nvc+nw+ncor0+1:ntrtot0] <- 1
                 }
             }
-            pbH0[posfix] <- 0
+            #pbH0[posfix] <- 0
             if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined in the absence of baseline risk function approximated by splines or piecewise linear function")
         }
         else
         {
             if(!all(Hr0 %in% 1:NPM)) stop("Indexes in partialH are not correct")
             pbH0[Hr0] <- 1
-            pbH0[posfix] <- 0
+            #pbH0[posfix] <- 0
         }
         indexHr <- NULL
-        if(sum(pbH0)>0) indexHr <- which(pbH0==1)
+        if(sum(pbH0)>0)
+        {
+            if(length(posfix)) pbH1 <- pbH0[-posfix] else pbH1 <- pbH0
+            indexHr <- which(pbH1==1)
+        }
     
         ## gestion de B=random(mod)
 
@@ -1460,8 +1469,8 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                 
                 Brandom <- TRUE
                 B <- eval(cl$B[[2]])
-
-                if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
+                if(B$conv != 1) stop("Model in argument B did not converge properly")
+                #if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
     
         ##valeurs initiales
@@ -1528,11 +1537,11 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                                         indinit <- sum(nprisq[1:ke])-nprisq[ke]+1:nprisq[ke]
                                                         if(B$conv==1)
                                                             {
-                                                                b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(sqrt(B$V[indinit*(indinit+1)/2]),ng0))
+                                                                b[indb] <- rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(sqrt(B$V[indinit*(indinit+1)/2]),ng0)
                                                             }
                                                         else
                                                             {
-                                                                b[indb] <- abs(rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(B$best[indinit],ng0))
+                                                                b[indb] <- rep(B$best[indinit],ng0)+rep((1:ng0)-(ng0+1)/2,each=nprisq[ke])*rep(B$best[indinit],ng0)
                                                             }
                                                     }
 
@@ -1824,10 +1833,10 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                                                 vbb <- vbb[-(sum(nrisq)-(ng-1)*sum(length(which(risqcom==2)))+nvarxevt+1:(ng-1)),-(sum(nrisq)-(ng-1)*sum(length(which(risqcom==2)))+nvarxevt+1:(ng-1))]
                                             }
 
-                                        Chol <- chol(vbb)
-                                        Chol <- t(Chol)
+                                        ##Chol <- chol(vbb)
+                                        ##Chol <- t(Chol)
                                         
-                                        bb <- bb + Chol %*% rnorm(length(bb))
+                                        bb <- rmvnorm(n=1,mean=bb,sigma = vbb) #bb + Chol %*% rnorm(length(bb))
 
                                         
                                         b[1:nprob] <- 0
@@ -2599,6 +2608,55 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                       ID=nom.subject,Tnames=noms.surv,prior.name=nom.prior,
                       TimeDepVar.name=nom.timedepvar)
 
+        
+        ## levels = modalites des variables dans X0 (si facteurs)
+        levelsdata <- vector("list", length(ttesLesVar))
+        levelsfixed <- vector("list", length(ttesLesVar))
+        levelsrandom <- vector("list", length(ttesLesVar))
+        levelsmixture <- vector("list", length(ttesLesVar))
+        levelsclassmb <- vector("list", length(ttesLesVar))
+        levelssurv <- vector("list", length(ttesLesVar))
+        names(levelsdata) <- ttesLesVar
+        names(levelsfixed) <- ttesLesVar
+        names(levelsrandom) <- ttesLesVar
+        names(levelsmixture) <- ttesLesVar
+        names(levelsclassmb) <- ttesLesVar
+        names(levelssurv) <- ttesLesVar
+        for(v in ttesLesVar)
+        {
+            if(v == "intercept") next
+            
+            if(is.factor(data[,v]))
+            {
+                levelsdata[[v]] <- levels(data[,v])
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), fixed)))
+            {
+                levelsfixed[[v]] <- levels(as.factor(data[,v]))
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), random)))
+            {
+                levelsrandom[[v]] <- levels(as.factor(data[,v]))
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), mixture)))
+            {
+                levelsmixture[[v]] <- levels(as.factor(data[,v]))
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), classmb)))
+            {
+                levelsclassmb[[v]] <- levels(as.factor(data[,v]))
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), form.surv)))
+            {
+                levelssurv[[v]] <- levels(as.factor(data[,v]))
+            }
+            
+        }
+        levels <- list(levelsdata=levelsdata, levelsfixed=levelsfixed, levelsrandom=levelsrandom,
+                       levelsmixture=levelsmixture, levelsclassmb=levelsclassmb,
+                       levelssurv=levelssurv)
+
+        
         cost<-proc.time()-ptm
         
         res <-list(ns=ns0,ng=ng0,idprob=idprob0,idcom=idcom,
@@ -2612,7 +2670,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
                    scoretest=stats,na.action=linesNA,
                    AIC=2*(length(out$best)-length(posfix)-out$loglik),
                    BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,
-                   data=datareturn,var.time=var.time,runtime=cost[3])
+                   data=datareturn,levels=levels,var.time=var.time,runtime=cost[3])
 
         class(res) <-c("Jointlcmm")
 

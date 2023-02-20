@@ -304,14 +304,8 @@
                 pi=0.d0
                 pi(prior(i))=1.d0
              else
-                if(nprob.eq.0) then
-                   !! on prend pprior
-                   pi=0.d0
-                   do g=1,ng
-                      pi(g) = pprior(i,g)
-                   end do
-                   
-                else
+                pi=1.d0   
+                if(nprob.gt.0) then
                    
                    ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
                    Xprob=0.d0
@@ -343,6 +337,14 @@
                       pi(g)=pi(g)*pi(ng)
                    end do
                 end if
+
+                !if(nprob.eq.0) then
+                !! on prend pprior
+                !pi=0.d0
+                do g=1,ng
+                   pi(g) = pi(g)*pprior(i,g)
+                end do
+                
              end if
 
 ! creation des vecteurs de variables explicatives
@@ -636,16 +638,8 @@
           pi=0.d0
           pi(prior(i))=1.d0
        else
-
-          if(nprob.eq.0) then
-             
-             !! on prend pprior
-             pi=0.d0
-             do g=1,ng
-                pi(g) = pprior(i,g)
-             end do
-
-          else
+          pi=1.d0
+          if(nprob.gt.0) then
              ! transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
              Xprob=0.d0
              !Xprob(1)=1
@@ -677,6 +671,15 @@
                 pi(g)=pi(g)*pi(ng)
              end do
           end if
+
+          !if(nprob.eq.0) then
+             
+             !! on prend pprior
+             !pi=0.d0
+             do g=1,ng
+                pi(g) = pi(g)*pprior(i,g)
+             end do
+
        endif
 !     write(*,*)'pi',(pi(g),g=1,ng)
 
@@ -798,7 +801,7 @@
 
 
       subroutine residuals(b1,npm,ppi,resid_m,pred_m_g,resid_ss, &
-        pred_ss_g,pred_RE)
+        pred_ss_g,pred_RE,var_RE)
 
       use commun
 !      use optim
@@ -810,14 +813,14 @@
       double precision,dimension(maxmes,nv) ::X0,X2
       double precision,dimension(nv) ::Xprob
       double precision,dimension(nea) :: err2
-      double precision,dimension(nea,nea) ::Ut,Ut1
+      double precision,dimension(nea,nea) ::Ut,Ut1,vre,vrecondY
       double precision,dimension(maxmes,maxmes) ::VC,Corr,VC1,SigmaE,CovDev
       double precision,dimension(npm) ::b1
       double precision,dimension(maxmes*(maxmes+1)/2) ::Vi
       double precision,dimension(nv) :: b0,b2,bprob,b3
       double precision :: eps,det
       double precision ::temp
-      double precision,dimension(nea,maxmes)::Valea
+      double precision,dimension(nea,maxmes)::Valea,err3
       double precision,dimension(maxmes) :: mu,Y1,Y2,pred1,err1,tcor
       double precision,dimension(ng) :: pi
       double precision,dimension(nobs)::resid_m &
@@ -826,6 +829,7 @@
     pred_m_g,pred_ss_g
       double precision,dimension(ns,ng) ::PPI
       double precision,dimension(ns*nea)::pred_RE
+      double precision,dimension(ns*nea*(nea+1)/2)::var_RE
 
 
 
@@ -874,6 +878,7 @@
       resid_ss=0.d0
       pred_ss_g=0.d0
       pred_re=0.d0
+      var_re=0.d0
       nmes_cur=0
       kk=0
       do i=1,ns
@@ -1027,6 +1032,23 @@
                pred_RE((i-1)*nea+k)=err2(k)
             end do
 
+            !! var_RE = Var(b/Yi) = B - BZ'V^(-1)ZB
+            vre = 0.d0
+            vre = MATMUL(Ut,transpose(Ut))
+            err3 = 0.d0
+            err3 = MATMUL(Valea,VC1)
+            vrecondY = 0.d0
+            vrecondY = vre - MATMUL(err3,transpose(Valea))
+
+            jj=0
+            do k=1,nea
+               do j=1,k
+                  jj = jj+1
+                  var_RE((i-1)*nea*(nea+1)/2 + jj) = vrecondY(j,k)
+               end do
+            end do
+
+
 
 !     cas 2 :  ng>1  composantes
          else
@@ -1035,16 +1057,9 @@
                pi=0.d0
                pi(prior(i))=1.d0
             else
+               pi=1.d0
+               if(nprob.gt.0) then
 
-               if(nprob.eq.0) then
-
-                   !! on prend pprior
-                   pi=0.d0
-                   do g=1,ng
-                      pi(g) = pprior(i,g)
-                   end do
-
-               else
                   !     transformation des  pig=exp(Xbg)/(1+somme(Xbk,k=1,G-1))
                   Xprob=0.d0
                   !Xprob(1)=1.d0
@@ -1076,6 +1091,13 @@
                      pi(g)=pi(g)*pi(ng)
                   end do
                end if
+
+               !! on prend pprior
+               !pi=0.d0
+               do g=1,ng
+                  pi(g) = pi(g)*pprior(i,g)
+               end do
+               
             end if
 !     write(*,*)'pi',(pi(g),g=1,ng)
 
@@ -1243,7 +1265,7 @@
       subroutine loglikhlme(Y0,X0,Prior0,pprior0,idprob0,idea0,idg0,idcor0  &
           ,ns0,ng0,nv0,nobs0,nea0,nmes0,idiag0,nwg0,ncor0   &
           ,npm0,b0,ppi0,resid_m0,resid_ss0 &
-          ,pred_m_g0,pred_ss_g0,pred_RE,fix0,nfix0,bfix0,estim0,loglik)
+          ,pred_m_g0,pred_ss_g0,pred_RE,var_RE,fix0,nfix0,bfix0,estim0,loglik)
 
       use commun
 
@@ -1277,6 +1299,7 @@
       double precision, dimension(ns0,ng0) :: PPI
       double precision, dimension(npm0+nfix0)::btot
       double precision, dimension(ns0*nea0), intent(out)::pred_RE
+      double precision, dimension(ns0*nea0*(nea0+1)/2), intent(out)::var_RE
       double precision, dimension(nobs0) :: resid_m, resid_ss
       double precision, dimension(nobs0,ng0):: pred_m_g, pred_ss_g
       double precision,external::funcpa
@@ -1306,6 +1329,7 @@
       pred_m_g0=0.d0
       pred_ss_g0=0.d0
       pred_re=0.d0
+      var_re=0.d0
 
 !enrigstrement pour les modules
       ns=ns0
@@ -1442,7 +1466,7 @@
             end if
                         
             call residuals(btot,npmtot,ppi,resid_m,pred_m_g,resid_ss  &
-                ,pred_ss_g,pred_RE)
+                ,pred_ss_g,pred_RE,var_RE)
 
             ig=0
             ij=0

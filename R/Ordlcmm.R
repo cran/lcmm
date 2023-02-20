@@ -411,7 +411,7 @@
         if(isTRUE(partialH))
         {
             if(partialH) pbH0 <- rep(1,NPM)
-            pbH0[posfix] <- 0
+            #pbH0[posfix] <- 0
             if(sum(pbH0)==0 & Hr0==1) stop("No partial Hessian matrix can be defined")
         }
     }
@@ -419,10 +419,14 @@
     {
         if(!all(Hr0 %in% 1:NPM)) stop("Indexes in partialH are not correct")
         pbH0[Hr0] <- 1
-        pbH0[posfix] <- 0
+        #pbH0[posfix] <- 0
     }
     indexHr <- NULL
-    if(sum(pbH0)>0) indexHr <- which(pbH0==1)
+    if(sum(pbH0)>0)
+    {
+        if(length(posfix)) pbH1 <- pbH0[-posfix] else pbH1 <- pbH0
+        indexHr <- which(pbH1==1)
+    }
 
     if(missing(B)){
 
@@ -601,17 +605,17 @@
                                     up <- vbb[upper.tri(vbb,diag=TRUE)]
                                     vbb <- t(vbb)
                                     vbb[upper.tri(vbb,diag=TRUE)] <- up
-                                    Chol <- chol(vbb)
-                                    Chol <- t(Chol)
+                                    ##Chol <- chol(vbb)
+                                    ##Chol <- t(Chol)
 
                                     if(idg0[1]>1)
                                         {
-                                            b[c((NPROB+ng):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
+                                            b[c((NPROB+ng):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- rmvnorm(n=1,mean=bb,sigma = vbb) #bb + Chol %*% rnorm(length(bb))
                                             b[NPROB+1:(ng-1)] <- 0
                                         } 
                                     else
                                         {
-                                            b[c((NPROB+1):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- bb + Chol %*% rnorm(length(bb))
+                                            b[c((NPROB+1):(NPROB+NEF+NVC),(NPROB+NEF+NVC+NW+1):NPM)] <- rmvnorm(n=1,mean=bb,sigma = vbb) #bb + Chol %*% rnorm(length(bb))
                                         }
 
                                     b[1:NPROB] <- 0
@@ -710,7 +714,7 @@
                             NPM,epsY0,idlink0,nbzitr0,zitr0,minY,maxY,ide,
                             fix0,nfix,bfix)
         
-        out <- list(conv=2, V=rep(NA, length(b)), best=b,
+        out <- list(conv=2, V=rep(0, length(b)), best=b,
                     ppi2=rep(NA,ns0*ng0), predRE=rep(NA,ns0*nea0), Yobs=rep(NA,nobs0),
                     resid_m=rep(NA,nobs0), resid_ss=rep(NA,nobs0),
                     marker=rep(NA,nsim), transfY=rep(NA,nsim),
@@ -890,9 +894,49 @@
     if (!("intercept" %in% nom.X0)) X0.names2 <- X0.names2[-1]
 ### ad
 
+    ## levels = modalites des variables dans X0 (si facteurs)
+    levelsdata <- vector("list", length(X0.names2))
+    levelsfixed <- vector("list", length(X0.names2))
+    levelsrandom <- vector("list", length(X0.names2))
+    levelsmixture <- vector("list", length(X0.names2))
+    levelsclassmb <- vector("list", length(X0.names2))
+    names(levelsdata) <- X0.names2
+    names(levelsfixed) <- X0.names2
+    names(levelsrandom) <- X0.names2
+    names(levelsmixture) <- X0.names2
+    names(levelsclassmb) <- X0.names2
+    for(v in X0.names2)
+    {
+        if(v == "intercept") next
+        
+        if(is.factor(data[,v]))
+        {
+            levelsdata[[v]] <- levels(data[,v])
+        }
+        if(length(grep(paste("factor\\(",v,"\\)",sep=""), fixed)))
+        {
+            levelsfixed[[v]] <- levels(as.factor(data[,v]))
+        }
+        if(length(grep(paste("factor\\(",v,"\\)",sep=""), random)))
+        {
+            levelsrandom[[v]] <- levels(as.factor(data[,v]))
+        }
+        if(length(grep(paste("factor\\(",v,"\\)",sep=""), mixture)))
+        {
+            levelsmixture[[v]] <- levels(as.factor(data[,v]))
+        }
+        if(length(grep(paste("factor\\(",v,"\\)",sep=""), classmb)))
+        {
+            levelsclassmb[[v]] <- levels(as.factor(data[,v]))
+        }
+        
+    }
+    levels <- list(levelsdata=levelsdata, levelsfixed=levelsfixed, levelsrandom=levelsrandom,
+                   levelsmixture=levelsmixture, levelsclassmb=levelsclassmb)
+    
     cost<-proc.time()-ptm
     
-    res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=rep(0,nvar.exp),loglik=out$loglik,best=out$best,V=V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action,AIC=2*(length(out$best)-length(posfix)-out$loglik),BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,data=datareturn, var.time=var.time, runtime=cost[3])
+    res <-list(ns=ns0,ng=ng0,idea0=idea0,idprob0=idprob0,idg0=idg0,idcor0=rep(0,nvar.exp),loglik=out$loglik,best=out$best,V=V,gconv=out$gconv,conv=out$conv,call=call,niter=out$niter,N=N,idiag=idiag0,pprob=ppi,Xnames=nom.X0,Xnames2=X0.names2,cholesky=Cholesky,estimlink=estimlink,epsY=0,linktype=3,linknodes=zitr,ide=ide,Ydiscrete=Ydiscrete,discrete_loglik=out$loglik,UACV=out$UACV,IndivContrib=out$rlindiv,na.action=na.action,AIC=2*(length(out$best)-length(posfix)-out$loglik),BIC=(length(out$best)-length(posfix))*log(ns0)-2*out$loglik,data=datareturn, levels=levels, var.time=var.time, runtime=cost[3])
     class(res) <-c("lcmm")  
 
     if(verbose==TRUE) cat("The program took", round(cost[3],2), "seconds \n")

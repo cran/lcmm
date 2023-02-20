@@ -127,14 +127,16 @@ summary.mpjlcmm <- function(object,...)
         nprob <- x$N[1]
         nrisqtot <- x$N[2]
         nvarxevt <- x$N[3]
-        nef <- x$Nprm[3+1:K]
-        ncontr <- x$Nprm[3+K+1:K]
-        nvc <- x$Nprm[3+2*K+1:K]
-        nw <- x$Nprm[3+3*K+1:K]
-        ncor <- x$Nprm[3+4*K+1:K]
-        nerr <- x$Nprm[3+5*K+1:K]
-        nalea <- x$Nprm[3+6*K+1:K]
-        ntr <- x$Nprm[3+7*K+1:sum(x$ny)]
+        l <- 3
+        if(nbevt>1) l <- 2+nbevt
+        nef <- x$Nprm[l+1:K]
+        ncontr <- x$Nprm[l+K+1:K]
+        nvc <- x$Nprm[l+2*K+1:K]
+        nw <- x$Nprm[l+3*K+1:K]
+        ncor <- x$Nprm[l+4*K+1:K]
+        nerr <- x$Nprm[l+5*K+1:K]
+        nalea <- x$Nprm[l+6*K+1:K]
+        ntr <- x$Nprm[l+7*K+1:sum(x$ny)]
         NPM <- length(x$best)
 
         ## shorten names if > 20 characters
@@ -146,7 +148,7 @@ summary.mpjlcmm <- function(object,...)
             short_names_best <- lapply(split_names_best, gsub, pattern="\\(.*\\)", replacement="(...)")
             new_names <- lapply(short_names_best, paste, collapse=":")
             names_best[islong] <- unlist(new_names)[islong]
-            names_best[nprob+1:nrisqtot] <- names(x$best)[nprob+1:nrisqtot]
+            if(nrisqtot>0) names_best[nprob+1:nrisqtot] <- names(x$best)[nprob+1:nrisqtot]
             names(x$best) <- names_best
             
             islong <- which(sapply(x$Names$Xnames, nchar)>20)
@@ -156,7 +158,7 @@ summary.mpjlcmm <- function(object,...)
             }
         }
         
-
+        
         se <- rep(NA,NPM)
         if (x$conv==1 | x$conv==3)
         {
@@ -180,6 +182,9 @@ summary.mpjlcmm <- function(object,...)
             pwaldch <- rep(NA,length(coef))
         }
         
+        
+        ow <- options("warn")
+        options(warn=-1) # to avoid warnings with conv=3
         if(x$conv!=2)
         {
             coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
@@ -191,7 +196,8 @@ summary.mpjlcmm <- function(object,...)
         {
             coefch <- format(as.numeric(sprintf("%.5f",coef)),nsmall=5,scientific=FALSE)
         }
-
+        options(ow)
+        
         if(length(posfix))
         {
             coefch[posfix] <- paste(coefch[posfix],"*",sep="")
@@ -281,7 +287,7 @@ summary.mpjlcmm <- function(object,...)
             {
                 interc <- "intercept"
             }
-            if(x$contrainte!=0)
+            if(x$contrainte[k]!=0)
             {
                 tmp <- matrix(c(0,NA,NA,NA),nrow=1,ncol=4)
                 interc <- paste(interc, "(not estimated)")
@@ -309,7 +315,7 @@ summary.mpjlcmm <- function(object,...)
             if(ncontr[k]>0)
             {
                 indice2 <- 1:NPM*(1:NPM+1)/2
-                nom.contr <- x$Names$Xnames[as.logical(x$idcontr[sumnv+1:x$nv[k]])]
+                nom.contr <- x$Names$Xnames[sumnv+as.logical(x$idcontr[sumnv+1:x$nv[k]])]
                 for (i in 1:sum(x$idcontr[sumnv+1:x$nv[k]]))
                 {
                     ##matrice de variance pour test et se du dernier coef
@@ -381,7 +387,7 @@ summary.mpjlcmm <- function(object,...)
                 pf <- sort(intersect(c(nprob+nrisqtot+nvarxevt+sumnpm+1:(nef[k]+ncontr[k])),posfix))
                 p <- rep(0,length(tmp[,1]))
                 a0 <- 1:nef[k]
-                if(x$contrainte!=0) a0 <- c(0,1:nef[k])
+                if(x$contrainte[k]!=0) a0 <- c(0,1:nef[k])
                 a1 <- rep(c(NA,1:(ny[k]-1),NA),sum(x$idcontr))
                 a2 <- rep(nef[k]+cumsum(c(0:(sum(x$idcontr)-1))),each=ny[k]+1)
                 a <- c(a0,a1+a2)
@@ -412,14 +418,14 @@ summary.mpjlcmm <- function(object,...)
             }
             
             if(sum(x$idea[sumnv+1:x$nv[k]])>0) cat("Variance-covariance matrix of the random-effects:\n" )
-            if(x$contrainte==2)
+            if(x$contrainte[k]==2)
             {
                 cat("(the variance of the first random effect is not estimated)\n")
                 if(nvc[k]==0)
                 {
                     Mat.cov <- matrix(1,nrow=1,ncol=1)
-                    colnames(Mat.cov) <- x$Names$Xnames[which(x$idea[sumnv+1:x$nv[k]]==1)]
-                    rownames(Mat.cov) <- x$Names$Xnames[which(x$idea[sumnv+1:x$nv[k]]==1)]
+                    colnames(Mat.cov) <- x$Names$Xnames[sumnv+which(x$idea[sumnv+1:x$nv[k]]==1)]
+                    rownames(Mat.cov) <- x$Names$Xnames[sumnv+which(x$idea[sumnv+1:x$nv[k]]==1)]
                     prmatrix(Mat.cov)
                 }
             }
@@ -427,7 +433,7 @@ summary.mpjlcmm <- function(object,...)
             {
                 if(x$idiag[k]==1)
                 {
-                    if(x$contrainte==2)
+                    if(x$contrainte[k]==2)
                     {
                         Mat.cov <- diag(c(1,coef[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]]))
                     }
@@ -441,7 +447,7 @@ summary.mpjlcmm <- function(object,...)
                 if(x$idiag[k]==0)
                 {
                     Mat.cov<-matrix(0,ncol=sum(x$idea[sumnv+1:x$nv[k]]),nrow=sum(x$idea[sumnv+1:x$nv[k]]))
-                    if(x$contrainte==2)
+                    if(x$contrainte[k]==2)
                     {
                         Mat.cov[upper.tri(Mat.cov,diag=TRUE)] <- c(1,coef[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]])
                     }
@@ -452,8 +458,8 @@ summary.mpjlcmm <- function(object,...)
                     Mat.cov <-t(Mat.cov)
                     Mat.cov[upper.tri(Mat.cov)] <- NA
                 }
-                colnames(Mat.cov) <- x$Names$Xnames[which(x$idea[sumnv+1:x$nv[k]]==1)]
-                rownames(Mat.cov) <- x$Names$Xnames[which(x$idea[sumnv+1:x$nv[k]]==1)]
+                colnames(Mat.cov) <- x$Names$Xnames[sumnv+which(x$idea[sumnv+1:x$nv[k]]==1)]
+                rownames(Mat.cov) <- x$Names$Xnames[sumnv+which(x$idea[sumnv+1:x$nv[k]]==1)]
             
             
                 if(any(posfix %in% c(nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k])))
@@ -464,7 +470,7 @@ summary.mpjlcmm <- function(object,...)
                     p <- matrix(0,sum(x$idea[sumnv+1:x$nv[k]]),sum(x$idea[sumnv+1:x$nv[k]]))
                     if(x$idiag[k]==FALSE)
                     {
-                        if(x$contrainte==2)
+                        if(x$contrainte[k]==2)
                         {
                             p[upper.tri(p,diag=TRUE)] <- c(0,nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k])
                         }
@@ -475,7 +481,7 @@ summary.mpjlcmm <- function(object,...)
                     }
                     if(x$idiag[k]==TRUE)
                     {
-                        if(x$contrainte==2)
+                        if(x$contrainte[k]==2)
                         {
                             diag(p) <- c(0,nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k])
                         }
@@ -528,7 +534,7 @@ summary.mpjlcmm <- function(object,...)
                 cat("\n")
             }
 
-            if(x$contrainte==1)
+            if(x$contrainte[k]==1)
             {
                 cat("Residual standard error: 1 (not estimated)\n")
             }

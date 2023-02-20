@@ -25,14 +25,16 @@ update.mpjlcmm <- function(object,...)
     nprob <- object$N[1]
     nrisqtot <- object$N[2]
     nvarxevt <- object$N[3]
-    nef <- object$Nprm[3+1:K]
-    ncontr <- object$Nprm[3+K+1:K]
-    nvc <- object$Nprm[3+2*K+1:K]
-    nw <- object$Nprm[3+3*K+1:K]
-    ncor <- object$Nprm[3+4*K+1:K]
-    nerr <- object$Nprm[3+5*K+1:K]
-    nalea <- object$Nprm[3+6*K+1:K]
-    ntr <- object$Nprm[3+7*K+1:sum(ny)]
+    avt <- 3
+    if(object$nbevt>0) avt <- 2+object$nbevt
+    nef <- object$Nprm[avt+1:K]
+    ncontr <- object$Nprm[avt+K+1:K]
+    nvc <- object$Nprm[avt+2*K+1:K]
+    nw <- object$Nprm[avt+3*K+1:K]
+    ncor <- object$Nprm[avt+4*K+1:K]
+    nerr <- object$Nprm[avt+5*K+1:K]
+    nalea <- object$Nprm[avt+6*K+1:K]
+    ntr <- object$Nprm[avt+7*K+1:sum(ny)]
     ntrtotK <- sapply(1:K,function(k) sum(ntr[sum(ny[1:k])-ny[k]+1:ny[k]]))
 
     npmtot <- nef+ncontr+nvc+nw+ncor+nerr+nalea+ntrtotK
@@ -51,7 +53,7 @@ update.mpjlcmm <- function(object,...)
     for(k in 1:K)
     {
         ## le k-ieme modele mixte avec les estimations du conjoint:
-        mcall <- lK[[k]]$call
+        mcall <- object$longicall[[k]] #lK[[k]]$call
         fixk <- NULL
         if(ng>1)
         {
@@ -82,7 +84,7 @@ update.mpjlcmm <- function(object,...)
         mcall$posfix <- fixk
         mcall$maxiter <- 0
         mcall$verbose <- FALSE
-        m <- eval(mcall)
+        if(length(fixk) == (ng-1+npmtot[k])) m <- lK[[k]] else m <- eval(mcall)
 
         ## ajouter les variances
         if(ng>1)
@@ -98,8 +100,8 @@ update.mpjlcmm <- function(object,...)
         m$conv <- object$conv
 
         ##predictions
-        if(inherits(m,"multlcmm")) m$pred <- object$pred[which(object$pred[,2] %in% m$Ynames),]
-        else m$pred <- object$pred[which(object$pred[,2]==object$Names$Yname[k]),-2]
+        if(inherits(m,"multlcmm")) m$pred[,1:ncol(object$pred)] <- object$pred[which(object$pred[,2] %in% m$Ynames),]
+        else m$pred[,1:(ncol(object$pred)-1)] <- object$pred[which(object$pred[,2]==object$Names$Yname[k]),-2]
 
         m$pprob <- object$pprob
         m$pprobY <- object$pprobY

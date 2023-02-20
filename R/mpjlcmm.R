@@ -219,7 +219,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     hazard="Weibull",hazardtype="Specific",hazardnodes=NULL,TimeDepVar=NULL,
                     data,B,convB=0.0001,convL=0.0001,convG=0.0001,maxiter=100,nsim=100,
                     prior,logscale=FALSE,subset=NULL,na.action=1,posfix=NULL,
-                    partialH=FALSE,verbose=TRUE,nproc=1,clustertype=NULL)
+                    partialH=FALSE,verbose=FALSE,nproc=1,clustertype=NULL)
     {
         
         ptm <- proc.time()
@@ -227,9 +227,9 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         cl <- match.call()
 
         if(!is.list(longitudinal)) stop("longitudinal should be a list of estimated models")
-        longclass <- unique(sapply(longitudinal,class))
+        longclass <- sapply(longitudinal,class)
         if(any(!(longclass %in% c("hlme","lcmm","multlcmm")))) stop("longitudinal should only contain hlme, lcmm or multlcmm objects")
-        if(length(longclass)!=1) stop("longitudinal should only contain objects of the same class")
+        #if(length(longclass)!=1) stop("longitudinal should only contain objects of the same class")
         if(!missing(classmb) & ng==1) stop("No classmb can be specified with ng=1")
         #if(missing(classmb) & ng==1) classmb <- ~-1
         #if(missing(classmb) & ng>1) classmb <- ~1
@@ -281,7 +281,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         attributes(data)$terms <- NULL
 
         ## contrainte selon le type de modele longitudinal
-        contrainte <- switch(longclass[1],"hlme"=0,"lcmm"=1,"multlcmm"=2)
+        contrainte <- as.numeric(sapply(longclass, function(x){switch(x,"hlme"=0,"lcmm"=1,"multlcmm"=2)}))
 
         ## ### donnees Y ### ##
         K <- length(longitudinal)
@@ -290,23 +290,74 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         Ynames <- vector("list",K)
         Xnames <- vector("list",K)
         nomsX <- unique(unlist(sapply(longitudinal,function(x) setdiff(x$Xnames2,"intercept"))))
+        longicall <- vector("list",K)
         
         for(k in 1:K)
             {
                 ## modele k
-                if(length(longitudinal[[k]]$call))
+                ## if(length(longitudinal[[k]]$call))
+                ##     {
+                ##         z <- longitudinal[[k]]$call
+                ##         z$data <- data
+                ##         z$maxiter <- 0
+                ##         z$B <- longitudinal[[k]]$best
+                ##         z$verbose <- FALSE
+                ##         mod <- eval(z)
+                ##     }
+                ## else
+                ##     {
+                ##         mod <- eval(longitudinal[[k]])
+                ##     }
+                
+                modk <- longitudinal[[k]]
+                z <- modk$call
+                z$data <- data
+                z$maxiter <- 0
+                z$B <- modk$best
+                z$verbose <- FALSE
+                if(any(modk$linktype == 2))
+                {
+                    if(inherits(modk, "lcmm"))
                     {
-                        z <- longitudinal[[k]]$call
-                        z$data <- data
-                        z$maxiter <- 0
-                        z$B <- longitudinal[[k]]$best
-                        z$verbose <- FALSE
-                        mod <- eval(z)
+                        ## lcmm
+                        nb <- length(modk$linknodes)
+                        z$link <- paste(nb,"-manual-splines",sep="")
+                        z$range <- modk$linknodes[c(1,nb)]
+                        z$intnodes <- modk$linknodes[c(2:(nb-1))]
                     }
-                else
+                    else
                     {
-                        mod <- eval(longitudinal[[k]])
+                        ## multlcmm
+                        nspl <- 0
+                        link <- rep(NA,length(modk$linktype))
+                        intnodes <- NULL
+                        range <- NULL
+                        for (yk in 1:length(modk$linktype))
+                        {
+                            if(modk$linktype[yk] == 2)
+                            {
+                                nspl <- nspl+1
+                                nb <- modk$nbnodes[nspl]
+                                link[yk] <- paste(nb,"-manual-splines",sep="")
+                                intnodes <- c(intnodes, modk$linknodes[2:(nb-1),yk])
+                                range <- c(range, modk$linknodes[c(1,nb),yk])
+                            }
+                            else
+                            {
+                                if(modk$linktype[yk]==0) link[yk] <- "linear"
+                                if(modk$linktype[yk]==1) link[yk] <- "beta"
+                            }
+                        }
+                        z$link <- link
+                        z$intnodes <- intnodes
+                        z$range <- range
                     }
+                }
+                mod <- eval(z)
+                longicall[[k]] <- mod$call
+                longicall[[k]]$data <- cl$data
+                
+##                mod <- longitudinal[[k]]
                 assign(paste("mod",k,sep=""),mod)
 
                 subject <- mod$call$subject
@@ -317,7 +368,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 if(mod$ng!=ng) stop(paste("The longitudinal model (number ",k,") does not define the correct number of latent classes",sep=""))
                 
                 
-                if(longclass=="multlcmm")
+                if(longclass[k]=="multlcmm")
                 {
                     Ynames[[k]] <- mod$Ynames
                     Xnames[[k]] <- mod$Xnames
@@ -335,7 +386,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     {
                         ## data frame de l'outcome m
                         colx <- c(subject,nomsX,Ynames[[k]][m])
-                        if(longclass=="multlcmm")
+                        if(longclass[k]=="multlcmm")
                             {
                                 if(length(mod$na.action[[m]]))
                                 {
@@ -456,8 +507,8 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             Tevent <- getElement(object=data,name=nom.Tevent)
             Event <- getElement(object=data,name=nom.Event)  
             nbevt <- length(attr(do.call("Surv",list(time=Tevent,event=Event,type="mstate")),"states"))
-            #nbevt <- length(which(names(table(data[,nom.Event]))>0))    #length(unique(Event))-1   
-            if(nbevt<1) stop("No observed event in the data")
+            ##nbevt <- length(which(names(table(data[,nom.Event]))>0))    #length(unique(Event))-1   
+            if(nbevt<1) nbevt <- 1 #stop("No observed event in the data")
             
 
             ## pour la formule pour survivial, creer 3 formules : 
@@ -683,32 +734,61 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         nbzitr <- rep(0,sum(ny))
         ntr <- rep(0,sum(ny))
         zitr <- matrix(0,nrow=0,ncol=0)
+        levelsFRM <- vector("list",K)
         for(k in 1:K)
             {   
                 mod <- get(paste("mod",k,sep=""))
                 namesmod <- c(namesmod,names(mod$best))
 
+                ## levels fixed random and mixture
+                levelsFRM[[k]] <- mod$levels
 
                 ## formule k
                 formf <- gsub("contrast","",mod$call$fixed[3])
-                formk <- paste("processK+outcomeM",paste(formf,collapse="+"),paste(mod$call$random[2],collapse="+"),sep="+")
-                if(!is.null(mod$call$cor))
-                    {
-                        formk <- paste(formk,as.character(mod$call$cor)[2],sep="+")
-                    }
+                formk <- paste("processK+outcomeM",paste(formf,collapse="+"), sep="+")
+####
+                ## if(!is.null(mod$call$random[2]))
+                ## {
+                ##     formk <- paste(formk, paste(mod$call$random[2],collapse="+"),sep="+")
+                ##     terms_random <- terms(formula(paste("~",paste(mod$call$random[2],collapse="+"))))
+                ## }
+                ## else
+                ## {
+                ##     terms_random <- terms(~-1)
+                ## }
+                ## if(!is.null(mod$call$cor))
+                ##     {
+                ##         formk <- paste(formk,as.character(mod$call$cor)[2],sep="+")
+                ##     }
 
-                ## garder l'intercept si intercept dans fixed ou dans random
-                ## car pb si random=~-1, on n'a pas intercept dans formk
-                terms_formk <- terms(formula(paste("~",formk)))
-                terms_formf <- terms(formula(paste("~",paste(formf,collapse="+"))))
-                terms_random <- terms(formula(paste("~",paste(mod$call$random[2],collapse="+"))))
-                if(attr(terms_formf,"intercept") | attr(terms_random,"intercept"))
+                ## ## garder l'intercept si intercept dans fixed ou dans random
+                ## ## car pb si random=~-1, on n'a pas intercept dans formk
+                ## terms_formk <- terms(formula(paste("~",formk)))
+                ## terms_formf <- terms(formula(paste("~",paste(formf,collapse="+"))))
+                ## if(attr(terms_formf,"intercept") | attr(terms_random,"intercept"))
+                ## {
+                ##     attr(terms_formk,"intercept") <- 1
+                ## }
+
+                ## ## X0 pour k
+                ## xk <- model.matrix(terms_formk,data=dataY[which(dataY$processK==k),,drop=FALSE])
+                ## va pas car pas ranges dans le bon ordre
+####
+                
+                xfk <- model.matrix(formula(paste("~",formk)), data=dataY[which(dataY$processK==k),,drop=FALSE])
+                xrk <- model.matrix(formula(paste("~",mod$call$random[2])), data=dataY[which(dataY$processK==k),,drop=FALSE])
+                
+                ## X0 dans le bon ordre
+                xk <- cbind(xfk, xrk)[,union(colnames(xfk),colnames(xrk)),drop=FALSE]
+                if( mod$N[5+contrainte[k]]>0)
                 {
-                    attr(terms_formk,"intercept") <- 1
+                    namescor <- as.character(mod$call$cor)[2]
+                    xck <- model.matrix(formula(paste("~-1+",namescor)), data=dataY[which(dataY$processK==k),,drop=FALSE])
+                    if(!(namescor %in% colnames(xk)))
+                    {
+                        xk <- cbind(xk,xck)
+                    }
                 }
-
-                ## X0 pour k
-                xk <- model.matrix(terms_formk,data=dataY[which(dataY$processK==k),,drop=FALSE])
                 nomxk[[k]] <- colnames(xk)
 
                 ## X0 merge (range par K)
@@ -745,14 +825,14 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 ctr[k] <- sum(mod$idcontr)
                 q[k] <- sum(mod$idea)
                 nvc[k] <- ifelse(idiag[k]==1,q[k],q[k]*(q[k]+1)/2)
-                ncor[k] <- mod$N[5+contrainte]
-                nw[k] <- ifelse(contrainte==2,mod$N[5],mod$N[4])
+                ncor[k] <- mod$N[5+contrainte[k]]
+                nw[k] <- ifelse(contrainte[k]==2,mod$N[5],mod$N[4])
                 
                 ## link
-                if(contrainte==0) idlink[sum(ny[1:k])-ny[k]+1:ny[k]] <- -1
+                if(contrainte[k]==0) idlink[sum(ny[1:k])-ny[k]+1:ny[k]] <- -1
                 else idlink[sum(ny[1:k])-ny[k]+1:ny[k]] <- mod$linktype
 
-                if(contrainte==2)
+                if(contrainte[k]==2)
                 {
                     ncontr[k] <- mod$N[2]
                     nalea[k] <- mod$N[6]
@@ -772,14 +852,19 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                         zitr <- cbind(zitr,ztmp)
                     }
                     epsY[sum(ny[1:k])-ny[k]+1:ny[k]] <- mod$epsY
+                    mspl <- 0
                     for (m in 1:ny[k])
                     {
                         if(mod$linktype[m]==0) ntr[sum(ny[1:k])-ny[k]+m] <- 2
                         if(mod$linktype[m]==1) ntr[sum(ny[1:k])-ny[k]+m] <- 4
-                        if(mod$linktype[m]==2) ntr[sum(ny[1:k])-ny[k]+m] <- mod$nbnodes[m]+2
+                        if(mod$linktype[m]==2)
+                        {
+                            mspl <- mspl +1
+                            ntr[sum(ny[1:k])-ny[k]+m] <- mod$nbnodes[mspl]+2
+                        }
                     }
                 }
-                if(contrainte==1)
+                if(contrainte[k]==1)
                 {
                     nbzitr[k] <- length(mod$linknodes)
                     nodes <- c(nodes,as.vector(mod$linknodes))
@@ -936,9 +1021,10 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             }
             else
             {
-                uniqueY0 <- ym
-                indiceY0 <- c(1:length(ym))
-                nvalSPL0 <- c(nvalSPL0,length(ym))
+                uniqueY0 <- c(uniqueY0, ym)
+                indiceY0 <- c(indiceY0, c(1:length(ym)))
+                nb <- nb + length(ym)
+                nvalSPL0 <- c(nvalSPL0, length(ym))
             }
         }
     }
@@ -1333,10 +1419,15 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         predRE <- rep(0,ns*sum(nea))
         predRE_Y <- rep(0,ns*sum(nalea))
 
-        if(contrainte==0) nef <- p1+ng*p2 else nef <- p1+ng*p2-1
-        if(contrainte==2) nvc <- nvc-1 else nvc <- nvc
-        if(contrainte==1) nerr <- rep(0,K) else nerr <- ny
-
+        nef <- rep(NA,K)
+        nerr <- rep(NA,K)
+        for(k in 1:K)
+        {
+            if(contrainte[k]==0) nef[k] <- p1[k]+ng*p2[k] else nef[k] <- p1[k]+ng*p2[k]-1
+            if(contrainte[k]==2) nvc[k] <- nvc[k]-1 else nvc[k] <- nvc[k]
+            if(contrainte[k]==1) nerr[k] <- 0 else nerr[k] <- ny[k]
+        }
+        
         ## nb prm
         nprob <- (ng-1)*sum(idprob)
         neftot <- sum(nef)
@@ -1344,7 +1435,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         nvctot <- sum(nvc)
         nwtot <- sum(nw)
         ncortot <- sum(ncor)
-        nerrtot <- ifelse(contrainte==1,0,sum(ny))
+        nerrtot <- sum(nerr)
         naleatot <- sum(nalea)
         ntrtot <- sum(ntr)
 
@@ -1354,7 +1445,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         NPM <- nprob + nrisqtot + nvarxevt +
             neftot + ncontrtot + nvctot + nwtot + ncortot +
             naleatot + ntrtot + nerrtot
-                  
+               
         V <- rep(0, NPM*(NPM+1)/2)  #pr variance des parametres
 
         ## prm fixes
@@ -1408,17 +1499,21 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     }
                 }
             }
-            pbH[posfix] <- 0
+            #pbH[posfix] <- 0
             if(sum(pbH)==0 & Hr==1) stop("No partial Hessian matrix can be defined")
         }
         else
         {
             if(!all(Hr %in% 1:NPM)) stop("Indexes in partialH are not correct")
             pbH[Hr] <- 1
-            pbH[posfix] <- 0
+            #pbH[posfix] <- 0
         }
         indexHr <- NULL
-        if(sum(pbH)>0) indexHr <- which(pbH==1)
+        if(sum(pbH)>0)
+        {
+            if(length(posfix)) pbH1 <- pbH[-posfix] else pbH1 <- pbH
+            indexHr <- which(pbH1==1)
+        }
     
         ## gestion de B=random(mod)
 
@@ -1434,7 +1529,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 
                 Brandom <- TRUE
                 B <- eval(cl$B[[2]])
-                
+                if(B$conv != 1) stop("Model in argument B did not converge properly")   
                 #if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
         }
@@ -1466,7 +1561,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                                 else
                                 {
                                     mvc <- matrix(0,nea[k],nea[k])
-                                    if(contrainte==2)
+                                    if(contrainte[k]==2)
                                     {
                                         mvc[upper.tri(mvc,diag=TRUE)] <- c(1,b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]])
                                         mvc <- t(mvc)
@@ -1481,7 +1576,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
 
                                     ch <- chol(mvc)
 
-                                    if(contrainte==2)
+                                    if(contrainte[k]==2)
                                     {
                                         b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]] <- ch[upper.tri(ch,diag=TRUE)][-1]
                                     }
@@ -1498,7 +1593,8 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     {
                         if(!inherits(B,"mpjlcmm")) stop("B should be either a vector or an object of class mpjlcmm")
                         nef2 <- p1+p2
-                        if(contrainte!=0) nef2 <- p1+p2-1
+                        ##if(contrainte!=0) nef2 <- p1+p2-1
+                        nef2 <- sapply(1:K, function(k){ifelse(contrainte[k]!=0,p1[k]+p2[k]-1,p1[k]+p2[k])})
                         NPM2 <- sum(nprisq)+nvarxevt2+sum(nef2)+sum(ncontr)+sum(nvc)+
                             sum(ncor)+sum(nerr)+sum(nalea)+sum(ntr)
                         if(length(B$best)!=NPM2) stop(paste("B is not correct. The number of parameters should be",NPM2))
@@ -1546,7 +1642,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
 
                             sumnpm <- 0
                             sumch <- 0
-                            sumnpmG <- nprob+nrisq+nvarxevt
+                            sumnpmG <- nprob+nrisqtot+nvarxevt
                             cholRandom <- vector("list",K)
                             for (k in 1:K) #m1,..,mK
                             {
@@ -1555,15 +1651,33 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                                 {
                                     multRandom <- TRUE
                                     if(mk$N[4]>0) cholRandom[[k]] <- sumnpmG+1:mk$N[4]
+                                    if(idiag[k]==1)
+                                    {
+                                        names(cholRandom)[k] <- "diag"
+                                    }
+                                    else
+                                    {
+                                        names(cholRandom)[k] <- "full"
+                                    }
                                 }
                                 else
                                 {
                                     multRandom <- FALSE
                                     if(mk$N[3]>0) cholRandom[[k]] <- sumnpmG+mk$N[2]+1:mk$N[3]
+                                    if(idiag[k]==1)
+                                    {
+                                        names(cholRandom)[k] <- "diag"
+                                    }
+                                    else
+                                    {
+                                        names(cholRandom)[k] <- "full"
+                                    }
                                 }
 
                                 ## remplacer varcov par cholesky
-                                if(B$Nprm[3+2*K+k]>0) theta0[sum(nprisq)+nvarxevt2+sumnpm+B$Nprm[3+k]+B$Nprm[3+K+k]+1:B$Nprm[3+2*K+k]] <- B$cholesky[sumch+1:B$Nprm[3+2*K+k]]
+                                avt <- 3
+                                if(nbevt>1) avt <- 2+nbevt
+                                if(B$Nprm[avt+2*K+k]>0) theta0[sum(nprisq)+nvarxevt2+sumnpm+B$Nprm[avt+k]+B$Nprm[avt+K+k]+1:B$Nprm[avt+2*K+k]] <- B$cholesky[sumch+1:B$Nprm[avt+2*K+k]]
 
 
                                 mkw <- max(w)+mk$wRandom
@@ -1578,18 +1692,17 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                             }
 
 
-
                             ## gerer les posfix de B
                             ww <- w
                             for(j in fix1)
                             {
-                                ww[which(w>fix1)] <- ww[which(w>fix1)]-1
-                                b0 <- c(b0,rep(B$best[j],length(which(w==j))))
+                                ww[which(w>j)] <- ww[which(w>j)]-1
+                                b0 <- c(b0,rep(theta0[j],length(which(w==j))))
                             }
                             ww[which(w %in% fix1)] <- 0
                             theta1 <- theta0[setdiff(1:length(theta0),fix1)]
                             var1 <- var0[setdiff(1:length(B$best),fix1),setdiff(1:length(B$best),fix1)]
-                            b <- Brandom(theta0=theta1,v0=var1,w=ww,b0=b0,chol=cholRandom,mult=multRandom)
+                            b <- Brandom(theta0=theta1,v0=var1,w=ww,b0=b0,chol=NULL, mult=NULL) #chol=cholRandom,mult=multRandom)
 
                         } # fin random
                         
@@ -1611,11 +1724,11 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                         {
                             if(logspecif==1)
                             {  
-                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(c(log(sum(Event==i)/sum(Tevent[Event==i])),0),ifelse(risqcom==0,ng,1)),rep(1,(ng-1)*(risqcom[i]==2)))  
+                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(c(log(sum(Event==i)/sum(Tevent[Event==i])),0),ifelse(risqcom[i]==0,ng,1)),rep(1,(ng-1)*(risqcom[i]==2)))  
                             }
                             else
                             {
-                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(c(sqrt(sum(Event==i)/sum(Tevent[Event==i])),1),ifelse(risqcom==0,ng,1)),rep(1,(ng-1)*(risqcom[i]==2)))
+                                b[nprob+sum(nrisq[1:i])-nrisq[i]+1:nrisq[i]] <- c(rep(c(sqrt(sum(Event==i)/sum(Tevent[Event==i])),1),ifelse(risqcom[i]==0,ng,1)),rep(1,(ng-1)*(risqcom[i]==2)))
                             }   
                         }
                         else
@@ -1898,7 +2011,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                                    risqcom,nz,zi,nmesM,nea,nw,ncor,nalea,idiag,idtrunc,
                                    logspecif,NPM,fix,contrainte,nfix,bfix)
             
-            out <- list(conv=2, V=rep(NA, length(b)), best=b,
+            out <- list(conv=2, V=rep(NA, length(b)*(length(b)+1)/2), best=b,
                         ppi=rep(NA,ns*ng), ppitest=rep(NA,ns*ng),
                         predRE=rep(NA,ns*sum(nea)), predRE_Y=rep(NA,ns*sum(nalea)),
                         Yobs=rep(NA,nobs0),
@@ -2106,7 +2219,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 if(nvc[k]>0)
                 {
                     Cholesky <- c(Cholesky,out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]])
-                    if(contrainte==2)
+                    if(contrainte[k]==2)
                     {
                         ch <- c(1,out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]])
                     }
@@ -2120,7 +2233,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                         U <- matrix(0,nea[k],nea[k])
                         U[upper.tri(U,diag=TRUE)] <- ch
                         z <- t(U) %*% U
-                        if(contrainte==2)
+                        if(contrainte[k]==2)
                         {
                             out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]] <- z[upper.tri(z,diag=TRUE)][-1]
                         }
@@ -2300,7 +2413,37 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                       ID=nom.subject,Tnames=c(nom.Tentry,nom.Tevent,nom.Event),
                       prior.name=nom.prior,TimeDepVar.name=nom.timedepvar)
 
+        ## levels = modalites des variables dans X0 (si facteurs)
+        levelsdata <- vector("list", length(nomsX))
+        levelsclassmb <- vector("list", length(nomsX))
+        levelssurv <- vector("list", length(nomsX))
+        names(levelsdata) <- nomsX
+        names(levelsclassmb) <- nomsX
+        names(levelssurv) <- nomsX
+        for(v in nomsX)
+        {
+            if(v == "intercept") next
+            
+            if(is.factor(data[,v]))
+            {
+                levelsdata[[v]] <- levels(data[,v])
+            }
+            if(length(grep(paste("factor\\(",v,"\\)",sep=""), classmb)))
+            {
+                levelsclassmb[[v]] <- levels(as.factor(data[,v]))
+            }
+            if(nbevt>0)
+            {
+                if(length(grep(paste("factor\\(",v,"\\)",sep=""), form.surv)))
+                {
+                    levelssurv[[v]] <- levels(as.factor(data[,v]))
+                }
+            }
+        }
+        levels <- list(levelsdata=levelsdata, levelsclassmb=levelsclassmb,
+                       levelssurv=levelssurv, levelsFRM=levelsFRM)
 
+        
         cost <- proc.time()-ptm
         
         res <-list(K=K,ny=ny,nbevt=nbevt,ng=ng,ns=ns,idprob=idprob,idcom=idcom,
@@ -2313,7 +2456,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                    epsY=epsY,linktype=idlink,nbzitr=nbzitr,linknodes=zitr,
                    predSurv=predSurv,typrisq=typrisq,hazardtype=hazardtype,
                    hazardnodes=zi,nz=nz,scoretest=stats,na.action=linesNA,
-                   contrainte=contrainte,
+                   contrainte=contrainte, levels=levels, longicall=longicall,
                    AIC=2*(length(out$best)-length(posfix)-out$loglik),
                    BIC=(length(out$best)-length(posfix))*log(ns)-2*out$loglik,
                    runtime=cost[3])

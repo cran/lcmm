@@ -1,23 +1,30 @@
 Package: lcmm
 Type: Package
 Title: Extended Mixed Models Using Latent Classes and Latent Processes
-Version: 2.0.0
-Date: 2022-06-15
-Author: Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit Liquet
-Maintainer: Cecile Proust-Lima <cecile.proust-lima@inserm.fr>
+Version: 2.0.2
+Date: 2023-02-20
+Authors@R: c(person("Cecile", "Proust-Lima", role=c("aut", "cre"), email="cecile.proust-lima@inserm.fr"),
+             person("Viviane", "Philipps", role="aut"),
+	     person("Amadou", "Diakite", role="ctb"),
+	     person("Benoit", "Liquet", role="ctb"))
 Description: Estimation of various extensions of the mixed models including latent class mixed models, joint latent latent class mixed models, mixed models for curvilinear outcomes, mixed models for multivariate longitudinal outcomes using a maximum likelihood estimation method (Proust-Lima, Philipps, Liquet (2017) <doi:10.18637/jss.v078.i02>).
 License: GPL (>= 2.0)
 Depends: R (>= 3.5.0), survival (>= 2.37-2), parallel, mvtnorm,
         randtoolbox, marqLevAlg (> 2.0)
 Imports: nlme
-Suggests:
-        knitr,rmarkdown,lattice,NormPsy,ggplot2,ggpubr,dplyr,splines,gridExtra
+Suggests: knitr,rmarkdown,lattice,NormPsy
+URL: https://cecileproust-lima.github.io/lcmm/
 BugReports: https://github.com/CecileProust-Lima/lcmm/issues
 LazyLoad: yes
 LazyData: true
 VignetteBuilder: knitr
 NeedsCompilation: yes
-RoxygenNote: 7.1.1
-Packaged: 2022-06-24 14:43:23 UTC; vp3
+RoxygenNote: 7.2.1
+Packaged: 2023-02-20 14:18:13 UTC; vp3
+Author: Cecile Proust-Lima [aut, cre],
+  Viviane Philipps [aut],
+  Amadou Diakite [ctb],
+  Benoit Liquet [ctb]
+Maintainer: Cecile Proust-Lima <cecile.proust-lima@inserm.fr>
 Repository: CRAN
-Date/Publication: 2022-06-24 16:20:02 UTC
+Date/Publication: 2023-02-20 15:00:02 UTC
