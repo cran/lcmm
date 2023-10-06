@@ -20,7 +20,6 @@
 !! eval_splines
 !! inv_Isplines
 !! bgos
-!! uniran
 !! gausshermite
 
 
@@ -289,7 +288,7 @@ function alnorm ( x, upper )
   !
   !  Parameters:
   !
-  !    Input, real ( kind = 8 ) X, is one endpoint of the semi-infinite interval
+  !    Input, double precision X, is one endpoint of the semi-infinite interval
   !    over which the integration takes place.
   !
   !    Input, logical UPPER, determines whether the upper or lower
@@ -297,39 +296,39 @@ function alnorm ( x, upper )
   !    .TRUE.  => integrate from X to + Infinity;
   !    .FALSE. => integrate from - Infinity to X.
   !
-  !    Output, real ( kind = 8 ) ALNORM, the integral of the standard normal
+  !    Output, double precision ALNORM, the integral of the standard normal
   !    distribution over the desired interval.
   !
   implicit none
 
-  real ( kind = 8 ), parameter :: a1 = 5.75885480458D+00
-  real ( kind = 8 ), parameter :: a2 = 2.62433121679D+00
-  real ( kind = 8 ), parameter :: a3 = 5.92885724438D+00
-  real ( kind = 8 ) alnorm
-  real ( kind = 8 ), parameter :: b1 = -29.8213557807D+00
-  real ( kind = 8 ), parameter :: b2 = 48.6959930692D+00
-  real ( kind = 8 ), parameter :: c1 = -0.000000038052D+00
-  real ( kind = 8 ), parameter :: c2 = 0.000398064794D+00
-  real ( kind = 8 ), parameter :: c3 = -0.151679116635D+00
-  real ( kind = 8 ), parameter :: c4 = 4.8385912808D+00
-  real ( kind = 8 ), parameter :: c5 = 0.742380924027D+00
-  real ( kind = 8 ), parameter :: c6 = 3.99019417011D+00
-  real ( kind = 8 ), parameter :: con = 1.28D+00
-  real ( kind = 8 ), parameter :: d1 = 1.00000615302D+00
-  real ( kind = 8 ), parameter :: d2 = 1.98615381364D+00
-  real ( kind = 8 ), parameter :: d3 = 5.29330324926D+00
-  real ( kind = 8 ), parameter :: d4 = -15.1508972451D+00
-  real ( kind = 8 ), parameter :: d5 = 30.789933034D+00
-  real ( kind = 8 ), parameter :: ltone = 7.0D+00
-  real ( kind = 8 ), parameter :: p = 0.398942280444D+00
-  real ( kind = 8 ), parameter :: q = 0.39990348504D+00
-  real ( kind = 8 ), parameter :: r = 0.398942280385D+00
+  double precision, parameter :: a1 = 5.75885480458D+00
+  double precision, parameter :: a2 = 2.62433121679D+00
+  double precision, parameter :: a3 = 5.92885724438D+00
+  double precision alnorm
+  double precision, parameter :: b1 = -29.8213557807D+00
+  double precision, parameter :: b2 = 48.6959930692D+00
+  double precision, parameter :: c1 = -0.000000038052D+00
+  double precision, parameter :: c2 = 0.000398064794D+00
+  double precision, parameter :: c3 = -0.151679116635D+00
+  double precision, parameter :: c4 = 4.8385912808D+00
+  double precision, parameter :: c5 = 0.742380924027D+00
+  double precision, parameter :: c6 = 3.99019417011D+00
+  double precision, parameter :: con = 1.28D+00
+  double precision, parameter :: d1 = 1.00000615302D+00
+  double precision, parameter :: d2 = 1.98615381364D+00
+  double precision, parameter :: d3 = 5.29330324926D+00
+  double precision, parameter :: d4 = -15.1508972451D+00
+  double precision, parameter :: d5 = 30.789933034D+00
+  double precision, parameter :: ltone = 7.0D+00
+  double precision, parameter :: p = 0.398942280444D+00
+  double precision, parameter :: q = 0.39990348504D+00
+  double precision, parameter :: r = 0.398942280385D+00
   logical up
   logical upper
-  real ( kind = 8 ), parameter :: utzero = 18.66D+00
-  real ( kind = 8 ) x
-  real ( kind = 8 ) y
-  real ( kind = 8 ) z
+  double precision, parameter :: utzero = 18.66D+00
+  double precision x
+  double precision y
+  double precision z
 
   up = upper
   z = x
@@ -2431,7 +2430,7 @@ SUBROUTINE BGOS(SX,ID,X1,X2,RO)
   double precision ::RO,SX
   integer ::ID
   double precision ::F,V1,V2,S,DLS,RO2
-  double precision ::X1,X2,UNIRAN
+  double precision ::X1,X2,runiran
   !C     write(*,*)'dans bgos'
 
 
@@ -2442,8 +2441,8 @@ SUBROUTINE BGOS(SX,ID,X1,X2,RO)
   !C     X1=RAND()
   !C     X2=RAND()
 
-  X1=UNIRAN()
-  X2=UNIRAN()
+  X1=runiran()
+  X2=runiran()
 
   IF(ID.NE.1) GO TO 10
   F=2.*SQRT(3.)
@@ -2474,42 +2473,6 @@ END subroutine bgos
 
 
 !C ------------------- FIN SUBROUTINE BGOS -----------------
-
-
-!C ------------------------------------------------------
-
-DOUBLE PRECISION FUNCTION UNIRAN()
-  !C
-  !C     Random number generator(RCARRY), adapted from F. James
-  !C     "A Review of Random Number Generators"
-  !C      Comp. Phys. Comm. 60(1990), pp. 329-344.
-  !C
-  implicit none
-  DOUBLE PRECISION SEEDS(24), TWOM24, CARRY, ONE
-  PARAMETER ( ONE = 1, TWOM24 = ONE/16777216 )
-  INTEGER I, J
-  SAVE I, J, CARRY, SEEDS
-  DATA I, J, CARRY / 24, 10, 0.0 /
-  DATA SEEDS /      &
-       0.8804418, 0.2694365, 0.0367681, 0.4068699, 0.4554052, 0.2880635,      &
-       0.1463408, 0.2390333, 0.6407298, 0.1755283, 0.7132940, 0.4913043, &
-       0.2979918, 0.1396858, 0.3589528, 0.5254809, 0.9857749, 0.4612127, &
-       0.2196441, 0.7848351, 0.4096100, 0.9807353, 0.2689915, 0.5140357/
-  UNIRAN = SEEDS(I) - SEEDS(J) - CARRY
-  IF ( UNIRAN .LT. 0 ) THEN
-     UNIRAN = UNIRAN + 1
-     CARRY = TWOM24
-  ELSE
-     CARRY = 0
-  ENDIF
-  SEEDS(I) = UNIRAN
-  I = 24 - MOD( 25-I, 24 )
-  J = 24 - MOD( 25-J, 24 )
-
-  return
-END function uniran
-
-
 
 
 

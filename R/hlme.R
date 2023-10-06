@@ -142,9 +142,8 @@
 #' value in 1,...,ng indicates that the subject belongs to the corresponding
 #' latent class.
 #' @param pprior optional vector specifying the names of the covariates containing the
-#' prior probabilities to belog to each latent class. These probabilities should be
-#' between 0 and 1 and should sum up to 1 for each subject. If pprior is specified, the
-#' multinomial logistic model should be removed with classmb=~-1.
+#' prior probabilities to belong to each latent class. These probabilities should be
+#' between 0 and 1 and should sum up to 1 for each subject. 
 #' @param maxiter optional maximum number of iterations for the Marquardt
 #' iterative algorithm. By default, maxiter=500.
 #' @param subset a specification of the rows to be used: defaults to all rows.
@@ -801,16 +800,20 @@ hlme <-
 ## gestion de B=random(mod)
 
         Brandom <- FALSE
-        if(length(cl$B)==2)
+        tryB <- try(as.numeric(B), silent=TRUE)
+        if(inherits(tryB, "try-error"))
+        {
+            if(length(cl$B)==2)
             {
-                if(!inherits(eval(cl$B[[2]]),"hlme")) stop("The model specified in B should be of class hlme")
+                if(!inherits(eval(cl$B[[2]], parent.env(environment())),"hlme")) stop("The model specified in B should be of class hlme")
                 if(as.character(cl$B[1])!="random") stop("Please use random() to specify random initial values")
                 
                 Brandom <- TRUE
-                B <- eval(cl$B[[2]])
+                B <- eval(cl$B[[2]], parent.env(environment()))
                 if(B$conv != 1) stop("Model in argument B did not converge properly")
                 #if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
+        }
 
         
 

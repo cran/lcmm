@@ -1,3 +1,16 @@
+# Changes in Version 2.1.0 (2023-10-06) :
+
+* new function `externVar` to perform a secondary regression analysis after the estimation of a primary latent class model
+* new argument `pprior` in hlme, lcmm, multlcmm and Jointlcmm to fix the probability to belong to each latent class
+* packages survival, parallel, mvtnorm, randtoolbox, marqLevAlg, doParallel, numDeriv are now listed in Imports rather than in Depends
+* no subject-specific predictions in multlcmm with ordinal outcomes
+* corrections in mpjlcmm
+* correction in predictL without random effects
+* correction in epoce and predictY.Jointlcmm
+* use of R's random number generator in Fortran codes
+* use double precision rather than real(kind=8) in Fortran
+
+
 # Changes in Version 2.0.2 (2023-02-17)
 
 * all vignettes excepted the introduction vignette (now renamed lcmm.Rmd) are removed from the CRAN version because of too long check time. 

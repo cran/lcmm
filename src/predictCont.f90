@@ -55,6 +55,9 @@ subroutine predictcont(X0,idprob,idea,idg,idcor &
   ! for output
   double precision,dimension(maxmes*ng),intent(out) ::Ymarg
 
+  
+  !! call GetRNGstate
+  call getrand()
 
 
   !============= recup des places de parametres
@@ -111,7 +114,7 @@ subroutine predictcont(X0,idprob,idea,idg,idcor &
   nea=0
   ncg=0
   ncssg=0
-  nprob=ng-1
+  nprob=0 !ng-1
   nvarprob=min(ng-1,1)
   do k=1,nv
      if (idg(k).eq.1) then
@@ -738,6 +741,8 @@ subroutine predictcont(X0,idprob,idea,idg,idcor &
   deallocate(zitr,splaa)
   deallocate(Z,P,R,X00,X2,ysim,usim,mu,tcor,VC,Vi)
 
+  !! call PutRNGstate
+  call putrand()
 
 
   return

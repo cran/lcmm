@@ -1,7 +1,8 @@
 #' Summary of models
 #' 
 #' This function provides a table summarizing the results of different models
-#' fitted by \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm}.
+#' fitted by \code{hlme}, \code{lcmm}, \code{multlcmm}, \code{Jointlcmm},
+#' \code{mpjlcmm} or \code{externVar}.
 #' 
 #' Can be reported the usual criteria used to assess the fit and the clustering
 #'  of the data:
@@ -10,16 +11,16 @@
 #'  - AIC (the lower the better) computed as -2L+2P 
 #'  - BIC (the lower the better) computed as -2L+ P log(N) where N is the number of subjects
 #'  - SABIC (the lower the better) computed as -2L+ P log((N+2)/24)
-#'  - Entropy (the closer to one the better) computed as 1-sum[pi_ig*log(pi_ig)]/(N*log(G))
+#'  - Entropy (the closer to one the better) computed in two ways : ICL1 = 1-sum[pi_ig*log(pi_ig)]/(N*log(G))
 #'    where pi_ig is the posterior probability that subject i belongs to class g
 #'  - ICL (the lower the better) computed in two ways : ICL1 = BIC - sum[pi_ig*log(pi_ig)]
 #'    or ICL2 = BIC - 2*sum(log(max(pi_ig)), where the max is taken over the classes for each subject.
 #'  - %Class computed as the proportion of each class based on c_ig
 #' 
-#' @param m1 an object of class \code{hlme}, \code{lcmm}, \code{multlcmm} or
-#' \code{Jointlcmm}
+#' @param m1 an object of class \code{hlme}, \code{lcmm}, \code{multlcmm}, 
+#' \code{Jointlcmm}, \code{mpjlcmm}, \code{externVar} or \code{externVar}.
 #' @param \dots further arguments, in particular other objects of class
-#' \code{hlme}, \code{lcmm}, \code{multlcmm} or \code{Jointlcmm}
+#' \code{hlme}, \code{lcmm}, \code{multlcmm}, \code{Jointlcmm} or \code{mpjlcmm}.
 #' @param which character vector indicating which results should be returned.
 #' Possible values are "G", "loglik", "conv", "npm", "AIC", "BIC", "SABIC",
 #' "entropy", "ICL", "ICL1", "ICL2", "\%class".
@@ -37,7 +38,7 @@
 summarytable <- function(m1, ..., which=c("G","loglik","npm","BIC","%class"), display=TRUE)
     {
         if(missing(m1)) stop("At least one model should be specified")
-        if(!inherits(m1,c("hlme","lcmm","multlcmm","Jointlcmm","mpjlcmm"))) stop("Use with 'hlme', 'lcmm' , 'multlcmm', 'Jointlcmm' or 'mpjlcmm' objects only")
+        if(!inherits(m1,c("hlme","lcmm","multlcmm","Jointlcmm","mpjlcmm", "externX", "externSurv"))) stop("Use with 'hlme', 'lcmm' , 'multlcmm', 'Jointlcmm', 'mpjlcmm', 'externX' or 'externSurv' objects only")
         if(any(!(which %in% c("G", "loglik", "conv", "npm", "AIC", "BIC", "SABIC", "entropy", "scoretest","ICL", "ICL1", "ICL2","%class")))) stop(paste("which should contain elements among",paste(c("G", "loglik", "conv", "npm", "AIC", "BIC", "SABIC", "entropy", "scoretest", "ICL", "ICL1", "ICL2", "%class"),collapse=", ")))
 
         dots <- list(...)
@@ -93,22 +94,22 @@ summarytable <- function(m1, ..., which=c("G","loglik","npm","BIC","%class"), di
         
         ICL <- function(x)
         {
-            ## ICL1 = BIC - sum(log(pprob)*pprob)
-            z1 <- log(as.matrix(x$pprob[,c(3:(x$ng+2))]))*as.matrix(x$pprob[,c(3:(x$ng+2))])
-            if(any(!is.finite(z1))){ z1[which(!is.finite(z1))] <- 0}
-            res1 <- x$BIC - sum(z1)
-            if(x$ng==1) res1 <- x$BIC
-            
-            ## ICL2 = BIC - 2*sum(log(pprobmax))
-            z2 <- rep(0,length=length(x$pprob[,1]))
-            for(g in 1:x$ng)
-            {
-                z2[which(x$pprob[,2]==g)] <- log(as.numeric(x$pprob[which(x$pprob[,2]==g),2+g]))
-            }
-            res2 <- x$BIC - 2*sum(z2)
-            if(x$ng==1) res2 <- x$BIC
-            
-            return(c(res1, res2))
+          ## ICL1 = BIC - sum(log(pprob)*pprob)
+          z1 <- log(as.matrix(x$pprob[,c(3:(x$ng+2))]))*as.matrix(x$pprob[,c(3:(x$ng+2))])
+          if(any(!is.finite(z1))){ z1[which(!is.finite(z1))] <- 0}
+          res1 <- x$BIC - sum(z1)
+          if(x$ng==1) res1 <- x$BIC
+          
+          ## ICL2 = BIC - 2*sum(log(pprobmax))
+          z2 <- rep(0,length=length(x$pprob[,1]))
+          for(g in 1:x$ng)
+          {
+            z2[which(x$pprob[,2]==g)] <- log(as.numeric(x$pprob[which(x$pprob[,2]==g),2+g]))
+          }
+          res2 <- x$BIC - 2*sum(z2)
+          if(x$ng==1) res2 <- x$BIC
+          
+          return(c(res1, res2))
         }
         
         

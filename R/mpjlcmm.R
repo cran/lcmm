@@ -68,7 +68,7 @@
 #' convergence criteria (can solve non convergence due to estimates at the boundary 
 #' of the parameter space - usually 0).
 #' @param verbose logical indicating whether information about computation should be
-#' reported. Default to TRUE.
+#' reported. Default to FALSE.
 #' @param nproc the number cores for parallel computation.
 #' Default to 1 (sequential mode).
 #' @param clustertype optional character indicating the type of cluster for parallel computation.
@@ -291,6 +291,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         Xnames <- vector("list",K)
         nomsX <- unique(unlist(sapply(longitudinal,function(x) setdiff(x$Xnames2,"intercept"))))
         longicall <- vector("list",K)
+        timeobs <- NULL
         
         for(k in 1:K)
             {
@@ -345,7 +346,11 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                             else
                             {
                                 if(modk$linktype[yk]==0) link[yk] <- "linear"
-                                if(modk$linktype[yk]==1) link[yk] <- "beta"
+                                if(modk$linktype[yk]==1)
+                                {
+                                    link[yk] <- "beta"
+                                    range <- c(range, modk$linknodes[c(1,2), yk])
+                                }
                             }
                         }
                         z$link <- link
@@ -380,6 +385,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     Xnames[[k]] <- mod$Xnames
                     ny[k] <- 1
                 }
+
 
                 ## donnees km
                 for(m in 1:ny[k])
@@ -448,9 +454,28 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
 
                                 dataY <- rbind(dataY,datam)
                             }
+                                                                
+                        ## save var.time
+                        if(!is.null(mod$var.time))
+                        {
+                            if(longclass[k]=="multlcmm")
+                            {
+                                timeobs <- c(timeobs,mod$pred[which(mod$pred[,2]==Ynames[[k]][m]),ncol(mod$pred)])
+                            }
+                            else
+                            {
+                                timeobs <- c(timeobs,mod$pred[,ncol(mod$pred)])
+                            }
+                        }
+                        else
+                        {
+                            timeobs <- c(timeobs, rep(NA, nrow(datam)))
+                        }
                     }
                 
             }
+
+        dataY <- data.frame(dataY, var.time.timeobs=as.numeric(timeobs))
 
 
         if(is.null(survival))
@@ -674,7 +699,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     colnames(newdata) <- unique(c(nom.subject,varSurvClas,nom.prior))
                 }
             }
-
+ 
 
         ## prendre les sujets dans dataY et dans newdata
         selectid <- intersect(unique(dataY[,subject]),unique(newdata[,nom.subject]))
@@ -707,6 +732,9 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         ## Y0
         Y0 <- dataY$measureY
 
+        ## var.time
+        timeobs <- dataY$var.time.timeobs[order(dataY[,nom.subject])]
+
         ## X0 pour longitudinal
         nomxk <- vector("list",K)
         nv <- rep(NA,K)
@@ -733,7 +761,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         nodes <- NULL
         nbzitr <- rep(0,sum(ny))
         ntr <- rep(0,sum(ny))
-        zitr <- matrix(0,nrow=0,ncol=0)
+        zitr <- vector("list", sum(ny))
         levelsFRM <- vector("list",K)
         for(k in 1:K)
             {   
@@ -813,6 +841,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 nv[k] <- ncol(xk)-2 # enlever process et outcome
                 idg <- c(idg,mod$idg)
                 idea <- c(idea,mod$idea)
+                if(is.null(mod$idcontr)) mod$idcontr <- rep(0, length(mod$idg))
                 idcontr <- c(idcontr,mod$idcontr)
                 idcor <- c(idcor,mod$idcor)
 
@@ -841,16 +870,6 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     nbtmp[which(mod$linktype==2)] <- mod$nbnodes
                     nbzitr[sum(ny[1:k])-ny[k]+1:ny[k]] <- nbtmp
                     nodes <- c(nodes,as.vector(mod$linknodes))
-                    if(nrow(zitr)<max(nbtmp))
-                    {
-                        zitr <- rbind(zitr,matrix(0,nrow=max(nbtmp)-nrow(zitr),ncol=ncol(zitr)))
-                        zitr <- cbind(zitr,mod$linknodes)
-                    }
-                    else
-                    {
-                        ztmp <- rbind(mod$linknodes,matrix(0,nrow=nrow(zitr)-max(nbtmp),ncol=ncol(mod$linknodes)))
-                        zitr <- cbind(zitr,ztmp)
-                    }
                     epsY[sum(ny[1:k])-ny[k]+1:ny[k]] <- mod$epsY
                     mspl <- 0
                     for (m in 1:ny[k])
@@ -861,27 +880,35 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                         {
                             mspl <- mspl +1
                             ntr[sum(ny[1:k])-ny[k]+m] <- mod$nbnodes[mspl]+2
+                            zitr[[sum(ny[1:k])-ny[k]+m]] <- mod$linknodes[1:mod$nbnodes[mspl],m]
+                        }
+                        else
+                        {
+                            zitr[[sum(ny[1:k])-ny[k]+m]] <- mod$linknodes[1:2,m]
                         }
                     }
                 }
                 if(contrainte[k]==1)
                 {
-                    nbzitr[k] <- length(mod$linknodes)
+                    nbzitr[sum(ny[1:k])-ny[k]+1] <- length(mod$linknodes)
                     nodes <- c(nodes,as.vector(mod$linknodes))
-                    if(nrow(zitr)<nbzitr[k])
-                    {
-                        zitr <- rbind(zitr,matrix(0,nrow=nbzitr[k]-nrow(zitr),ncol=ncol(zitr)))
-                        zitr <- cbind(zitr,mod$linknodes)
-                    }
-                    else
-                    {
-                        ztmp <- c(mod$linknodes,rep(0,nrow(zitr)-nbzitr[k]))
-                        zitr <- cbind(zitr,ztmp)
-                    }
-                    epsY[k] <- mod$epsY
-                    ntr[k] <- ifelse(idlink[k]==0,2,nbzitr[k]+2)
+                    zitr[[sum(ny[1:k])-ny[k]+1]] <- mod$linknodes
+                    epsY[sum(ny[1:k])-ny[k]+1] <- mod$epsY
+                    ntr[sum(ny[1:k])-ny[k]+1] <- ifelse(idlink[k]==0,2,nbzitr[k]+2)
                 }
             }
+
+        ## zitr en matrice
+        zzitr <- matrix(0, max(sapply(zitr, length)), sum(ny))
+        for(k in 1:K)
+        {
+            for(m in 1:ny[k])
+            {
+                km <- sum(ny[1:k])-ny[k]+m
+                if(nbzitr[km]>0) zzitr[1:nbzitr[km],km] <- zitr[[km]]
+            }
+        }
+        zitr <- zzitr
 
         ## refaire les idg etc pour tenir compte de toutes les var
         colnames(X0)[which(colnames(X0)=="(Intercept)")] <- "intercept"
@@ -1524,11 +1551,11 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
             if(inherits(B,"try-error"))
             {
                 if(length(cl$B)==1) stop(B)
-                if(!inherits(eval(cl$B[[2]]),"mpjlcmm")) stop("The model specified in B should be of class mpjlcmm")
+                if(!inherits(eval(cl$B[[2]], parent.env(environment())),"mpjlcmm")) stop("The model specified in B should be of class mpjlcmm")
                 if(as.character(cl$B[1])!="random") stop("Please use random() to specify random initial values")
                 
                 Brandom <- TRUE
-                B <- eval(cl$B[[2]])
+                B <- eval(cl$B[[2]], parent.env(environment()))
                 if(B$conv != 1) stop("Model in argument B did not converge properly")   
                 #if(length(posfix)) stop("Argument posfix is not compatible with random intial values")
             }
@@ -1556,33 +1583,33 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                             {
                                 if(idiag[k]==1)
                                 {
-                                    b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]] <- sqrt(b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]])
+                                    b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]] <- sqrt(b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]])
                                 }
                                 else
                                 {
                                     mvc <- matrix(0,nea[k],nea[k])
                                     if(contrainte[k]==2)
                                     {
-                                        mvc[upper.tri(mvc,diag=TRUE)] <- c(1,b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]])
+                                        mvc[upper.tri(mvc,diag=TRUE)] <- c(1,b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]])
                                         mvc <- t(mvc)
-                                        mvc[upper.tri(mvc,diag=TRUE)] <- c(1,b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]])        
+                                        mvc[upper.tri(mvc,diag=TRUE)] <- c(1,b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]])        
                                     }
                                     else
                                     {
-                                        mvc[upper.tri(mvc,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]]
+                                        mvc[upper.tri(mvc,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]]
                                         mvc <- t(mvc)
-                                        mvc[upper.tri(mvc,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]]
+                                        mvc[upper.tri(mvc,diag=TRUE)] <- b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]]
                                     }
 
                                     ch <- chol(mvc)
 
                                     if(contrainte[k]==2)
                                     {
-                                        b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]] <- ch[upper.tri(ch,diag=TRUE)][-1]
+                                        b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]] <- ch[upper.tri(ch,diag=TRUE)][-1]
                                     }
                                     else
                                     {
-                                        b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+1:nvc[k]] <- ch[upper.tri(ch,diag=TRUE)]
+                                        b[nprob+nrisqtot+nvarxevt+sumnpm+nef[k]+ncontr[k]+1:nvc[k]] <- ch[upper.tri(ch,diag=TRUE)]
                                     }
                                 }
                             }
@@ -2245,7 +2272,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                     
                     if(idiag[k]==1)
                     {
-                        out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]] <- out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+1:nvc[k]]**2
+                        out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]] <- out$best[nprob+nrisqtot+nvarxevt+tmp+nef[k]+ncontr[k]+1:nvc[k]]**2
                     }
                 }
                 else
@@ -2345,11 +2372,22 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                 pred_ss <- rep(NA,nobs0)
             } 
 
-        pred <- data.frame(IND,nomyy,pred_m,out$resid_m,pred_ss,out$resid_ss,out$Yobs,pred_m_g,pred_ss_g)
-
         temp <- paste("pred_m",1:ng,sep="")
         temp1 <- paste("pred_ss",1:ng,sep="")
-        colnames(pred) <- c(nom.subject,"Yname","pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1)
+        if(!all(is.na(timeobs)))
+        {
+            pred <- data.frame(IND,nomyy,pred_m,out$resid_m,pred_ss,out$resid_ss,out$Yobs,pred_m_g,pred_ss_g,timeobs)
+            colnames(pred) <- c(nom.subject,"Yname","pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1,"var.time")
+            var.time <- "var.time"
+        }
+        else
+        {
+            pred <- data.frame(IND,nomyy,pred_m,out$resid_m,pred_ss,out$resid_ss,out$Yobs,pred_m_g,pred_ss_g)
+            colnames(pred) <- c(nom.subject,"Yname","pred_m","resid_m","pred_ss","resid_ss","obs",temp,temp1)
+            var.time <- NULL
+        }
+
+
 
         ## risques
         if(nbevt>0)
@@ -2459,7 +2497,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
                    contrainte=contrainte, levels=levels, longicall=longicall,
                    AIC=2*(length(out$best)-length(posfix)-out$loglik),
                    BIC=(length(out$best)-length(posfix))*log(ns)-2*out$loglik,
-                   runtime=cost[3])
+                   runtime=cost[3], var.time=var.time)
 
         class(res) <- "mpjlcmm"
 
