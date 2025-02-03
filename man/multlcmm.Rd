@@ -319,18 +319,18 @@ is the rescaled outcome i.e. Y(t)'= [ Y(t) - min(Y(t)) + epsY ] / [
 max(Y(t)) - min(Y(t)) +2*epsY ].
 
 3. With the "splines" link function, n+2 parameters are required for the
-following transformation b_1 + b_2*I_1(Y(t)) + ... + b_{n+2} I_{n+1}(Y(t)),
-where I_1,...,I_{n+1} is the basis of quadratic I-splines. To constraint the
+following transformation b_1 + b_2*I_1(Y(t)) + ... + b_(n+2) I_(n+1)(Y(t)),
+where I_1,...,I_(n+1) is the basis of quadratic I-splines. To constraint the
 parameters to be positive, except for b_1, the program estimates b_k^* (for
 k=2,...,n+2) so that b_k=(b_k^*)^2. This parameterization may lead in some
 cases to problems of convergence that we are currently addressing.
 
 4. With the "thresholds" link function for an ordinal outcome with levels
 0,...,C, C-1 parameters are required for the following transformation:
-Y(t)=c <=> b_c < L(t) <= b_{c+1} with b_0 = - infinity and b_{C+1}=+infinity.
+Y(t)=c <=> b_c < L(t) <= b_(c+1) with b_0 = - infinity and b_(C+1)=+infinity.
 To constraint the parameters to be increasing, except for the first
 parameter b_1, the program estimates b_k^* (for k=2,...C-1) so that
-b_{k}=b_{k-1}+(b_k^*)^2.
+b_k=b_(k-1)+(b_k^*)^2.
 
 Details of these parameterized link functions can be found in the papers:
 Proust-Lima et al. (Biometrics 2006), Proust-Lima et al. (BJMSP 2013),
@@ -345,9 +345,9 @@ membership model, and if covariates are included in \code{classmb}, ng-1
 paramaters should be entered for each one; (2) for all covariates in
 \code{fixed}, one parameter is required if the covariate is not in
 \code{mixture}, ng paramaters are required if the covariate is also in
-\code{mixture}; When ng=1, the intercept is not estimated and no parameter
+\code{mixture}; When ng=1, the intercept is not estimated and no intercept parameter
 should be specified in \code{B}. When ng>1, the first intercept is not
-estimated and only ng-1 parameters should be specified in \code{B}; (3) for
+estimated and only ng-1 intercept parameters should be specified in \code{B}; (3) for
 all covariates included with \code{contrast()} in \code{fixed}, one
 supplementary parameter per outcome is required excepted for the last
 outcome for which the parameter is not estimated but deduced from the
@@ -356,14 +356,14 @@ specified in \code{random} is required excepted the first one (usually the
 intercept) which is constrained to 1. (5) if \code{idiag=FALSE}, the
 inferior triangular variance-covariance matrix of all the random-effects is
 required excepted the first variance (usually the intercept) which is
-constrained to 1. (5) only if \code{nwg=TRUE} and \code{ng}>1, ng-1
+constrained to 1. (6) only if \code{nwg=TRUE} and \code{ng}>1, ng-1
 parameters for class-specific proportional coefficients for the variance
-covariance matrix of the random-effects; (6) if \code{cor} is specified, the
+covariance matrix of the random-effects; (7) if \code{cor} is specified, the
 standard error of the Brownian motion or the standard error and the
-correlation parameter of the autoregressive process; (7) the standard error
-of the outcome-specific Gaussian errors (one per outcome); (8) if
+correlation parameter of the autoregressive process; (8) the standard error
+of the outcome-specific Gaussian errors (one per outcome); (9) if
 \code{randomY=TRUE}, the standard error of the outcome-specific random
-intercept (one per outcome); (9) the parameters of each parameterized link
+intercept (one per outcome); (10) the parameters of each parameterized link
 function: 2 for "linear", 4 for "beta", n+2 for "splines" with n nodes.
 
 C. CAUTIONS REGARDING THE USE OF THE PROGRAM

@@ -7,7 +7,7 @@ knitr::opts_chunk$set(
 )
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, nwg = FALSE, cor = NULL, data, B, convB = 0.0001, convL = 0.0001, convG = 0.0001, prior, maxiter = 500, subset = NULL, na.action = 1, posfix = NULL)
+# hlme(fixed, mixture, random, subject, classmb, ng = 1, idiag = FALSE, nwg = FALSE, cor = NULL, data, B, convB = 0.0001, convL = 0.0001, convG = 0.0001, prior, maxiter = 500, subset = NULL, na.action = 1, posfix = NULL)
 
 ## ----comment=''---------------------------------------------------------------
 head(paquid)

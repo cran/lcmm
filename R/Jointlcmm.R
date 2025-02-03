@@ -15,8 +15,8 @@
 #' considered. Be careful, parametrisations changed in lcmm_V1.5:
 #' 
 #' 1. With the "Weibull" function: 2 parameters are necessary w_1 and w_2 so
-#' that the baseline risk function a_0(t) = w_1^2*w_2^2*(w_1^2*t)^(w_2^2-1) if
-#' logscale=FALSE and a_0(t) = exp(w_1)*exp(w_2)(t)^(exp(w_2)-1) if
+#' that the baseline risk function a_0(t) = w_1^2 * w_2^2 * (w_1^2 * t)^(w_2^2 - 1) if
+#' logscale=FALSE and a_0(t) = exp(w_1) * exp(w_2) * (t)^(exp(w_2) - 1) if
 #' logscale=TRUE.
 #' 
 #' 2. with the "piecewise" step function and nz nodes (y_1,...y_nz), nz-1
@@ -27,7 +27,7 @@
 #' 3. with the "splines" function and nz nodes (y_1,...y_nz), nz+2 parameters
 #' are necessary s_1,...s_nz+2 so that the baseline risk function a_0(t) =
 #' sum_j s_j^2 M_j(t) if logscale=FALSE and a_0(t) = sum_j exp(s_j) M_j(t) if
-#' logscale=TRUE where {M_j} is the basis of cubic M-splines.
+#' logscale=TRUE where M_j is the basis of cubic M-splines.
 #' 
 #' Two parametrizations of the baseline risk function are proposed
 #' (logscale=TRUE or FALSE) because in some cases, especially when the
@@ -359,8 +359,7 @@
 #' in Medical Research 23, 74-90.
 #' @examples
 #' 
-#' 
-#' 
+#' \dontrun{
 #' #### Example of a joint latent class model estimated for a varying number
 #' # of latent classes: 
 #' # The linear mixed model includes a subject- (ID) and class-specific 
@@ -380,12 +379,11 @@
 #' # towards the global maximum.
 #' 
 #' 
-#' \dontrun{
 #' #### estimation with 1 latent class (ng=1): independent models for the 
 #' # longitudinal outcome and the time of event
-#' m1 <- Jointlcmm(fixed= Ydep1~X1*Time,random=~Time,subject='ID'
-#' ,survival = Surv(Tevent,Event)~ X1+X2 ,hazard="3-quant-splines"
-#' ,hazardtype="PH",ng=1,data=data_lcmm)
+#' m1 <- Jointlcmm(fixed= Ydep1~X1*Time,random=~Time,subject='ID',
+#' survival = Surv(Tevent,Event)~ X1+X2 ,hazard="3-quant-splines",
+#' hazardtype="PH",ng=1,data=data_lcmm)
 #' summary(m1)
 #' #Goodness-of-fit statistics for m1:
 #' #    maximum log-likelihood: -3944.77 ; AIC: 7919.54  ;  BIC: 7975.09  
@@ -437,7 +435,7 @@
 #' # class-specific predicted trajectories in the 3-class model retained 
 #' # (with characteristics of subject ID=193)
 #' data <- data_lcmm[data_lcmm$ID==193,]
-#' plot(predictY(m3,var.time="Time",newdata=data,bty="l")
+#' plot(predictY(m3,var.time="Time",newdata=data,bty="l"))
 #' # predictive accuracy of the model evaluated with EPOCE
 #' vect <- 1:15
 #' cvpl <- epoce(m3,var.time="Time",pred.times=vect)
@@ -2688,7 +2686,7 @@ Jointlcmm <- function(fixed,mixture,random,subject,classmb,ng=1,idiag=FALSE,nwg=
         
         cost<-proc.time()-ptm
         
-        res <-list(ns=ns0,ng=ng0,idprob=idprob0,idcom=idcom,
+        res <-list(ns=ns0,ng=ng0,nbevt=nbevt,idprob=idprob0,idcom=idcom,
                    idspecif=idspecif,idtdv=idtdv,idg=idg0,idea=idea0,
                    idcor=idcor0,loglik=out$loglik,best=out$best,V=V,
                    gconv=out$gconv,conv=out$conv,call=cl,niter=out$niter,

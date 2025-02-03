@@ -24,7 +24,7 @@
 #' @param hazardnodes optional vector containing interior nodes if
 #' \code{splines} or \code{piecewise} is specified for the baseline hazard
 #' function in \code{hazard}
-#' @param TimeDepVar optional vector specifying the name of the time-depending
+#' @param TimeDepVar optional vector specifying the name of the time-dependent
 #' covariate in the survival model
 #' @param data data frame containing all the variables used in the model
 #' @param B optional specification for the initial values of the parameters.
@@ -240,6 +240,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         
         if(!inherits(classmb,"formula")) stop("The argument classmb must be a formula")
         if(missing(data)){ stop("The argument data should be specified and defined as a data.frame")}
+        data <- as.data.frame(data)
         if(nrow(data)==0) stop("Data should not be empty")
         if(missing(subject)){ stop("The argument subject must be specified in any model")}
         
@@ -707,7 +708,7 @@ mpjlcmm <- function(longitudinal,subject,classmb,ng,survival,
         dataY <- dataY[which(dataY[,nom.subject] %in% selectid),,drop=FALSE]
         newdata <- newdata[which(newdata[,nom.subject] %in% selectid),,drop=FALSE]
         nsdata <- unique(newdata[,c(nom.subject,varSurvClas,nom.prior),drop=FALSE])
-        if(nrow(nsdata)!=ns) stop("No time-dependant variable should appear in survival nor in classmb")
+        if(nrow(nsdata)!=ns) stop("No time-dependent variable should appear in survival nor in classmb")
         nsdata <- nsdata[order(nsdata[,1]),,drop=FALSE] # tri
         prior <- nsdata[,nom.prior]
         if(is.null(nom.prior)) prior <- rep(0,ns)

@@ -37,7 +37,7 @@
 #' future updates VIA GITHUB ONLY.
 #' 
 #' @name lcmm-package
-#' @docType package
+#####@docType package
 #' @author Cecile Proust-Lima, Viviane Philipps, Amadou Diakite and Benoit
 #' Liquet
 #' 
@@ -96,6 +96,8 @@
 #' Verbeke and Lesaffre (1996). A linear mixed-effects model with heterogeneity
 #' in the random-effects population. Journal of the American Statistical
 #' Association 91, 217-21
+"_PACKAGE"
+
 #' 
 #' @keywords package
 #' @importFrom graphics axis hist lines matlines matplot mtext par plot points segments polygon
@@ -103,7 +105,7 @@
 #' @importFrom stats as.formula formula get_all_vars integrate median model.frame model.matrix na.fail na.omit na.pass pchisq pnorm qnorm quantile rnorm sd terms residuals vcov fitted coef update reformulate cov2cor simulate rbinom runif uniroot rweibull
 #' @importFrom survival Surv untangle.specials
 #' @importFrom mvtnorm rmvnorm
-#' @importFrom randtoolbox sobol
+#' @importFrom spacefillr generate_sobol_owen_set
 #' @importFrom parallel makeCluster clusterExport stopCluster parLapply clusterEvalQ clusterSetRNGStream parSapply parApply
 #' @importFrom doParallel registerDoParallel
 #' @importFrom nlme ranef fixef
