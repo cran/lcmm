@@ -1,8 +1,8 @@
 Package: lcmm
 Type: Package
 Title: Extended Mixed Models Using Latent Classes and Latent Processes
-Version: 2.2.0
-Date: 2025-01-31
+Version: 2.2.1
+Date: 2025-02-12
 Authors@R: c(person("Cecile", "Proust-Lima", role=c("aut", "cre"), email="cecile.proust-lima@inserm.fr"),
              person("Viviane", "Philipps", role="aut"),
 	     person("Amadou", "Diakite", role="ctb"),
@@ -22,7 +22,7 @@ LazyData: true
 VignetteBuilder: knitr
 NeedsCompilation: yes
 RoxygenNote: 7.3.2
-Packaged: 2025-01-31 14:43:16 UTC; vp3
+Packaged: 2025-02-12 15:27:03 UTC; vp3
 Author: Cecile Proust-Lima [aut, cre],
   Viviane Philipps [aut],
   Amadou Diakite [ctb],
@@ -31,4 +31,4 @@ Author: Cecile Proust-Lima [aut, cre],
   John Burkardt [ctb] (Author of alnorm subroutine)
 Maintainer: Cecile Proust-Lima <cecile.proust-lima@inserm.fr>
 Repository: CRAN
-Date/Publication: 2025-02-03 14:00:01 UTC
+Date/Publication: 2025-02-12 17:50:12 UTC

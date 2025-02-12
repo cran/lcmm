@@ -1,4 +1,4 @@
-23751b7e4ec5935da466725361c823a7 *DESCRIPTION
+aefdd64ac4f5cc706f2423499c9cef7c *DESCRIPTION
 ff30000ff10a2dbd7a916981d1411d9c *NAMESPACE
 a5bb4ee3f125dad35a194f19d0bc708a *NEWS.md
 3b0d346dad045ddaf103dbcd128c32ff *R/Brandom.R
@@ -45,7 +45,7 @@ aef70da45a4e150bbfdc8d380b7a551c *R/hlme.R
 142817a92962bf1e51d0ec18e30e77dc *R/loglik.R
 d4e0402001f7c8c04d2b8c6fe048ceb7 *R/mixture.R
 b6d0c558218f70b9ad37e12954e65fcf *R/mpjlcmm.R
-97eecb2ff3069aa245bd72ef3dda1910 *R/multlcmm.R
+44012dd89c921c35053c3c25271dd7bc *R/multlcmm.R
 312136f63397ff27726a5aaaffc66835 *R/paquid.R
 e228167ade136372c3bccbd0666e465f *R/permut.R
 1642e34dc429eaf21ac8351a15d8b6b6 *R/permutmpj.R
@@ -118,7 +118,7 @@ add8ed9f3b43bfbce03fcd07be45cd92 *R/update.mpjlcmm.R
 2978cb13c814f4fafa34e3d2923650a0 *R/xclass.R
 34943f71b3d713105f22c6a7dbf670ec *README.md
 b4a28f9f9bfa7a21cc7b180de1f4610d *THANKS
-0f2ddee1f918fa5685a118039e1f66ae *build/partial.rdb
+a85415fd61f842a0ddc40e614c183882 *build/partial.rdb
 84af944393563f8957f1839a0bc8d590 *build/vignette.rds
 fc03c84e4359dd357dc0f876c735038a *data/data_hlme.rda
 63ece534c04f8c3c38d641054cd87b17 *data/data_lcmm.rda
